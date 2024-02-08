@@ -6,6 +6,8 @@
     - [Models](#models)
     - [Embeddings](#embeddings)
     - [Chats](#chats)	
+- [Contributing](#contributing)
+- [License](#license)
 
 ## Remarks 
 
@@ -110,3 +112,10 @@ Using the API to create and maintain conversations. You have the option to eithe
     end);
 ```
 
+## Contributing
+
+Pull requests are welcome. If you're planning to make a major change, please open an issue first to discuss your proposed changes.
+
+## License
+
+This project is licensed under the [MIT](https://choosealicense.com/licenses/mit/) License.
