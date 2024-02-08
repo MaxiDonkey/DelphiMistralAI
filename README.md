@@ -1,9 +1,16 @@
 # Delphi MistralAI API
 
+- [Remarks](#remarks)
 - [Usage](#usage)
     - [Initialization](#initialization)
     - [Models](#models)
     - [Embeddings](#embeddings)
+    - [Chats](#chats)	
+
+## Remarks
+
+This is an unofficial library. MistralAI does not provide any official library for Delphi.
+This repositorty contains Delphi implementation over [MistralAI](https://https://docs.mistral.ai/api/) public API.
 
 ## Usage
 
@@ -41,9 +48,10 @@ var Models := MistralAI.Models.List;
 Embeddings make it possible to vectorize one or more texts in order, for example, to calculate the similarity between sentences.
 
 ```Pascal
-var Embeddings := MistralAI.Embeddings.Create(
+  var Embeddings := MistralAI.Embeddings.Create(
     procedure (Params: TEmbeddingParams)
     begin
+      Params.Model('mistral-embed'); //By default this is the model used so this line can be omitted
       Params.Input(['aba', 'bbb']);
     end);
   try
@@ -57,3 +65,48 @@ var Embeddings := MistralAI.Embeddings.Create(
     Embeddings.Free;
   end;
 ```
+
+### Chats
+
+Using the API to create and maintain conversations. You have the option to either wait for a complete response or receive the response sequentially (Streaming mode).
+
+```Pascal
+  var Chat := MistralAI.Chat.Create(
+    procedure (Params: TChatParams)
+    begin
+      Params.Model('mistral-tiny');
+      Params.Messages([TChatMessagePayload.User(Memo2.Text)]);
+      Params.MaxTokens(1024);
+    end);
+  try
+    for var Choice in Chat.Choices do
+      Memo1.Lines.Add(Choice.Message.Content);
+  finally
+    Chat.Free;
+  end;
+```
+
+### Stream mode
+
+```Pascal
+  MistralAI.Chat.CreateStream(
+    procedure(Params: TChatParams)
+    begin
+      Params.Model('mistral-medium');
+      Params.Messages([TChatMessagePayload.User(Memo2.Text)]);
+      Params.MaxTokens(1024);
+      Params.Stream;
+    end,
+    procedure(var Chat: TChat; IsDone: Boolean; var Cancel: Boolean)
+    begin
+      if (not IsDone) and Assigned(Chat) then
+        begin
+          Memo1.Text := Memo1.Text + Chat.Choices[0].Delta.Content;
+          Application.ProcessMessages;
+        end
+      else if IsDone then 
+        Memo1.Text := Memo1.Text + '--- Done';
+      Sleep(30);
+    end);
+```
+

@@ -115,7 +115,7 @@ constructor TEmbeddingParams.Create;
 begin
   inherited;
   Model('mistral-embed');
-  encoding_format('integer');
+  encoding_format('float');
 end;
 
 function TEmbeddingParams.Encoding_format(
