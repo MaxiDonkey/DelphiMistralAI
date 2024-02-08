@@ -7,11 +7,11 @@
     - [Embeddings](#embeddings)
     - [Chats](#chats)	
 
-## Remarks
+## Remarks 
 
 This is an unofficial library. MistralAI does not provide any official library for Delphi.
-This repositorty contains Delphi implementation over [MistralAI](https://https://docs.mistral.ai/api/) public API.
-
+This repositorty contains Delphi implementation over [MistralAI](https://docs.mistral.ai/api/) public API.
+ 
 ## Usage
 
 ### Initialization
