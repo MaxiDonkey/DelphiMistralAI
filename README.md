@@ -1,5 +1,9 @@
 # Delphi MistralAI API
 
+___
+![GitHub](https://img.shields.io/badge/IDE%20Version-Delphi%2010.3+-yellow)
+
+
 - [Remarks](#remarks)
 - [Usage](#usage)
     - [Initialization](#initialization)
