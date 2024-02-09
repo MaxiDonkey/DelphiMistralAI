@@ -53,7 +53,7 @@ var Models := MistralAI.Models.List;
 
 ### Embeddings
 
-Embeddings make it possible to vectorize one or more texts in order, for example, to calculate the similarity between sentences.
+Embeddings make it possible to vectorize one or more texts in order, for example, to calculate the similarity between sentences. Each vector resulted will be of dimension 1024. 
 
 ```Pascal
 //uses MistralAI, MistralAI.Embeddings;
