@@ -175,6 +175,7 @@ type
     FMessage: TChatMessage;
     [JsonReflectAttribute(ctString, rtString, TFinishReasonInterceptor)]
     FFinish_reason: TFinishReason;
+    [JsonNameAttribute('delta')]
     FDelta: TChatMessage;
   public
     /// <summary>
