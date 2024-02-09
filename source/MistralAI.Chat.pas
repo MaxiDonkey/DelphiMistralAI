@@ -71,7 +71,7 @@ type
     /// </summary>
     property Content: string read FContent write FContent;
     /// <summary>
-    /// Create a new "payload" message with user assistant
+    /// Create a new "payload" message with assistant role
     /// </summary>
     class function Assistant(const Content: string): TChatMessagePayload; static;
     /// <summary>
@@ -94,7 +94,7 @@ type
     /// The maximum number of tokens to generate in the completion.
     /// The token count of your prompt plus max_tokens cannot exceed the model's context length.
     /// </summary>
-    function MaxTokens(const Value: Integer = 8): TChatParams;
+    function MaxTokens(const Value: Integer = 16): TChatParams;
     /// <summary>
     /// The prompt(s) to generate completions for, encoded as a list of dict with role and content.
     /// The first prompt role should be user or system.
