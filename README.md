@@ -53,7 +53,8 @@ var Models := MistralAI.Models.List;
 
 ### Embeddings
 
-Embeddings make it possible to vectorize one or more texts in order, for example, to calculate the similarity between sentences. Each vector resulted will be of dimension 1024. 
+Embeddings make it possible to vectorize one or more texts in order, for example, to calculate the similarity between sentences. Each vector resulted will be of dimension 1024. This vector representation captures deep semantic aspects of texts, allowing for more nuanced comparisons.
+Distance measures such as cosine, Euclidean distance or other custom measures can be applied to these embeddings. 
 
 ```Pascal
 //uses MistralAI, MistralAI.Embeddings;
