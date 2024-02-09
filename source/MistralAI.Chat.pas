@@ -75,7 +75,7 @@ type
     /// </summary>
     class function Assistant(const Content: string): TChatMessagePayload; static;
     /// <summary>
-    /// Create a new "payload" message with user system
+    /// Create a new "payload" message with system role
     /// </summary>
     class function System(const Content: string; const Name: string = ''): TChatMessagePayload; static;
     /// <summary>
