@@ -292,6 +292,7 @@ begin
     assistant:
       Exit('assistant');
   end;
+  //test
 end;
 
 { TChatParams }
