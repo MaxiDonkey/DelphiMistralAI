@@ -317,16 +317,16 @@ begin
   Items := TJSONArray.Create;
   try
     for Item in Value do
-    begin
-      JSON := TJSONObject.Create;
-      {--- Add role }
-      JSON.AddPair('role', Item.Role.ToString);
+      begin
+        JSON := TJSONObject.Create;
+        {--- Add role }
+        JSON.AddPair('role', Item.Role.ToString);
 
-      {--- Add content }
-      if not Item.Content.IsEmpty then
-        JSON.AddPair('content', Item.Content);
-      Items.Add(JSON);
-    end;
+        {--- Add content }
+        if not Item.Content.IsEmpty then
+          JSON.AddPair('content', Item.Content);
+        Items.Add(JSON);
+      end;
   except
     Items.Free;
     raise;
