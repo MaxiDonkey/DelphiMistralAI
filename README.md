@@ -40,6 +40,8 @@ List the various models available in the API. You can refer to the Models docume
 See [Models Documentation](https://docs.mistral.ai/models/)
 
 ```Pascal
+//uses MistralAI, MistralAI.Models;
+
 var Models := MistralAI.Models.List;
   try
     for var Model in Models.Data do
@@ -54,6 +56,8 @@ var Models := MistralAI.Models.List;
 Embeddings make it possible to vectorize one or more texts in order, for example, to calculate the similarity between sentences.
 
 ```Pascal
+//uses MistralAI, MistralAI.Embeddings;
+
   var Embeddings := MistralAI.Embeddings.Create(
     procedure (Params: TEmbeddingParams)
     begin
@@ -77,6 +81,8 @@ Embeddings make it possible to vectorize one or more texts in order, for example
 Using the API to create and maintain conversations. You have the option to either wait for a complete response or receive the response sequentially (Streaming mode).
 
 ```Pascal
+//uses MistralAI, MistralAI.Chat;  
+
   var Chat := MistralAI.Chat.Create(
     procedure (Params: TChatParams)
     begin
@@ -95,6 +101,8 @@ Using the API to create and maintain conversations. You have the option to eithe
 ### Stream mode
 
 ```Pascal
+//uses MistralAI, MistralAI.Chat;
+
   MistralAI.Chat.CreateStream(
     procedure(Params: TChatParams)
     begin
