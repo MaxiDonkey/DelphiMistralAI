@@ -77,7 +77,7 @@ type
     /// <summary>
     /// Create a new "payload" message with system role
     /// </summary>
-    class function System(const Content: string; const Name: string = ''): TChatMessagePayload; static;
+    class function System(const Content: string): TChatMessagePayload; static;
     /// <summary>
     /// Create a new "payload" message with user role
     /// </summary>
@@ -372,8 +372,7 @@ begin
   Result.FContent := Content;
 end;
 
-class function TChatMessagePayload.System(const Content,
-  Name: string): TChatMessagePayload;
+class function TChatMessagePayload.System(const Content: string): TChatMessagePayload;
 begin
   Result.FRole := TMessageRole.system;
   Result.FContent := Content;
