@@ -190,7 +190,7 @@ begin
 end;
 ```
 
-###JSON
+### JSON
 
 Users have the option to set response_format to {"type": "json_object"} to enable JSON mode. It's important to explicitly ask the model to generate JSON output in your message. Currently, JSON mode is available for all of the models through API.
 
