@@ -127,7 +127,7 @@ Using the API to create and maintain conversations. You have the option to eithe
     end);
 ```
 
-### Function calling
+### Function
 
 Function calling allows Mistral models to connect to external tools. By integrating Mistral models with external tools such as user defined functions or APIs, users can easily build applications catering to specific use cases and practical problems. 
 
@@ -190,7 +190,7 @@ begin
 end;
 ```
 
-### JSON Mode
+### JSON
 
 Users have the option to set response_format to {"type": "json_object"} to enable JSON mode. It's important to explicitly ask the model to generate JSON output in your message. Currently, JSON mode is available for all of the models through API.
 
