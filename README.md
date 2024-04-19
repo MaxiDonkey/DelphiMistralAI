@@ -2,6 +2,7 @@
 
 ___
 ![GitHub](https://img.shields.io/badge/IDE%20Version-Delphi%2010.3+-yellow)
+![GitHub](https://img.shields.io/badge/platform-all%20platforms-green)
 
 
 - [Remarks](#remarks)
