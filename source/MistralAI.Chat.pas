@@ -4,7 +4,9 @@ interface
 
 uses
   System.SysUtils, System.Classes, REST.JsonReflect, System.JSON, REST.Json.Types,
-  MistralAI.API.Params, MistralAI.API;
+  MistralAI.API.Params, MistralAI.API, MistralAI.Functions.Core,
+
+  Vcl.Dialogs;
 
 type
   /// <summary>
@@ -22,7 +24,11 @@ type
     /// <summary>
     /// Assistant message
     /// </summary>
-    assistant);
+    assistant,
+    /// <summary>
+    /// Function message
+    /// </summary>
+    tool);
 
   TMessageRoleHelper = record helper for TMessageRole
     function ToString: string;
@@ -44,7 +50,15 @@ type
     /// <summary>
     /// model_length
     /// </summary>
-    model_length);
+    model_length,
+    /// <summary>
+    /// An error was encountered while processing the request
+    /// </summary>
+    error,
+    /// <summary>
+    /// A function must be invoked before further processing of the request
+    /// </summary>
+    tool_calls);
 
   TFinishReasonHelper = record helper for TFinishReason
     function ToString: string;
@@ -57,6 +71,41 @@ type
     procedure StringReverter(Data: TObject; Field: string; Arg: string); override;
   end;
 
+  TToolChoice = (
+    /// <summary>
+    /// The model won't call a function and will generate a message instead
+    /// </summary>
+    none,
+    /// <summary>
+    /// The model can choose to either generate a message or call a function
+    /// </summary>
+    auto,
+    /// <summary>
+    /// The model is forced to call a function
+    /// </summary>
+    any);
+
+  TToolChoiceHelper = record helper for TToolChoice
+    function ToString: string;
+  end;
+
+  TChatMessageTool = record
+  private
+    FFunction: IFunctionCore;
+  public
+    /// <summary>
+    /// This method converts the TFunctionCore instance to a JSON object containing the type and
+    /// representation of the function, and handles exceptions by deleting the JSON object and
+    /// propagating the exception if an error occurs
+    /// </summary>
+    function ToJson: TJSONObject;
+    /// <summary>
+    /// The function properties
+    /// </summary>
+    property &Function: IFunctionCore read FFunction write FFunction;
+    class function Add(const AFunction: IFunctionCore): TChatMessageTool; static;
+  end;
+
   TChatMessagePayload = record
   private
     FRole: TMessageRole;
@@ -67,7 +116,7 @@ type
     /// </summary>
     property Role: TMessageRole read FRole write FRole;
     /// <summary>
-    /// The contents of the message. content is required for all messages.
+    /// The contents of the message. content is required for all messages
     /// </summary>
     property Content: string read FContent write FContent;
     /// <summary>
@@ -92,28 +141,35 @@ type
     function Model(const Value: string): TChatParams;
     /// <summary>
     /// The maximum number of tokens to generate in the completion.
-    /// The token count of your prompt plus max_tokens cannot exceed the model's context length.
+    /// The token count of your prompt plus max_tokens cannot exceed the model's context length
     /// </summary>
     function MaxTokens(const Value: Integer = 16): TChatParams;
     /// <summary>
-    /// The prompt(s) to generate completions for, encoded as a list of dict with role and content.
+    /// The prompt(s) to generate completions for, encoded as a list of dict with role and content
     /// The first prompt role should be user or system.
     /// </summary>
-    function Messages(const Value: TArray<TChatMessagePayload>): TChatParams; overload;
+    function Messages(const Value: TArray<TChatMessagePayload>): TChatParams;
+    /// <summary>
+    /// An object specifying the format that the model must output. Setting to { "type": "json_object" }
+    /// enables JSON mode, which guarantees the message the model generates is in JSON.
+    /// When using JSON mode you MUST also instruct the model to produce JSON yourself with a system or
+    /// a user message
+    /// </summary>
+    function ResponseFormat(const Value: string = 'json_object'): TChatParams;
     /// <summary>
     /// Whether to stream back partial progress. If set, tokens will be sent as data-only server-sent events as they become available,
     /// with the stream terminated by a data: [DONE] message. Otherwise, the server will hold the request open until the timeout or
-    /// until completion, with the response containing the full result as JSON.
+    /// until completion, with the response containing the full result as JSON
     /// </summary>
     function Stream(const Value: Boolean = True): TChatParams;
     /// <summary>
     /// What sampling temperature to use, between 0.0 and 1.0. Higher values like 0.8 will make the output more random,
-    /// while lower values like 0.2 will make it more focused and deterministic.
+    /// while lower values like 0.2 will make it more focused and deterministic
     /// </summary>
     function Temperature(const Value: Single = 0.7): TChatParams;
     /// <summary>
     /// Nucleus sampling, where the model considers the results of the tokens with top_p probability mass.
-    /// So 0.1 means only the tokens comprising the top 10% probability mass are considered.
+    /// So 0.1 means only the tokens comprising the top 10% probability mass are considered
     /// </summary>
     function TopP(const Value: Single = 1): TChatParams;
     /// <summary>
@@ -121,7 +177,18 @@ type
     /// </summary>
     function SafePrompt(const Value: Boolean = False): TChatParams;
     /// <summary>
-    /// The seed to use for random sampling. If set, different calls will generate deterministic results.
+    /// A list of available tools for the model. Use this to specify functions for which the model can generate JSON inputs
+    /// </summary>
+    function Tools(const Value: TArray<TChatMessageTool>): TChatParams;
+    /// <summary>
+    /// Specifies if/how functions are called. If set to none the model won't call a function and will generate a message instead.
+    /// If set to auto the model can choose to either generate a message or call a function. If set to any the model is forced
+    /// to call a function
+    /// Default: "auto"
+    /// </summary>
+    function ToolChoice(const Value: TToolChoice = auto): TChatParams;
+    /// <summary>
+    /// The seed to use for random sampling. If set, different calls will generate deterministic results
     /// </summary>
     function RandomSeed(const Value: Integer): TChatParams;
     constructor Create; override;
@@ -137,17 +204,46 @@ type
     FTotal_tokens: Int64;
   public
     /// <summary>
-    /// Number of tokens in the prompt.
+    /// Number of tokens in the prompt
     /// </summary>
     property PromptTokens: Int64 read FPrompt_tokens write FPrompt_tokens;
     /// <summary>
-    /// Number of tokens in the generated completion.
+    /// Number of tokens in the generated completion
     /// </summary>
     property CompletionTokens: Int64 read FCompletion_tokens write FCompletion_tokens;
     /// <summary>
-    /// Total number of tokens used in the request (prompt + completion).
+    /// Total number of tokens used in the request (prompt + completion)
     /// </summary>
     property TotalTokens: Int64 read FTotal_tokens write FTotal_tokens;
+  end;
+
+  TCalledFunctionSpecifics = class
+  private
+    [JsonNameAttribute('name')]
+    FName: string;
+    [JsonNameAttribute('arguments')]
+    FArguments: string;
+  public
+    /// <summary>
+    /// Name of the called function
+    /// </summary>
+    property Name: string read FName write FName;
+    /// <summary>
+    /// Calculed Arguments for the called function
+    /// </summary>
+    property Arguments: string read FArguments write FArguments;
+  end;
+
+  TCalledFunction = class
+  private
+    [JsonNameAttribute('function')]
+    FFunction: TCalledFunctionSpecifics;
+  public
+    /// <summary>
+    /// Specifics of the called function
+    /// </summary>
+    property &Function: TCalledFunctionSpecifics read FFunction write FFunction;
+    destructor Destroy; override;
   end;
 
   TChatMessage = class
@@ -156,15 +252,22 @@ type
     FRole: string;
     [JsonNameAttribute('content')]
     FContent: string;
+    [JsonNameAttribute('tool_calls')]
+    FToolsCalls: TArray<TCalledFunction>;
   public
     /// <summary>
-    /// The role of the author of this message.
+    /// The role of the author of this message
     /// </summary>
     property Role: string read FRole write FRole;
     /// <summary>
-    /// The contents of the message.
+    /// The contents of the message
     /// </summary>
     property Content: string read FContent write FContent;
+    /// <summary>
+    /// "tool calls" must be runned for query complement
+    /// </summary>
+    property ToolsCalls: TArray<TCalledFunction> read FToolsCalls write FToolsCalls;
+    destructor Destroy; override;
   end;
 
   TChatChoices = class
@@ -179,15 +282,15 @@ type
     FDelta: TChatMessage;
   public
     /// <summary>
-    /// The index of the choice in the list of choices.
+    /// The index of the choice in the list of choices
     /// </summary>
     property Index: Int64 read FIndex write FIndex;
     /// <summary>
-    /// A chat completion message generated by the model.
+    /// A chat completion message generated by the model
     /// </summary>
     property Message: TChatMessage read FMessage write FMessage;
     /// <summary>
-    /// A chat completion delta generated by streamed model responses.
+    /// A chat completion delta generated by streamed model responses
     /// </summary>
     property Delta: TChatMessage read FDelta write FDelta;
     /// <summary>
@@ -214,27 +317,27 @@ type
     FUsage: TChatUsage;
   public
     /// <summary>
-    /// A unique identifier for the chat completion.
+    /// A unique identifier for the chat completion
     /// </summary>
     property Id: string read FId write FId;
     /// <summary>
-    /// The object type, which is always chat.completion.
+    /// The object type, which is always chat.completion
     /// </summary>
     property &Object: string read FObject write FObject;
     /// <summary>
-    /// The Unix timestamp (in seconds) of when the chat completion was created.
+    /// The Unix timestamp (in seconds) of when the chat completion was created
     /// </summary>
     property Created: Int64 read FCreated write FCreated;
     /// <summary>
-    /// The model used for the chat completion.
+    /// The model used for the chat completion
     /// </summary>
     property Model: string read FModel write FModel;
     /// <summary>
-    /// A list of chat completion choices. Can be more than one if N is greater than 1.
+    /// A list of chat completion choices. Can be more than one if N is greater than 1
     /// </summary>
     property Choices: TArray<TChatChoices> read FChoices write FChoices;
     /// <summary>
-    /// Usage statistics for the completion request.
+    /// Usage statistics for the completion request
     /// </summary>
     property Usage: TChatUsage read FUsage write FUsage;
     destructor Destroy; override;
@@ -243,7 +346,7 @@ type
   TChatEvent = reference to procedure(var Chat: TChat; IsDone: Boolean; var Cancel: Boolean);
 
   /// <summary>
-  /// Access to the chat completion API allows you to chat with a model fine-tuned to follow instructions.
+  /// Access to the chat completion API allows you to chat with a model fine-tuned to follow instructions
   /// </summary>
   TChatRoute = class(TMistralAIAPIRoute)
   public
@@ -271,13 +374,15 @@ uses
 
 class function TMessageRoleHelper.FromString(const Value: string): TMessageRole;
 begin
-  case IndexStr(AnsiLowerCase(Value), ['system', 'user', 'assistant']) of
+  case IndexStr(AnsiLowerCase(Value), ['system', 'user', 'assistant', 'tool']) of
     0 :
       Exit(system);
     1 :
       Exit(user);
     2 :
       Exit(assistant);
+    3 :
+      Exit(tool);
   end;
   Result := user;
 end;
@@ -291,8 +396,9 @@ begin
       Exit('user');
     assistant:
       Exit('assistant');
+    tool:
+      Exit('tool');
   end;
-  //test
 end;
 
 { TChatParams }
@@ -345,6 +451,13 @@ begin
   Result := TChatParams(Add('random_seed', Value));
 end;
 
+function TChatParams.ResponseFormat(const Value: string): TChatParams;
+begin
+  var JSON := TJSONObject.Create;
+  JSON.AddPair('type', Value);
+  Result := TChatParams(Add('response_format', JSON));
+end;
+
 function TChatParams.SafePrompt(const Value: Boolean): TChatParams;
 begin
   Result := TChatParams(Add('safe_prompt', Value));
@@ -358,6 +471,32 @@ end;
 function TChatParams.Temperature(const Value: Single): TChatParams;
 begin
   Result := TChatParams(Add('temperature', Value));
+end;
+
+function TChatParams.ToolChoice(const Value: TToolChoice): TChatParams;
+begin
+  Result := TChatParams(Add('tool_choice', Value.ToString));
+end;
+
+function TChatParams.Tools(const Value: TArray<TChatMessageTool>): TChatParams;
+var
+  Item: TChatMessageTool;
+  Items: TJSONArray;
+begin
+  Items := TJSONArray.Create;
+  try
+    for Item in Value do
+      begin
+        Items.Add(Item.ToJson);
+      end;
+    Result := TChatParams(Add('tools', Items));
+  except
+    on E: Exception do
+      begin
+        Items.Free;
+        raise;
+      end;
+  end;
 end;
 
 function TChatParams.TopP(const Value: Single): TChatParams;
@@ -391,13 +530,17 @@ end;
 
 class function TFinishReasonHelper.Create(const Value: string): TFinishReason;
 begin
-  case IndexStr(AnsiLowerCase(Value), ['stop', 'length', 'model_length']) of
+  case IndexStr(AnsiLowerCase(Value), ['stop', 'length', 'model_length', 'error', 'tool_calls']) of
     0 :
       Exit(stop);
     1 :
       Exit(length);
     2 :
       Exit(model_length);
+    3 :
+      Exit(error);
+    4 :
+      Exit(tool_calls);
   end;
   Result := stop;
 end;
@@ -411,6 +554,10 @@ begin
       Exit('length');
     model_length:
       Exit('model_length');
+    error:
+      Exit('error');
+    tool_calls:
+      Exit('tool_calls');
   end;
 end;
 
@@ -514,6 +661,51 @@ begin
   finally
     Response.Free;
   end;
+end;
+
+{ TChatMessageTool }
+
+class function TChatMessageTool.Add(
+  const AFunction: IFunctionCore): TChatMessageTool;
+begin
+  Result.&Function := AFunction;
+end;
+
+function TChatMessageTool.ToJson: TJSONObject;
+begin
+  Result := FFunction.ToJson;
+end;
+
+{ TToolChoiceHelper }
+
+function TToolChoiceHelper.ToString: string;
+begin
+  case Self of
+    auto:
+      Exit('auto');
+    any:
+      Exit('any');
+    else
+      Exit('none');
+  end;
+end;
+
+{ TCalledFunction }
+
+destructor TCalledFunction.Destroy;
+begin
+  if Assigned(FFunction) then
+    FFunction.Free;
+  inherited;
+end;
+
+{ TChatMessage }
+
+destructor TChatMessage.Destroy;
+begin
+  for var Tool in FToolsCalls do
+    Tool.Free;
+  inherited;
 end;
 
 end.
