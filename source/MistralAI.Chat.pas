@@ -4,9 +4,7 @@ interface
 
 uses
   System.SysUtils, System.Classes, REST.JsonReflect, System.JSON, REST.Json.Types,
-  MistralAI.API.Params, MistralAI.API, MistralAI.Functions.Core,
-
-  Vcl.Dialogs;
+  MistralAI.API.Params, MistralAI.API, MistralAI.Functions.Core;
 
 type
   /// <summary>
