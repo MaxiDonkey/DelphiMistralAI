@@ -10,8 +10,8 @@ ___
     - [Models](#models)
     - [Embeddings](#embeddings)
     - [Chats](#chats)
-    - [Function calling](#Function calling)
-    - [JSON mode](#JSON mode)	
+    - [Function calling](#Function)
+    - [JSON mode](#JSON)	
 - [Contributing](#contributing)
 - [License](#license)
 
@@ -127,7 +127,7 @@ Using the API to create and maintain conversations. You have the option to eithe
     end);
 ```
 
-### Function calling
+### Function
 
 Function calling allows Mistral models to connect to external tools. By integrating Mistral models with external tools such as user defined functions or APIs, users can easily build applications catering to specific use cases and practical problems. 
 
@@ -137,7 +137,9 @@ Warning : While this technology is powerful, it also carries potential risks. We
 
 
 ```Pascal
-//uses MistralAI, MistralAI.Chat, MistralAI.Functions.Core, MistralAI.Functions.Example;
+//uses 
+//  MistralAI, MistralAI.Chat,  
+//  MistralAI.Functions.Core, MistralAI.Functions.Example;
   
   var WeatherFunc: IFunctionCore := TWeatherReportFunction.Create; //plugin in charge of the external API that can be invoked by the model  
   var Chat := MistralAI.Chat.Create(
@@ -188,7 +190,7 @@ begin
 end;
 ```
 
-###JSON mode
+###JSON
 
 Users have the option to set response_format to {"type": "json_object"} to enable JSON mode. It's important to explicitly ask the model to generate JSON output in your message. Currently, JSON mode is available for all of the models through API.
 
