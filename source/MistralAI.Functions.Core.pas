@@ -56,7 +56,7 @@ type
     function GetDescription: string; virtual; abstract;
     function GetName: string; virtual; abstract;
     function GetParameters: string; virtual; abstract;
-    function GetType: string; virtual; abstract;
+    function GetType: string; virtual;
   public
     function Execute(const Arguments: string): string; virtual; abstract;
     /// <summary>
@@ -97,6 +97,11 @@ implementation
 
 { TFunctionCore }
 
+function TFunctionCore.GetType: string;
+begin
+  Result := 'function';
+end;
+
 function TFunctionCore.ToJson: TJSONObject;
 begin
   Result := TJSONObject.Create;
@@ -115,14 +120,14 @@ end;
 function TFunctionCore.ToString: string;
 begin
   with TStringWriter.Create do
-  try
-    Write('"description": "%s",', [Description]);
-    Write('"name": "%s",', [Name]);
-    Write('"parameters": %s', [Parameters]);
-    Result := Format('{%s}', [ToString]);
-  finally
-    Free;
-  end;
+    try
+      Write('"description": "%s",', [Description]);
+      Write('"name": "%s",', [Name]);
+      Write('"parameters": %s', [Parameters]);
+      Result := Format('{%s}', [ToString]);
+    finally
+      Free;
+    end;
 end;
 
 end.

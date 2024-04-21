@@ -11,7 +11,6 @@ type
     function GetDescription: string; override;
     function GetName: string; override;
     function GetParameters: string; override;
-    function GetType: string; override;
   public
     function Execute(const Arguments: string): string; override;
   end;
@@ -102,11 +101,6 @@ begin
      '},'+
      '"required": ["location"]'+
   '}';
-end;
-
-function TWeatherReportFunction.GetType: string;
-begin
-  Result := 'function';
 end;
 
 end.
