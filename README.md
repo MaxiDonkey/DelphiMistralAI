@@ -19,6 +19,7 @@ ___
         - [Codestral initialization](#Codestral-initialization)
         - [Code completion](#Code-completion)
         - [Streamed Code completion](#Streamed-code-completion)
+        - [Fill in the middle](#Fill-in-the-middle)
 - [Contributing](#contributing)
 - [License](#license)
 
@@ -257,7 +258,7 @@ var CodingModel: IMistralAI := TMistralAI.Create(API_TOKEN, [CodestralSpec]);
 #### Code completion
 
 ```Pascal
-//uses MistralAI.Codestral;
+//uses MistralAI, MistralAI.Codestral;
 
   var Codestral := CodingModel.Codestral.Create(
     procedure (Params: TCodestralParams)
@@ -277,7 +278,7 @@ var CodingModel: IMistralAI := TMistralAI.Create(API_TOKEN, [CodestralSpec]);
 #### Streamed Code completion
 
 ```Pascal
-//uses MistralAI.Codestral;
+//uses MistralAI, MistralAI.Codestral;
 
   CodingModel.Codestral.CreateStream(
     procedure(Params: TCodestralParams)
@@ -299,6 +300,37 @@ var CodingModel: IMistralAI := TMistralAI.Create(API_TOKEN, [CodestralSpec]);
     end);
 ```
 
+#### Fill in the middle
+
+This feature allows users to set the beginning of their code with a `prompt` and to specify the end of the code using an optional `suffix` and an optional `stop` condition. The Codestral model will then produce the code that seamlessly fits between these markers, making it perfect for tasks that need a particular segment of code to be created.
+
+```Pascal
+//uses MistralAI, MistralAI.Codestral;
+
+  CodingModel.Codestral.CreateStream(
+    procedure(Params: TCodestralParams)
+    begin
+      Params.Model('codestral-latest');
+
+      Params.Prompt(Memo2.Text); // Beginning text
+      Params.Suffix(Memo3.Text); // Text ending
+
+      Params.MaxTokens(1024);
+      Params.Stream;
+    end,
+    procedure(var Code: TCodestral; IsDone: Boolean; var Cancel: Boolean)
+    begin
+      if (not IsDone) and Assigned(Code) then
+        begin
+          Memo1.Text := Memo1.Text + Code.Choices[0].Delta.Content;
+          Application.ProcessMessages;
+        end
+      else if IsDone then ;
+      Sleep(30);
+    end);
+```
+
+The model will create the intermediate code completing the codes provided to the `prompt` and `suffix` parameters.
 
 ## Contributing
 
