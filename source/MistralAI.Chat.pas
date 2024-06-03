@@ -355,10 +355,10 @@ type
     /// <exception cref="MistralAIExceptionInvalidRequestError"> MistralAIExceptionInvalidRequestError </exception>
     function Create(ParamProc: TProc<TChatParams>): TChat;
     /// <summary>
-    /// Creates a completion for the chat message
+    /// Creates a completion for the chat message with streamed response
     /// </summary>
     /// <remarks>
-    /// The Chat object will be nil if all data is received!
+    /// The Chat object will be nil if all data is received
     /// </remarks>
     function CreateStream(ParamProc: TProc<TChatParams>; Event: TChatEvent): Boolean;
   end;

@@ -4,7 +4,7 @@ interface
 
 uses
   System.SysUtils, System.Classes, MistralAI.API, System.Net.URLClient,
-  MistralAI.Chat, MistralAI.Embeddings, MistralAI.Models;
+  MistralAI.Chat, MistralAI.Embeddings, MistralAI.Models, MistralAI.Codestral;
 
 type
   IMistralAI = interface
@@ -15,6 +15,7 @@ type
     function GetBaseUrl: string;
     procedure SetBaseUrl(const Value: string);
     function GetChatRoute: TChatRoute;
+    function GetCodestralRoute: TCodestralRoute;
     function GetEmbeddings: TEmbeddingsRoute;
     function GetModels: TModelsRoute;
 
@@ -31,14 +32,18 @@ type
     /// </summary>
     property Token: string read GetToken write SetToken;
     /// <summary>
-    /// Base Url (https://api.mistral.ai/v1)
+    /// Base Url (https://api.mistral.ai/v1) by default
+    /// If the "CodestralSpec" flag is set to the "Specs" value, then the base URL is thus modified (https://codestral.mistral.ai/v1)
     /// </summary>
     property BaseURL: string read GetBaseUrl write SetBaseUrl;
-
     /// <summary>
     /// Access to the chat completion API allows you to chat with a model fine-tuned to follow instructions.
     /// </summary>
     property Chat: TChatRoute read GetChatRoute;
+    /// <summary>
+    /// Access to the Codestral Completion API allows you to design or complete code with a template configured to follow instructions.
+    /// </summary>
+    property Codestral: TCodestralRoute read GetCodestralRoute;
     /// <summary>
     /// Access to the embeddings API allows you to embed sentences
     /// </summary>
@@ -50,10 +55,26 @@ type
     property Models: TModelsRoute read GetModels;
   end;
 
+  TSpec = (
+    /// <summary>
+    /// The "codestral" specification is taken into account in the instantiation of the class
+    /// </summary>
+    CodestralSpec);
+
+  /// <summary>
+  /// List of specifications taken into account
+  /// </summary>
+  TSpecs = set of TSpec;
+
   TMistralAI = class(TInterfacedObject, IMistralAI)
+  strict private
+    FSpecs: TSpecs;
+    procedure CodestralCheck;
+
   private
     FAPI: TMistralAIAPI;
     FChatRoute: TChatRoute;
+    FCodestralRoute: TCodestralRoute;
     FEmbeddings: TEmbeddingsRoute;
     FModels: TModelsRoute;
     function GetAPI: TMistralAIAPI;
@@ -62,6 +83,7 @@ type
     function GetBaseUrl: string;
     procedure SetBaseUrl(const Value: string);
     function GetChatRoute: TChatRoute;
+    function GetCodestralRoute: TCodestralRoute;
     function GetEmbeddings: TEmbeddingsRoute;
     function GetModels: TModelsRoute;
 
@@ -89,6 +111,10 @@ type
     /// </summary>
     property Chat: TChatRoute read GetChatRoute;
     /// <summary>
+    /// Access to the Codestral Completion API allows you to design or complete code with a template configured to follow instructions.
+    /// </summary>
+    property Codestral: TCodestralRoute read GetCodestralRoute;
+    /// <summary>
     /// Access to the embeddings API allows you to embed sentences
     /// </summary>
     property Embeddings: TEmbeddingsRoute read GetEmbeddings;
@@ -100,7 +126,7 @@ type
 
   public
     constructor Create; overload;
-    constructor Create(const AToken: string); overload;
+    constructor Create(const AToken: string; Specs: TSpecs = []); overload;
     destructor Destroy; override;
   end;
 
@@ -114,10 +140,26 @@ begin
   FAPI := TMistralAIAPI.Create;
 end;
 
-constructor TMistralAI.Create(const AToken: string);
+procedure TMistralAI.CodestralCheck;
+begin
+  if not (CodestralSpec in FSpecs) then
+    raise Exception.Create(
+       'The MistralAI instance cannot manage "Codestral", for this you must indicate '+
+       '[CodestralSpec] as a specification when instantiating the TMistralAI type interface:'#13#13+
+       '   TMistralAI.Create(''Your key'', [CodestralSpec])');
+end;
+
+constructor TMistralAI.Create(const AToken: string; Specs: TSpecs);
 begin
   Create;
   Token := AToken;
+
+  {--- Managing specifications for an instance of the class }
+  if CodestralSpec in Specs then
+    begin
+      FSpecs := FSpecs + [CodestralSpec];
+      FAPI.BaseUrl := TMistralAIAPI.URL_BASE_CODESTRAL;
+    end;
 end;
 
 destructor TMistralAI.Destroy;
@@ -125,6 +167,8 @@ begin
   FModels.Free;
   FEmbeddings.Free;
   FChatRoute.Free;
+  if CodestralSpec in FSpecs then
+    FCodestralRoute.Free;
   FAPI.Free;
   inherited;
 end;
@@ -144,6 +188,14 @@ begin
  if not Assigned(FChatRoute) then
     FChatRoute := TChatRoute.CreateRoute(API);
   Result := FChatRoute;
+end;
+
+function TMistralAI.GetCodestralRoute: TCodestralRoute;
+begin
+  CodestralCheck;
+  if not Assigned(FCodestralRoute) then
+    FCodestralRoute := TCodestralRoute.CreateRoute(API);
+  Result := FCodestralRoute;
 end;
 
 function TMistralAI.GetEmbeddings: TEmbeddingsRoute;

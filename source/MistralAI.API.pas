@@ -58,6 +58,7 @@ type
   public
     const
       URL_BASE = 'https://api.mistral.ai/v1';
+      URL_BASE_CODESTRAL = 'https://codestral.mistral.ai/v1';
   private
     FHTTPClient: THTTPClient;
     FToken: string;
