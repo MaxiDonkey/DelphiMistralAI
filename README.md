@@ -16,6 +16,7 @@ ___
     - [Code generation](#Code-generation)
         - [Before using](#Before-using)
         - [End points](#End-points)
+        - [Codestral initialization](#Codestral-initialization)
 - [Contributing](#contributing)
 - [License](#license)
 
@@ -239,6 +240,17 @@ Go to this address to create a key for using **Codestral** [Key creation](https:
 
 However, it is crucial to understand that chat usage requires using only the **"codestral-latest"** model or similar. In other words, with the endpoint `https://codestral.mistral.ai/v1/chat/completions`, a model such as **"open-mixtral-8x22b-2404"** or similar cannot be used; instead, **"codestral-latest" should be preferred**.
 
+#### Codestral initialization
+
+Lors de l'instanciation de l'interface gérant la classe de type ***TMistralAI***, la spécification **CodestralSpec** doit être spécifiée dans le constructeur `create`.
+
+L'interface résultante gérera à la fois les fonctionnalités de **CodeStral** ainsi que les interactions de type **chat**.
+
+```Pascal
+uses MistralAI;
+
+var CodingModel: IMistralAI := TMistralAI.Create(API_TOKEN, [CodestralSpec]);
+```
 
 ## Contributing
 
