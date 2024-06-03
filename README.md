@@ -230,7 +230,7 @@ See also [Code generation](https://docs.mistral.ai/capabilities/code_generation/
 #### Before using
 
 To utilize the Delphi classes managing the Codestral function, you are required to create a new KEY on the Mistral.ai website. Please note that obtaining this key necessitates providing a valid phone number. 
-Go to this address to create a key for using Codestral [Key creation](https://console.mistral.ai/codestral/)
+Go to this address to create a key for using Codestral [Key creation](https://console.mistral.ai/codestral)
 
 ## Contributing
 
