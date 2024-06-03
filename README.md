@@ -235,9 +235,9 @@ Go to this address to create a key for using `Codestral` [Key creation](https://
 
 #### End points
 
-`Codestral` can be used directly to generate code using the endpoint: ***https://codestral.mistral.ai/v1/fim/completions***, and for chat interactions with the endpoint: ***https://codestral.mistral.ai/v1/chat/completions***.
+`Codestral` can be used directly to generate code using the endpoint: `https://codestral.mistral.ai/v1/fim/completions`, and for chat interactions with the endpoint: `https://codestral.mistral.ai/v1/chat/completions`.
 
-However, it is crucial to understand that chat usage requires using only the **"codestral-latest"** model or similar. In other words, with the endpoint https://codestral.mistral.ai/v1/chat/completions, a model such as **"open-mixtral-8x22b-2404"** or similar cannot be used; instead, **"codestral-latest" should be preferred**.
+However, it is crucial to understand that chat usage requires using only the **"codestral-latest"** model or similar. In other words, with the endpoint `https://codestral.mistral.ai/v1/chat/completions`, a model such as **"open-mixtral-8x22b-2404"** or similar cannot be used; instead, **"codestral-latest" should be preferred**.
 
 
 ## Contributing
