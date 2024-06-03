@@ -244,9 +244,9 @@ However, it is crucial to understand that chat usage requires using only the **"
 
 #### Codestral initialization
 
-Lors de l'instanciation de l'interface gérant la classe de type ***TMistralAI***, la spécification **CodestralSpec** doit être spécifiée dans le constructeur `create`.
+When instantiating the interface managing the ***TMistralAI*** type class, the `CodestralSpec` specification must be specified in the `create` constructor.
 
-L'interface résultante gérera à la fois les fonctionnalités de **CodeStral** ainsi que les interactions de type **chat**.
+The resulting interface will handle both **CodeStral** functionality as well as chat-type interactions.
 
 ```Pascal
 uses MistralAI;
