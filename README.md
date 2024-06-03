@@ -325,6 +325,9 @@ This feature allows users to set the beginning of their code with a `prompt` and
     end);
 ```
 
+The model will create the intermediate code completing the codes provided to the `prompt` and `suffix` parameters.
+
+
 #### Stop tokens
 
 It is advisable to include stop tokens when integrating with IDE autocomplete to ensure the model doesn't provide overly verbose output.
@@ -348,9 +351,6 @@ It is advisable to include stop tokens when integrating with IDE autocomplete to
     Codestral.Free;
   end;
 ```
-
-The model will create the intermediate code completing the codes provided to the `prompt` and `suffix` parameters.
-
 
 #### End points
 
