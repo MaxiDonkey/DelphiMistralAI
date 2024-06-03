@@ -15,11 +15,12 @@ ___
     - [JSON mode](#JSON-mode)
     - [Code generation](#Code-generation)
         - [Before using](#Before-using)
-        - [End points](#End-points)
         - [Codestral initialization](#Codestral-initialization)
         - [Code completion](#Code-completion)
         - [Streamed Code completion](#Streamed-code-completion)
         - [Fill in the middle](#Fill-in-the-middle)
+        - [Stop tokens](#Stop-tokens)
+        - [End points](#End-points)
 - [Contributing](#contributing)
 - [License](#license)
 
@@ -237,12 +238,6 @@ See also [Code generation](https://docs.mistral.ai/capabilities/code_generation/
 To utilize the Delphi classes managing the **Codestral** function, you are required to create a new KEY on the ***Mistral.ai website***. Please note that obtaining this key necessitates providing a valid phone number. 
 Go to this address to create a key for using **Codestral** [Key creation](https://console.mistral.ai/codestral)
 
-#### End points
-
-**Codestral** can be used directly to generate code using the endpoint: `https://codestral.mistral.ai/v1/fim/completions`, and for chat interactions with the endpoint: `https://codestral.mistral.ai/v1/chat/completions`.
-
-However, it is crucial to understand that chat usage requires using only the **"codestral-latest"** model or similar. In other words, with the endpoint `https://codestral.mistral.ai/v1/chat/completions`, a model such as **"open-mixtral-8x22b-2404"** or similar cannot be used; instead, **"codestral-latest" should be preferred**.
-
 #### Codestral initialization
 
 When instantiating the interface managing the ***TMistralAI*** type class, the `CodestralSpec` specification must be specified in the `create` constructor.
@@ -329,6 +324,36 @@ This feature allows users to set the beginning of their code with a `prompt` and
       Sleep(30);
     end);
 ```
+
+#### Stop tokens
+
+It is advisable to include stop tokens when integrating with IDE autocomplete to ensure the model doesn't provide overly verbose output.
+
+```Pascal
+//uses MistralAI, MistralAI.Codestral;
+
+  var Codestral := CodingModel.Codestral.Create(
+    procedure (Params: TCodestralParams)
+    begin
+      Params.Model('codestral-latest');
+      Params.Prompt(Memo2.Text);
+      Params.Suffix(Memo3.Text);
+      Params.MaxTokens(1024);
+      Params.Stop(['\n\n']);
+    end);
+  try
+    for var Choice in Codestral.Choices do
+      Memo1.Lines.Add(Choice.Message.Content);
+  finally
+    Codestral.Free;
+  end;
+```
+
+#### End points
+
+**Codestral** can be used directly to generate code using the endpoint: `https://codestral.mistral.ai/v1/fim/completions`, and for chat interactions with the endpoint: `https://codestral.mistral.ai/v1/chat/completions`.
+
+However, it is crucial to understand that chat usage requires using only the **"codestral-latest"** model or similar. In other words, with the endpoint `https://codestral.mistral.ai/v1/chat/completions`, a model such as **"open-mixtral-8x22b-2404"** or similar cannot be used; instead, **"codestral-latest" should be preferred**.
 
 The model will create the intermediate code completing the codes provided to the `prompt` and `suffix` parameters.
 
