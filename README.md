@@ -12,7 +12,9 @@ ___
     - [Embeddings](#embeddings)
     - [Chats](#chats)
     - [Function calling](#function-calling)
-    - [JSON mode](#JSON-mode)	
+    - [JSON mode](#JSON-mode)
+    - [Code generation](#Code-generation)
+        - [Before using](#Before-using) 
 - [Contributing](#contributing)
 - [License](#license)
 
@@ -219,6 +221,16 @@ See also [documentation](https://docs.mistral.ai/capabilities/json_mode/) at the
     Chat.Free;
   end;
 ```
+
+### Code generation
+
+Codestral is an advanced generative model optimized for code generation, including fill-in-the-middle and code completion. Trained on over 80 programming languages, it performs well on both common and rare languages.
+See also [Code generation](https://docs.mistral.ai/capabilities/code_generation/) at the MistralAI web site.
+
+#### Before using
+
+To utilize the Delphi classes managing the Codestral function, you are required to create a new KEY on the Mistral.ai website. Please note that obtaining this key necessitates providing a valid phone number. 
+Go to this address to create a key for using Codestral [Key creation](https://console.mistral.ai/codestral/)
 
 ## Contributing
 
