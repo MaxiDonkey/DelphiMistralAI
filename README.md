@@ -349,13 +349,32 @@ It is advisable to include stop tokens when integrating with IDE autocomplete to
   end;
 ```
 
+The model will create the intermediate code completing the codes provided to the `prompt` and `suffix` parameters.
+
+
 #### End points
 
 **Codestral** can be used directly to generate code using the endpoint: `https://codestral.mistral.ai/v1/fim/completions`, and for chat interactions with the endpoint: `https://codestral.mistral.ai/v1/chat/completions`.
 
 However, it is crucial to understand that chat usage requires using only the **"codestral-latest"** model or similar. In other words, with the endpoint `https://codestral.mistral.ai/v1/chat/completions`, a model such as **"open-mixtral-8x22b-2404"** or similar cannot be used; instead, **"codestral-latest" should be preferred**.
 
-The model will create the intermediate code completing the codes provided to the `prompt` and `suffix` parameters.
+```Pascal
+//uses MistralAI, MistralAI.Codestral;
+
+  var Chat := CodingModel.Chat.Create(
+    procedure (Params: TChatParams)
+    begin
+      Params.Model('codestral-latest');
+      Params.Messages([TChatMessagePayload.User(Memo2.Text)]);
+      Params.MaxTokens(1024);
+    end);
+  try
+    for var Choice in Chat.Choices do
+      Memo1.Lines.Add(Choice.Message.Content);
+  finally
+    Chat.Free;
+  end;
+```
 
 ## Contributing
 
