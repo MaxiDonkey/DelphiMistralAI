@@ -225,7 +225,7 @@ See also [documentation](https://docs.mistral.ai/capabilities/json_mode/) at the
 
 ### Code generation
 
-`Codestral` is an advanced generative model optimized for code generation, including **fill-in-the-middle** and code completion. Trained on over 80 programming languages, it performs well on both common and rare languages.
+*Codestral* is an advanced generative model optimized for code generation, including **fill-in-the-middle** and code completion. Trained on over 80 programming languages, it performs well on both common and rare languages.
 See also [Code generation](https://docs.mistral.ai/capabilities/code_generation/) at the MistralAI web site.
 
 #### Before using
