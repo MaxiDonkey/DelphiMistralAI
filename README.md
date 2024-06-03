@@ -17,6 +17,8 @@ ___
         - [Before using](#Before-using)
         - [End points](#End-points)
         - [Codestral initialization](#Codestral-initialization)
+        - [Code completion](#Code-completion)
+        - [Streamed Code completion](#Streamed-code-completion)
 - [Contributing](#contributing)
 - [License](#license)
 
@@ -251,6 +253,52 @@ uses MistralAI;
 
 var CodingModel: IMistralAI := TMistralAI.Create(API_TOKEN, [CodestralSpec]);
 ```
+
+#### Code completion
+
+```Pascal
+//uses MistralAI.Codestral;
+
+  var Codestral := CodingModel.Codestral.Create(
+    procedure (Params: TCodestralParams)
+    begin
+      Params.Model('codestral-latest');
+      Params.Prompt(Memo2.Text);  
+      Params.MaxTokens(1024);
+    end);
+  try
+    for var Choice in Codestral.Choices do
+      Memo1.Lines.Add(Choice.Message.Content);
+  finally
+    Codestral.Free;
+  end;
+```
+
+#### Streamed Code completion
+
+```Pascal
+//uses MistralAI.Codestral;
+
+  CodingModel.Codestral.CreateStream(
+    procedure(Params: TCodestralParams)
+    begin
+      Params.Model('codestral-latest');
+      Params.Prompt(Memo2.Text);
+      Params.MaxTokens(1024);
+      Params.Stream;
+    end,
+    procedure(var Code: TCodestral; IsDone: Boolean; var Cancel: Boolean)
+    begin
+      if (not IsDone) and Assigned(Code) then
+        begin
+          Memo1.Text := Memo1.Text + Code.Choices[0].Delta.Content;
+          Application.ProcessMessages;
+        end
+      else if IsDone then ;
+      Sleep(30);
+    end);
+```
+
 
 ## Contributing
 
