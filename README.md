@@ -32,13 +32,13 @@ Welcome to the unofficial Delphi **MistralAI** API library. This project aims to
 ## Remarks 
 
 This is an unofficial library. **MistralAI** does not provide any official library for `Delphi`.
-This repositorty contains `Delphi` implementation over [MistralAI](https://docs.mistral.ai/api/) public API.
+This repository contains `Delphi` implementation over [MistralAI](https://docs.mistral.ai/api/) public API.
 
 ## Usage
 
 ### Initialization
 
-To initialize API instance you need to [obtain](https://console.mistral.ai/api-keys/) API token from.
+To initialize API instance you need to obtain an API token from [Mistral.ai](https://console.mistral.ai/api-keys/).
 
 Once you have a token, you can initialize `IMistralAI` interface, which is an entry point to the API.
 
