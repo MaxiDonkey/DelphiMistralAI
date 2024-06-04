@@ -32,7 +32,7 @@ Welcome to the unofficial Delphi **MistralAI** API library. This project aims to
 ## Remarks 
 
 This is an unofficial library. **MistralAI** does not provide any official library for `Delphi`.
-This repositorty contains Delphi implementation over [MistralAI](https://docs.mistral.ai/api/) public API.
+This repositorty contains `Delphi` implementation over [MistralAI](https://docs.mistral.ai/api/) public API.
 
 ## Usage
 
