@@ -40,7 +40,7 @@ This repository contains `Delphi` implementation over [MistralAI](https://docs.m
 
 ### Initialization
 
-To initialize API instance you need to obtain an API token from [Mistral.ai](https://console.mistral.ai/api-keys/).
+To initialize the API instance, you need to [obtain an API token from MistralAI](https://console.mistral.ai/api-keys/).
 
 Once you have a token, you can initialize `IMistralAI` interface, which is an entry point to the API.
 
