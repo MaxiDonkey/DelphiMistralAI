@@ -6,6 +6,7 @@ ___
 
 
 - [Remarks](#remarks)
+- [Introduction](#Introduction)
 - [Usage](#usage)
     - [Initialization](#initialization)
     - [Models](#models)
@@ -28,7 +29,11 @@ ___
 
 This is an unofficial library. MistralAI does not provide any official library for Delphi.
 This repositorty contains Delphi implementation over [MistralAI](https://docs.mistral.ai/api/) public API.
- 
+
+## Introduction
+
+Welcome to the unofficial Delphi **MistralAI** API library. This project aims to provide a `Delphi` interface for interacting with the **MistralAI** public API, making it easier to integrate advanced natural language processing features into your Delphi applications. Whether you want to generate text, create embeddings, use chat models, or generate code, this library offers a simple and effective solution.
+
 ## Usage
 
 ### Initialization
