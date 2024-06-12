@@ -22,6 +22,9 @@ ___
         - [Fill in the middle](#Fill-in-the-middle)
         - [Stop tokens](#Stop-tokens)
         - [End points](#End-points)
+    - [Fine-tuning](#Fine-tuning)
+        - [Files](#Files)
+        - [Create a fine-tuning job](#Create-a-fine-tuning-job)
 - [Contributing](#contributing)
 - [License](#license)
 
@@ -382,6 +385,30 @@ However, it is crucial to understand that chat usage requires using only the **"
     Chat.Free;
   end;
 ```
+
+### Fine-tuning
+
+When choosing between prompt engineering and fine-tuning for an AI model, it's advisable to start with prompt engineering due to its speed and lower resource requirements. Fine-tuning, however, offers better performance and alignment with specific tasks, making it ideal for specialized applications and cost reduction.
+
+See also [Fine-tuning description](https://docs.mistral.ai/capabilities/finetuning/) at the **MistralAI** web site.
+
+
+#### Files
+
+Data should be stored in **JSON** Lines files `(.jsonl)`, where each line corresponds to a separate **JSON object**. This format enables efficient storage of multiple **JSON objects**.
+
+The datasets must adhere to an instruction-following format that simulates a conversation between a user and an assistant. Each JSON record should either contain only messages exchanged between the user and the assistant (referred to as ***"Default Instruct"***), or include additional logic for function calls (referred to as ***"Function-calling Instruct"***). 
+
+
+#### Create a fine-tuning job
+
+The next step involves creating a fine-tuning job.
+
+- **model**: Select the specific model you wish to fine-tune, with options being "open-mistral-7b" and "mistral-small-latest".
+- **training_files**: Provide a set of training file IDs, which can include one or multiple files.
+- **validation_files**: Provide a set of validation file IDs, which can include one or multiple files.
+- **hyperparameters**: Adjust the two available hyperparameters, "trainingₛtep" and "learning_rate", according to your preferences.
+
 
 ## Contributing
 
