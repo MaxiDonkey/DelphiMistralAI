@@ -4,7 +4,8 @@ interface
 
 uses
   System.SysUtils, System.Classes, MistralAI.API, System.Net.URLClient,
-  MistralAI.Chat, MistralAI.Embeddings, MistralAI.Models, MistralAI.Codestral;
+  MistralAI.Chat, MistralAI.Embeddings, MistralAI.Models, MistralAI.Codestral,
+  MistralAI.Files, MistralAI.FineTunings;
 
 type
   IMistralAI = interface
@@ -17,6 +18,8 @@ type
     function GetChatRoute: TChatRoute;
     function GetCodestralRoute: TCodestralRoute;
     function GetEmbeddings: TEmbeddingsRoute;
+    function GetFilesRoute: TFilesRoute;
+    function GetFineTuningRoute: TFineTuningRoute;
     function GetModels: TModelsRoute;
 
     /// <summary>
@@ -49,6 +52,14 @@ type
     /// </summary>
     property Embeddings: TEmbeddingsRoute read GetEmbeddings;
     /// <summary>
+    /// Files are used to upload documents that can be used with features like Fine-tuning.
+    /// </summary>
+    property &File: TFilesRoute read GetFilesRoute;
+    /// <summary>
+    /// Fine tuning jobs for your organization and user
+    /// </summary>
+    property FineTuning: TFineTuningRoute read GetFineTuningRoute;
+    /// <summary>
     /// Lists and describes the various models available in the API.
     /// You can refer to the Models documentation to understand what models are available and the differences between them.
     /// </summary>
@@ -75,8 +86,10 @@ type
     FAPI: TMistralAIAPI;
     FChatRoute: TChatRoute;
     FCodestralRoute: TCodestralRoute;
-    FEmbeddings: TEmbeddingsRoute;
-    FModels: TModelsRoute;
+    FEmbeddingsRoute: TEmbeddingsRoute;
+    FFileRoute: TFilesRoute;
+    FFineTuningRoute: TFineTuningRoute;
+    FModelsRoute: TModelsRoute;
     function GetAPI: TMistralAIAPI;
     function GetToken: string;
     procedure SetToken(const Value: string);
@@ -85,8 +98,9 @@ type
     function GetChatRoute: TChatRoute;
     function GetCodestralRoute: TCodestralRoute;
     function GetEmbeddings: TEmbeddingsRoute;
+    function GetFilesRoute: TFilesRoute;
+    function GetFineTuningRoute: TFineTuningRoute;
     function GetModels: TModelsRoute;
-
   public
     /// <summary>
     /// Direct access to API
@@ -119,11 +133,18 @@ type
     /// </summary>
     property Embeddings: TEmbeddingsRoute read GetEmbeddings;
     /// <summary>
+    /// Files are used to upload documents that can be used with features like Fine-tuning.
+    /// </summary>
+    property &File: TFilesRoute read GetFilesRoute;
+    /// <summary>
+    /// Fine tuning jobs for your organization and user
+    /// </summary>
+    property FineTuning: TFineTuningRoute read GetFineTuningRoute;
+    /// <summary>
     /// Lists and describes the various models available in the API.
     /// You can refer to the Models documentation to understand what models are available and the differences between them.
     /// </summary>
     property Models: TModelsRoute read GetModels;
-
   public
     constructor Create; overload;
     constructor Create(const AToken: string; Specs: TSpecs = []); overload;
@@ -164,11 +185,13 @@ end;
 
 destructor TMistralAI.Destroy;
 begin
-  FModels.Free;
-  FEmbeddings.Free;
+  FModelsRoute.Free;
+  FEmbeddingsRoute.Free;
   FChatRoute.Free;
   if CodestralSpec in FSpecs then
     FCodestralRoute.Free;
+  FFileRoute.Free;
+  FFineTuningRoute.Free;
   FAPI.Free;
   inherited;
 end;
@@ -200,16 +223,30 @@ end;
 
 function TMistralAI.GetEmbeddings: TEmbeddingsRoute;
 begin
-  if not Assigned(FEmbeddings) then
-    FEmbeddings := TEmbeddingsRoute.CreateRoute(API);
-  Result := FEmbeddings;
+  if not Assigned(FEmbeddingsRoute) then
+    FEmbeddingsRoute := TEmbeddingsRoute.CreateRoute(API);
+  Result := FEmbeddingsRoute;
+end;
+
+function TMistralAI.GetFilesRoute: TFilesRoute;
+begin
+  if not Assigned(FFileRoute) then
+    FFileRoute := TFilesRoute.CreateRoute(API);
+  Result := FFileRoute;
+end;
+
+function TMistralAI.GetFineTuningRoute: TFineTuningRoute;
+begin
+  if not Assigned(FFineTuningRoute) then
+    FFineTuningRoute := TFineTuningRoute.CreateRoute(API);
+  Result := FFineTuningRoute;
 end;
 
 function TMistralAI.GetModels: TModelsRoute;
 begin
-  if not Assigned(FModels) then
-    FModels := TModelsRoute.CreateRoute(API);
-  Result := FModels;
+  if not Assigned(FModelsRoute) then
+    FModelsRoute := TModelsRoute.CreateRoute(API);
+  Result := FModelsRoute;
 end;
 
 function TMistralAI.GetToken: string;

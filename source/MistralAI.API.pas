@@ -21,8 +21,8 @@ type
 
   /// <summary>
   /// An InvalidRequestError indicates that your request was malformed or
-  // missing some required parameters, such as a token or an input.
-  // This could be due to a typo, a formatting error, or a logic error in your code.
+  /// missing some required parameters, such as a token or an input.
+  /// This could be due to a typo, a formatting error, or a logic error in your code.
   /// </summary>
   MistralAIExceptionInvalidRequestError = class(MistralAIException);
 
@@ -49,6 +49,12 @@ type
   /// traffic and are unable to process your request at the moment
   /// </summary>
   MistralAIExceptionTryAgain = class(MistralAIException);
+
+  /// <summary>
+  /// This error occurs when a request to the API can not be processed. This is a client-side error,
+  /// meaning the problem is with the request itself, and not the API.
+  /// </summary>
+  MistralUnprocessableEntityError = class(MistralAIException);
 
   MistralAIExceptionInvalidResponse = class(MistralAIException);
 
@@ -347,6 +353,8 @@ end;
 procedure TMistralAIAPI.ParseAndRaiseError(Code: Int64; Error: TError);
 begin
   case Code of
+    422:
+      raise MistralUnprocessableEntityError.Create(Error.Message, Error.Request_id, Code);
     429:
       raise MistralAIExceptionRateLimitError.Create(Error.Message, Error.Request_id, Code);
     400, 404, 415:
@@ -392,6 +400,8 @@ begin
       except
         Result := nil;
       end;
+    {TODO: TUnprocessableError in MistalAI.Errors}
+    422: raise Exception.CreateFmt('error 422 : Unprocessable Entity Error. '#13'%s', [ResponseText]);
   else
     ParseError(Code, ResponseText);
   end;
@@ -423,7 +433,7 @@ end;
 
 constructor MistralAIException.Create(const Text, ARequest_id: string; const ACode: Int64);
 begin
-  inherited Create(Format('(%d) %s', [ACode, Text]));
+  inherited Create(Format('error %d: %s'#13'Request ID = %s', [ACode, Text, ARequest_id]));
   Code := ACode;
   Request_id := ARequest_id;
 end;
