@@ -175,7 +175,7 @@ function TFilePurposeHelper.ToString: string;
 begin
   case self of
     FineTune:
-      Exit('finetune');
+      Exit('fine-tune');
     else
       raise Exception.Create('(Files) error converting object to string');
   end;
