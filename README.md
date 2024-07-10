@@ -404,7 +404,7 @@ See also [Default Instruct](https://docs.mistral.ai/capabilities/finetuning/#1-d
 **`Warning:`**
 Please remember to remove any line breaks if you copy and paste the examples provided by Mistral AI for the "Dataset Format."
 
-File Upload example
+**File Upload example**
 
 ```Pascal
 //uses MistralAI.Files;
@@ -417,10 +417,24 @@ File Upload example
     end)
   do
     try
-      ShowMessage(Id);
+      ShowMessage(Id); //Display the uploaded file Id
     finally
       Free;
     end;  
+```
+
+**Returns uploaded files list**
+
+```Pascal
+//uses MistralAI.Files;
+
+  with MistralAI.&File.List do
+  try
+    for var Item in Data do
+      ShowMessage(Item.Id);
+  finally
+    Free;
+  end;
 ```
 
 #### Create a fine-tuning job
