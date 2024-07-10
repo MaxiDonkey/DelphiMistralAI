@@ -460,7 +460,7 @@ Returns 404 error if the Id does not exists.
   var MyId := 'XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX'; //Replace by the Id of file to retrieve
   with MistralAI.&File.Retrieve(MyId) do
   try
-    ShowMessageFmt('%s'#13'%s'#13'%d ko', [Id, FileName, Bytes]);
+    ShowMessageFmt('%s'#13'%s'#13'%d bytes', [Id, FileName, Bytes]);
   finally
     Free;
   end;
