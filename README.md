@@ -399,6 +399,11 @@ Data should be stored in **JSON** Lines files `(.jsonl)`, where each line corres
 
 The datasets must adhere to an instruction-following format that simulates a conversation between a user and an assistant. Each JSON record should either contain only messages exchanged between the user and the assistant (referred to as ***"Default Instruct"***), or include additional logic for function calls (referred to as ***"Function-calling Instruct"***). 
 
+See also [Default Instruct](https://docs.mistral.ai/capabilities/finetuning/#1-default-instruct) and [Function-calling Instruct](https://docs.mistral.ai/capabilities/finetuning/#2-function-calling-instruct)
+
+```Pascal
+  
+```
 
 #### Create a fine-tuning job
 
@@ -409,6 +414,10 @@ The next step involves creating a fine-tuning job.
 - **validation_files**: Provide a set of validation file IDs, which can include one or multiple files.
 - **hyperparameters**: Adjust the two available hyperparameters, "trainingₛtep" and "learning_rate", according to your preferences.
 
+```Pascal
+```
+
+The List/retrieve/cancel functions are also available to manage Jobs. And for the last two functions you will have to provide the job ID as a parameter.
 
 ## Contributing
 
