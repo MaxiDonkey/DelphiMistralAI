@@ -480,6 +480,31 @@ The next step involves creating a fine-tuning job.
 
 The List/retrieve/cancel functions are also available to manage Jobs. And for the last two functions you will have to provide the job ID as a parameter.
 
+**Example**
+```Pascal
+//uses MistralAI.Files, MistralAI.FineTunings;
+
+  var MyJob := MistralAI.FineTuning.CreateAndRun(
+    procedure (Params: TFineTuningJobParams)
+    begin
+      Params.Model('open-mistral-7b'); //Fine Tuneable Models : Enum "open-mistral-7b", "mistral-small-latest
+      Params.TrainingFiles([Id_TrainingFile1, Id_TrainingFile2, ... ]);
+      Params.ValidationFiles([Id_ValidationFile1, Id_ValidationFile2, ... ]);
+      Params.Suffix('my-great-model');  //less than 18 characters
+    end
+  );
+  with MyJob do
+  try
+    ShowMessageFmt('%s'#13'%s'#13'%s', [Id, Model, FineTuningModel]);
+  finally
+    Free;
+  end;
+```
+
+`Note` : In the current version, Mistral AI has not provided an API to delete a refined model.
+
+
+
 ## Contributing
 
 Pull requests are welcome. If you're planning to make a major change, please open an issue first to discuss your proposed changes.
