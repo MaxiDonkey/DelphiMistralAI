@@ -605,7 +605,7 @@ type
     /// This corresponds to dry_run parameter equal to True
     /// </remarks>
     function CreateAndPerformSanityCheck(ParamProc: TProc<TFineTuningJobParams>): JobMetadata;
-    /// <summary>
+     /// <summary>
     /// Get a fine tuned job details by its UUID
     /// </summary>
     /// <param name="Value">
@@ -631,7 +631,7 @@ uses
 class function TFineTuningJobStatusHelper.Create(
   const Value: string): TFineTuningJobStatus;
 begin
-  case IndexStr(AnsiLowerCase(Value), [
+  case IndexStr(AnsiUpperCase(Value), [
     'QUEUED', 'STARTED', 'RUNNING', 'FAILED', 'SUCCESS', 'CANCELLED', 'CANCELLATION_REQUESTED']) of
     0 :
       Exit(Queued);
