@@ -465,7 +465,7 @@ Returns 404 error if the Id does not exists.
     Free;
   end;
 ```
-Refer to the `TFile` class in the MistralAI.Files.pas unit to understand the information returned by the 'Retrieve' method.
+Refer to the `TFile` class in the MistralAI.Files.pas unit to understand the information returned by the "Retrieve" method.
 
 
 #### Create a fine-tuning job
