@@ -437,6 +437,21 @@ Please remember to remove any line breaks if you copy and paste the examples pro
   end;
 ```
 
+**Delete an uploaded file by his Id**
+
+```Pascal
+//uses MistralAI.Files;
+
+  with MistralAI.&File.Delete(Id) do //`Id` : Id of the file to delete
+  try
+    if Deleted then
+      ShowMessageFmt('%s a été supprimé', [MyId]); 
+  finally
+    Free;
+  end;
+```
+Returns 404 error if the Id does not exists.
+
 #### Create a fine-tuning job
 
 The next step involves creating a fine-tuning job.
@@ -446,8 +461,6 @@ The next step involves creating a fine-tuning job.
 - **validation_files**: Provide a set of validation file IDs, which can include one or multiple files.
 - **hyperparameters**: Adjust the two available hyperparameters, "trainingₛtep" and "learning_rate", according to your preferences.
 
-```Pascal
-```
 
 The List/retrieve/cancel functions are also available to manage Jobs. And for the last two functions you will have to provide the job ID as a parameter.
 
