@@ -442,15 +442,31 @@ Please remember to remove any line breaks if you copy and paste the examples pro
 ```Pascal
 //uses MistralAI.Files;
 
-  with MistralAI.&File.Delete(Id) do //`Id` : Id of the file to delete
+  with MistralAI.&File.Delete(Id) do //Id : Id of the file to delete
   try
     if Deleted then
-      ShowMessageFmt('%s a été supprimé', [MyId]); 
+      ShowMessageFmt('File with Id=%s was deleted', [MyId]); 
   finally
     Free;
   end;
 ```
 Returns 404 error if the Id does not exists.
+
+**Returns information about a specific file**
+
+```Pascal
+//uses MistralAI.Files;
+
+  var MyId := 'XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX'; //Replace by the Id of file to retrieve
+  with MistralAI.&File.Retrieve(MyId) do
+  try
+    ShowMessageFmt('%s'#13'%s'#13'%d ko', [Id, FileName, Bytes]);
+  finally
+    Free;
+  end;
+```
+See `TFile` class to know available parameters. 
+
 
 #### Create a fine-tuning job
 
