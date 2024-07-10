@@ -401,8 +401,26 @@ The datasets must adhere to an instruction-following format that simulates a con
 
 See also [Default Instruct](https://docs.mistral.ai/capabilities/finetuning/#1-default-instruct) and [Function-calling Instruct](https://docs.mistral.ai/capabilities/finetuning/#2-function-calling-instruct)
 
+**Warning:**
+Please remember to remove any line breaks if you copy and paste the examples provided by Mistral AI for the "Dataset Format."
+
+File Upload example
+
 ```Pascal
-  
+//uses MistralAI.Files;
+
+  with MistralAI.&File.Upload(
+    procedure (Params: TUploadParams)
+    begin
+      Params.&File('training_file.jsonl'); //File name to upload
+      Params.Purpose(finetune);
+    end)
+  do
+    try
+      ShowMessage(Id);
+    finally
+      Free;
+    end;  
 ```
 
 #### Create a fine-tuning job
