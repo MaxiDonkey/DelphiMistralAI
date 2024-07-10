@@ -501,10 +501,6 @@ The List/retrieve/cancel functions are also available to manage Jobs. And for th
   end;
 ```
 
-`Note` : In the current version, Mistral AI has not provided an API to delete a fine-tuned model.
-
-
-
 ## Contributing
 
 Pull requests are welcome. If you're planning to make a major change, please open an issue first to discuss your proposed changes.
