@@ -25,6 +25,7 @@ ___
     - [Fine-tuning](#Fine-tuning)
         - [Files](#Files)
         - [Create a fine-tuning job](#Create-a-fine-tuning-job)
+        - [Delete fine-tuned model](#Delete-fine-tuned-model)
 - [Contributing](#contributing)
 - [License](#license)
 
@@ -496,6 +497,21 @@ The List/retrieve/cancel functions are also available to manage Jobs. And for th
   with MyJob do
   try
     ShowMessageFmt('%s'#13'%s'#13'%s', [Id, Model, FineTuningModel]);
+  finally
+    Free;
+  end;
+```
+
+#### Delete fine-tuned model
+
+`Note`: The method in charge of deleting a fine tuned model is found in the `MistralAI.Models.pas` unit.
+
+```Pascal
+//uses MistralAI.Models;
+
+  with MistralAI.Models.Delete('Id_Model_to_delete') do
+  try
+    ShowMessage('Model Deleted');
   finally
     Free;
   end;
