@@ -25,7 +25,7 @@ ___
     - [Fine-tuning](#Fine-tuning)
         - [Files](#Files)
         - [Create a fine-tuning job](#Create-a-fine-tuning-job)
-        - [Delete fine-tuned model](#Delete-fine-tuned-model)
+        - [Delete a fine-tuned model](#Delete-a-fine-tuned-model)
 - [Contributing](#contributing)
 - [License](#license)
 
@@ -502,7 +502,7 @@ The List/retrieve/cancel functions are also available to manage Jobs. And for th
   end;
 ```
 
-#### Delete fine-tuned model
+#### Delete a fine-tuned model
 
 `Note`: The method in charge of deleting a fine tuned model is found in the `MistralAI.Models.pas` unit.
 
