@@ -10,11 +10,20 @@ type
   MistralAIException = class(Exception)
   private
     FCode: Int64;
-    FRequest_id: string;
+    FMsg: string;
   public
-    constructor Create(const Text, ARequest_id: string; const ACode: Int64); reintroduce;
+    constructor Create(const ACode: Int64; const AError: TError); reintroduce; overload;
+    constructor Create(const ACode: Int64; const Value: string); reintroduce; overload;
     property Code: Int64 read FCode write FCode;
-    property Request_id: string read FRequest_id write FRequest_id;
+    property Msg: string read FMsg write FMsg;
+  end;
+
+  MistralAIValidationException = class(Exception)
+  private
+    FCode: Int64;
+  public
+    constructor Create(const ACode: Int64; const AError: TValidationError); reintroduce;
+    property Code: Int64 read FCode write FCode;
   end;
 
   MistralAIExceptionAPI = class(Exception);
@@ -54,7 +63,7 @@ type
   /// This error occurs when a request to the API can not be processed. This is a client-side error,
   /// meaning the problem is with the request itself, and not the API.
   /// </summary>
-  MistralUnprocessableEntityError = class(MistralAIException);
+  MistralUnprocessableEntityError = class(MistralAIValidationException);
 
   MistralAIExceptionInvalidResponse = class(MistralAIException);
 
@@ -74,8 +83,9 @@ type
     procedure SetToken(const Value: string);
     procedure SetBaseUrl(const Value: string);
     procedure SetOrganization(const Value: string);
-    procedure ParseAndRaiseError(Code: Int64; Error: TError);
+    procedure RaiseError(Code: Int64; Error: TError);
     procedure ParseError(const Code: Int64; const ResponseText: string);
+    procedure ParseValidationError(const Code: Int64; const ResponseText: string);
     procedure SetCustomHeaders(const Value: TNetHeaders);
 
   protected
@@ -350,23 +360,21 @@ begin
     raise MistralAIExceptionAPI.Create('Base url is empty!');
 end;
 
-procedure TMistralAIAPI.ParseAndRaiseError(Code: Int64; Error: TError);
+procedure TMistralAIAPI.RaiseError(Code: Int64; Error: TError);
 begin
   case Code of
-    422:
-      raise MistralUnprocessableEntityError.Create(Error.Message, Error.Request_id, Code);
     429:
-      raise MistralAIExceptionRateLimitError.Create(Error.Message, Error.Request_id, Code);
+      raise MistralAIExceptionRateLimitError.Create(Code, Error);
     400, 404, 415:
-      raise MistralAIExceptionInvalidRequestError.Create(Error.Message, Error.Request_id, Code);
+      raise MistralAIExceptionInvalidRequestError.Create(Code, Error);
     401:
-      raise MistralAIExceptionAuthenticationError.Create(Error.Message, Error.Request_id, Code);
+      raise MistralAIExceptionAuthenticationError.Create(Code, Error);
     403:
-      raise MistralAIExceptionPermissionError.Create(Error.Message, Error.Request_id, Code);
+      raise MistralAIExceptionPermissionError.Create(Code, Error);
     409:
-      raise MistralAIExceptionTryAgain.Create(Error.Message, Error.Request_id, Code);
+      raise MistralAIExceptionTryAgain.Create(Code, Error);
   else
-    raise MistralAIException.Create(Error.Message, Error.Request_id, Code);
+    raise MistralAIException.Create(Code, Error);
   end;
 end;
 
@@ -382,9 +390,7 @@ begin
       Error := nil;
     end;
     if Assigned(Error)  then
-      ParseAndRaiseError(Code, Error)
-    else
-      raise MistralAIException.CreateFmt('Unknown error (%d)', [Code]);
+      RaiseError(Code, Error);
   finally
     if Assigned(Error) then
       Error.Free;
@@ -400,13 +406,32 @@ begin
       except
         Result := nil;
       end;
-    {TODO: TUnprocessableError in MistalAI.Errors}
-    422: raise Exception.CreateFmt('error 422 : Unprocessable Entity Error. '#13'%s', [ResponseText]);
+    422: ParseValidationError(Code, ResponseText);
   else
     ParseError(Code, ResponseText);
   end;
   if not Assigned(Result) then
-    raise MistralAIExceptionInvalidResponse.Create('Empty or invalid response', '', Code);
+    raise MistralAIExceptionInvalidResponse.Create(Code, 'Empty or invalid response');
+end;
+
+procedure TMistralAIAPI.ParseValidationError(const Code: Int64;
+  const ResponseText: string);
+var
+  Error: TValidationError;
+begin
+  Error := nil;
+  try
+    try
+      Error := TJson.JsonToObject<TValidationError>(ResponseText);
+    except
+      Error := nil;
+    end;
+    if Assigned(Error) then
+      raise MistralUnprocessableEntityError.Create(Code, Error);
+  finally
+    if Assigned(Error) then
+      Error.Free;
+  end;
 end;
 
 procedure TMistralAIAPI.SetBaseUrl(const Value: string);
@@ -431,11 +456,24 @@ end;
 
 { MistralAIException }
 
-constructor MistralAIException.Create(const Text, ARequest_id: string; const ACode: Int64);
+constructor MistralAIException.Create(const ACode: Int64; const AError: TError);
 begin
-  inherited Create(Format('error %d: %s'#13'Request ID = %s', [ACode, Text, ARequest_id]));
   Code := ACode;
-  Request_id := ARequest_id;
+  if AError.Detail <> EmptyStr then
+    Msg := AError.Detail
+  else
+  if AError.Message <> EmptyStr then
+    Msg := AError.Message;
+  if AError.RequestID <> EmptyStr then
+    Msg := Format('%s for request %s', [Msg, AError.RequestID]);
+  inherited Create(Format('error %d: %s', [ACode, Msg]));
+end;
+
+constructor MistralAIException.Create(const ACode: Int64; const Value: string);
+begin
+  Code := ACode;
+  Msg := Value;
+  inherited Create(Format('error %d: %s', [ACode, Msg]));
 end;
 
 { TMistralAIAPIRoute }
@@ -449,6 +487,22 @@ end;
 procedure TMistralAIAPIRoute.SetAPI(const Value: TMistralAIAPI);
 begin
   FAPI := Value;
+end;
+
+{ MistralAIValidationException }
+
+constructor MistralAIValidationException.Create(const ACode: Int64;
+  const AError: TValidationError);
+begin
+  Code := ACode;
+  var Text := EmptyStr;
+  for var Item in AError.Detail do
+    begin
+      if Text <> EmptyStr then
+        Text := Format('%s %s - %s'#13, [Text, Item.&Type, Item.Msg]) else
+        Text := Format('%s - %s'#13, [Item.&Type, Item.Msg])
+    end;
+  inherited Create(Format('error %d: %s', [ACode, Text]));
 end;
 
 end.

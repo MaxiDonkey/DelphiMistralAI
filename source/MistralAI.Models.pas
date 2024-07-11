@@ -39,7 +39,8 @@ type
   end;
 
   /// <summary>
-  /// Lists the currently available models, and provides basic information about each one such as the owner and availability.
+  /// Lists the currently available models, and provides basic information about each one
+  /// such as the owner and availability.
   /// </summary>
   TModels = class
   private
@@ -59,12 +60,44 @@ type
     destructor Destroy; override;
   end;
 
+  /// <summary>
+  /// Class managing the data returned upon successful completion of a request to delete a fine-tuned model
+  /// </summary>
+  TModelDeletion = class
+  private
+    [JsonNameAttribute('id')]
+    FId: string;
+    [JsonNameAttribute('object')]
+    FObject: string;
+    [JsonNameAttribute('deleted')]
+    FDeleted: Boolean;
+  public
+    /// <summary>
+    /// The ID of the deleted model
+    /// </summary>
+    property Id: string read FId write FId;
+    /// <summary>
+    /// Default: "model"
+    /// The object type that was deleted
+    /// </summary>
+    property &Object: string read FObject write FObject;
+    /// <summary>
+    /// The deletion status
+    /// </summary>
+    property Deleted: Boolean read FDeleted write FDeleted;
+  end;
+
   TModelsRoute = class(TMistralAIAPIRoute)
   public
     /// <summary>
     /// Lists the currently available models
     /// </summary>
     function List: TModels;
+    /// <summary>
+    /// Delete a fine-tuned model
+    /// </summary>
+    /// <param name="ModelId"> The ID of the fine-tuned model to be deleted </param>
+    function Delete(const ModelId: string): TModelDeletion;
   end;
 
 implementation
@@ -79,6 +112,11 @@ begin
 end;
 
 { TModelsRoute }
+
+function TModelsRoute.Delete(const ModelId: string): TModelDeletion;
+begin
+  Result := API.Delete<TModelDeletion>(Format('models/%s', [ModelId]));
+end;
 
 function TModelsRoute.List: TModels;
 begin
