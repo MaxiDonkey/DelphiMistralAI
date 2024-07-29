@@ -484,11 +484,11 @@ The List/retrieve/cancel functions are also available to manage Jobs. And for th
 **Important Notice**
 
 As of July 2024, the only fine-tunable models at Mistral are                 
-        `open-mistral-7b (v0.3)`,                                               
-        `mistral-small-latest` (`mistral-small-2402`),                            
-        `codestral-latest` (`codestral-2405`),                                    
-        `open-mistral-nemo` and ,                                               
-        `mistral-large-latest` (`mistral-large-2407`)
+  - `open-mistral-7b (v0.3)`,                                               
+  - `mistral-small-latest` (`mistral-small-2402`),                            
+  - `codestral-latest` (`codestral-2405`),                                    
+  - `open-mistral-nemo` and ,                                               
+  - `mistral-large-latest` (`mistral-large-2407`)
 
 **Example**
 
