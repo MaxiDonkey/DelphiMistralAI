@@ -5,8 +5,12 @@ unit MistralAI.FineTunings;
 |                                                                              |
 |  **Important Notice**                                                        |
 |                                                                              |
-| As of June 2024, the only fine-tunable models at Mistral are                 |
-|        "open-mistral-7b" and "mistral-small-latest".                         |
+| As of July 2024, the only fine-tunable models at Mistral are                 |
+|        open-mistral-7b (v0.3),                                               |
+|        mistral-small-latest (mistral-small-2402),                            |
+|        codestral-latest (codestral-2405),                                    |
+|        open-mistral-nemo and ,                                               |
+|        mistral-large-latest (mistral-large-2407)                             |
 |                                                                              |
 | To monitor and track the progress of fine-tuning using Wandb.ai tools,       |
 | you are required to register on the Wandb website at                         |
