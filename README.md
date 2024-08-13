@@ -70,7 +70,9 @@ See [Models Documentation](https://docs.mistral.ai/models/)
 var Models := MistralAI.Models.List;
   try
     for var Model in Models.Data do
-      Memo1.Lines.Add(Model.id);
+      if Model.Capabilities.FineTuning then
+        Memo1.Lines.Add(Model.id + '  (Can fine-tuned)') else
+        Memo1.Lines.Add(Model.id)
   finally
     Models.Free;
   end;
