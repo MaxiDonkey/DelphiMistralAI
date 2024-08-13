@@ -26,6 +26,7 @@ ___
         - [Files](#Files)
         - [Create a fine-tuning job](#Create-a-fine-tuning-job)
         - [Delete a fine-tuned model](#Delete-a-fine-tuned-model)
+    - [Agents](#Agents)
 - [Contributing](#contributing)
 - [License](#license)
 
@@ -73,6 +74,23 @@ var Models := MistralAI.Models.List;
   end;
 ```
 
+Update 08/2024:
+
+Model management has been strengthened with the introduction of the following APIs:
+  - Find a model by its Id 
+     `function Retrieve(const ModelId: string): TModel`
+
+  - Update a fine-tuned model by its Id, including updates to the model's name and description 
+     `function Update(const ModelId: string; ParamProc: TProc<TModelParams>): TFineTunedModel`
+
+  - Archive or unarchive a fine-tuned model by its Id.
+     `function Archive(const ModelId: string): TArchivingdModel`
+     `function Unarchive(const ModelId: string): TArchivingdModel`  
+
+(See the TModelsRoute class in the **MistralAI.Models** unit)
+
+New fields have been added to the data returned concerning the models, allowing for more precise management of information about the models (see the TCoreModel class and its derived classes in the **MistralAI.Models** unit)  
+
 ### Embeddings
 
 Embeddings make it possible to vectorize one or more texts in order, for example, to calculate the similarity between sentences. Each vector resulted will be of dimension 1024. This vector representation captures deep semantic aspects of texts, allowing for more nuanced comparisons.
@@ -108,7 +126,7 @@ Using the API to create and maintain conversations. You have the option to eithe
 See also [Prompting Capabilities](https://docs.mistral.ai/guides/prompting_capabilities/) at the MistralAI web site.
 
 ```Pascal
-//uses MistralAI, MistralAI.Chat;  
+//uses MistralAI, MistralAI.Functions.Tools, MistralAI.Chat;  
 
   var Chat := MistralAI.Chat.Create(
     procedure (Params: TChatParams)
@@ -128,7 +146,7 @@ See also [Prompting Capabilities](https://docs.mistral.ai/guides/prompting_capab
 ### Stream mode
 
 ```Pascal
-//uses MistralAI, MistralAI.Chat;
+//uses MistralAI, MistralAI.Functions.Tools, MistralAI.Chat;
 
   MistralAI.Chat.CreateStream(
     procedure(Params: TChatParams)
@@ -526,6 +544,12 @@ As of July 2024, the only fine-tunable models at Mistral are
     Free;
   end;
 ```
+
+### Agents
+
+As of 08/13/2024, only the API for executing an agent is available; however, no API for creating an agent has been made available.  
+
+(See the **MistralAI.Models** unit)
 
 ## Contributing
 
