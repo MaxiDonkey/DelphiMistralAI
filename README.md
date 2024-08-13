@@ -77,6 +77,7 @@ var Models := MistralAI.Models.List;
 Update 08/2024:
 
 Model management has been strengthened with the introduction of the following APIs:
+
   - Find a model by its Id 
     - `function Retrieve(const ModelId: string): TModel`
 
@@ -87,9 +88,9 @@ Model management has been strengthened with the introduction of the following AP
     - `function Archive(const ModelId: string): TArchivingdModel`
     - `function Unarchive(const ModelId: string): TArchivingdModel`  
 
-(See the TModelsRoute class in the **MistralAI.Models** unit)
+(See the ***TModelsRoute*** class in the ***MistralAI.Models*** unit)
 
-New fields have been added to the data returned concerning the models, allowing for more precise management of information about the models (see the TCoreModel class and its derived classes in the **MistralAI.Models** unit)  
+New fields have been added to the data returned concerning the models, allowing for more precise management of information about the models (see the ***TCoreModel*** class and its derived classes in the ***MistralAI.Models*** unit)
 
 ### Embeddings
 
