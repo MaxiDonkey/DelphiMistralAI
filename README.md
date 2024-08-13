@@ -78,14 +78,14 @@ Update 08/2024:
 
 Model management has been strengthened with the introduction of the following APIs:
   - Find a model by its Id 
-     `function Retrieve(const ModelId: string): TModel`
+    - `function Retrieve(const ModelId: string): TModel`
 
   - Update a fine-tuned model by its Id, including updates to the model's name and description 
-     `function Update(const ModelId: string; ParamProc: TProc<TModelParams>): TFineTunedModel`
+    - `function Update(const ModelId: string; ParamProc: TProc<TModelParams>): TFineTunedModel`
 
   - Archive or unarchive a fine-tuned model by its Id.
-     `function Archive(const ModelId: string): TArchivingdModel`
-     `function Unarchive(const ModelId: string): TArchivingdModel`  
+    - `function Archive(const ModelId: string): TArchivingdModel`
+    - `function Unarchive(const ModelId: string): TArchivingdModel`  
 
 (See the TModelsRoute class in the **MistralAI.Models** unit)
 
