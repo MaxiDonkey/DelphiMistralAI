@@ -67,7 +67,7 @@ See [Models Documentation](https://docs.mistral.ai/models/)
 ```Pascal
 //uses MistralAI, MistralAI.Models;
 
-var Models := MistralAI.Models.List;
+var Models := MistralAI.Models.List; 
   try
     for var Model in Models.Data do
       if Model.Capabilities.FineTuning then
@@ -92,7 +92,7 @@ var Models := MistralAI.Models.List;
 >  - Archive or unarchive a fine-tuned model by its Id.
 >    - `function Archive(const ModelId: string): TArchivingdModel`
 >    - `function Unarchive(const ModelId: string): TArchivingdModel`  
-
+>
 > (See the ***TModelsRoute*** class in the ***MistralAI.Models.pas*** unit)
 
 New fields have been added to the data returned concerning the models, allowing for more precise management of information about the models (see the ***TCoreModel*** class and its derived classes in the ***MistralAI.Models.pas*** unit)
@@ -555,7 +555,7 @@ As of July 2024, the only fine-tunable models at Mistral are
 
 > [!WARNING]
 > As of 08/13/2024, only the API for executing an agent is available; however, no API for creating an agent has been made available.  
-
+>
 > (See the ***MistralAI.Agents.pas*** unit)
 
 ## Contributing
