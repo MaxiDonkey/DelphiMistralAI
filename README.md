@@ -88,9 +88,9 @@ Model management has been strengthened with the introduction of the following AP
     - `function Archive(const ModelId: string): TArchivingdModel`
     - `function Unarchive(const ModelId: string): TArchivingdModel`  
 
-(See the ***TModelsRoute*** class in the ***MistralAI.Models*** unit)
+(See the ***TModelsRoute*** class in the ***MistralAI.Models.pas*** unit)
 
-New fields have been added to the data returned concerning the models, allowing for more precise management of information about the models (see the ***TCoreModel*** class and its derived classes in the ***MistralAI.Models*** unit)
+New fields have been added to the data returned concerning the models, allowing for more precise management of information about the models (see the ***TCoreModel*** class and its derived classes in the ***MistralAI.Models.pas*** unit)
 
 ### Embeddings
 
@@ -548,9 +548,10 @@ As of July 2024, the only fine-tunable models at Mistral are
 
 ### Agents
 
-As of 08/13/2024, only the API for executing an agent is available; however, no API for creating an agent has been made available.  
+> [!WARNING]
+> As of 08/13/2024, only the API for executing an agent is available; however, no API for creating an agent has been made available.  
 
-(See the **MistralAI.Models** unit)
+> (See the ***MistralAI.Agents.pas*** unit)
 
 ## Contributing
 
