@@ -3,13 +3,43 @@ unit MistralAI.Models;
 interface
 
 uses
-  System.SysUtils, REST.Json.Types, MistralAI.API.Params, MistralAI.API;
+  System.SysUtils, System.Classes, REST.Json.Types, MistralAI.API.Params,
+  MistralAI.API;
 
 type
+  TModelParams = class(TJSONParam)
+    /// <summary>
+    /// The New Name value of the fine-tuned model to update
+    /// Warning: Not to be confused with the model ID which does not move
+    /// </summary>
+    function Name(const Value: string): TModelParams;
+    /// <summary>
+    /// The new description of the fine-tuned model to update
+    /// </summary>
+    function Description(const Value: string): TModelParams;
+  end;
+
+  TCapabilities = class
+  private
+    [JsonNameAttribute('completion_chat')]
+    FCompletionChat: Boolean;
+    [JsonNameAttribute('completion_fim')]
+    FCompletionFim: Boolean;
+    [JsonNameAttribute('function_calling')]
+    FFunctionCalling: Boolean;
+    [JsonNameAttribute('fine_tuning')]
+    FFineTuning: Boolean;
+  public
+    property CompletionChat: Boolean read FCompletionChat write FCompletionChat;
+    property CompletionFim: Boolean read FCompletionFim write FCompletionFim;
+    property FunctionCalling: Boolean read FFunctionCalling write FFunctionCalling;
+    property FineTuning: Boolean read FFineTuning write FFineTuning;
+  end;
+
   /// <summary>
   /// Describes an MistralAI model offering that can be used with the API.
   /// </summary>
-  TModel = class
+  TCoreModel = class
   private
     [JsonNameAttribute('id')]
     FId: string;
@@ -19,6 +49,20 @@ type
     FCreated: Int64;
     [JsonNameAttribute('owned_by')]
     FOwned_by: string;
+    [JsonNameAttribute('root')]
+    FRoot: string;
+    [JsonNameAttribute('archived')]
+    FArchived: Boolean;
+    [JsonNameAttribute('name')]
+    FName: string;
+    [JsonNameAttribute('description')]
+    FDescription: string;
+    [JsonNameAttribute('capabilities')]
+    FCapabilities: TCapabilities;
+    [JsonNameAttribute('max_context_length')]
+    FMaxContextLength: Int64;
+    [JsonNameAttribute('aliases')]
+    FAliases: TArray<string>;
   public
     /// <summary>
     /// The model identifier, which can be referenced in the API endpoints
@@ -36,6 +80,55 @@ type
     /// The owner of the model
     /// </summary>
     property OwnedBy: string read FOwned_by write FOwned_by;
+    /// <summary>
+    /// Root of the model
+    /// </summary>
+    property Root: string read FRoot write FRoot;
+    /// <summary>
+    /// Returns True if the model is archived
+    /// </summary>
+    property Archived: Boolean read FArchived write FArchived;
+    /// <summary>
+    /// Name of the modèle for fined-tuned model.
+    /// </summary>
+    property Name: string read FName write FName;
+    /// <summary>
+    /// Description of the model
+    /// </summary>
+    property Description: string read FDescription write FDescription;
+    /// <summary>
+    /// Return the capabilities of the model
+    /// </summary>
+    property Capabilities: TCapabilities read FCapabilities write FCapabilities;
+    /// <summary>
+    /// Returns the max_context_length valur of the model
+    /// </summary>
+    property MaxContextLength: Int64 read FMaxContextLength write FMaxContextLength;
+    /// <summary>
+    /// Resturns the aliases of the model in an array of strings
+    /// </summary>
+    property Aliases: TArray<string> read FAliases write FAliases;
+
+    destructor Destroy; override;
+  end;
+
+  TModel = class(TCoreModel)
+  private
+    [JsonNameAttribute('deprecation')]
+    FDeprecation: string;
+  public
+    /// <summary>
+    /// Returns the date of model deprecation like one string
+    /// </summary>
+    property Deprecation: string read FDeprecation write FDeprecation;
+  end;
+
+  TFineTunedModel = class(TCoreModel)
+  private
+    [JsonNameAttribute('job')]
+    FJob: string;
+  public
+    property Job: string read FJob write FJob;
   end;
 
   /// <summary>
@@ -73,7 +166,7 @@ type
     FDeleted: Boolean;
   public
     /// <summary>
-    /// The ID of the deleted model
+    /// The ID of the fine-tuned model to be delete
     /// </summary>
     property Id: string read FId write FId;
     /// <summary>
@@ -82,9 +175,33 @@ type
     /// </summary>
     property &Object: string read FObject write FObject;
     /// <summary>
-    /// The deletion status
+    /// The deletion flag
     /// </summary>
     property Deleted: Boolean read FDeleted write FDeleted;
+  end;
+
+  TArchivingdModel = class
+  private
+    [JsonNameAttribute('id')]
+    FId: string;
+    [JsonNameAttribute('object')]
+    FObject: string;
+    [JsonNameAttribute('archived')]
+    FArchived: Boolean;
+  public
+    /// <summary>
+    /// The ID of the fine-tuned model to be archive or unarchive
+    /// </summary>
+    property Id: string read FId write FId;
+    /// <summary>
+    /// Default: "model"
+    /// The object type that was archived or unarchived
+    /// </summary>
+    property &Object: string read FObject write FObject;
+    /// <summary>
+    /// The archiving flag
+    /// </summary>
+    property Archived: Boolean read FArchived write FArchived;
   end;
 
   TModelsRoute = class(TMistralAIAPIRoute)
@@ -94,10 +211,27 @@ type
     /// </summary>
     function List: TModels;
     /// <summary>
-    /// Delete a fine-tuned model
+    /// Delete one fine-tuned model
     /// </summary>
     /// <param name="ModelId"> The ID of the fine-tuned model to be deleted </param>
     function Delete(const ModelId: string): TModelDeletion;
+    /// <summary>
+    /// Retrieve one model
+    /// </summary>
+    /// <param name="ModelId"> The ID of the model to be retrieved </param>
+    function Retrieve(const ModelId: string): TModel;
+    /// <summary>
+    /// Update the name or the description of one fine-tuned model
+    /// </summary>
+    function Update(const ModelId: string; ParamProc: TProc<TModelParams>): TFineTunedModel;
+    /// <summary>
+    /// Archive a fine-tuned model
+    /// </summary>
+    function Archive(const ModelId: string): TArchivingdModel;
+    /// <summary>
+    /// Un-archive a fine-tuned model
+    /// </summary>
+    function Unarchive(const ModelId: string): TArchivingdModel;
   end;
 
 implementation
@@ -113,6 +247,11 @@ end;
 
 { TModelsRoute }
 
+function TModelsRoute.Archive(const ModelId: string): TArchivingdModel;
+begin
+  Result := API.Post<TArchivingdModel>(Format('fine_tuning/models/%s/archive', [ModelId]));
+end;
+
 function TModelsRoute.Delete(const ModelId: string): TModelDeletion;
 begin
   Result := API.Delete<TModelDeletion>(Format('models/%s', [ModelId]));
@@ -121,6 +260,43 @@ end;
 function TModelsRoute.List: TModels;
 begin
   Result := API.Get<TModels>('models');
+end;
+
+function TModelsRoute.Retrieve(const ModelId: string): TModel;
+begin
+  Result := API.Get<TModel>(Format('models/%s', [ModelId]));
+end;
+
+function TModelsRoute.Unarchive(const ModelId: string): TArchivingdModel;
+begin
+  Result := API.Delete<TArchivingdModel>(Format('fine_tuning/models/%s/archive', [ModelId]));
+end;
+
+function TModelsRoute.Update(const ModelId: string;
+  ParamProc: TProc<TModelParams>): TFineTunedModel;
+begin
+  Result := API.Post<TFineTunedModel, TModelParams>(Format('fine_tuning/models/%s', [ModelId]), ParamProc);
+end;
+
+{ TCoreModel }
+
+destructor TCoreModel.Destroy;
+begin
+  if Assigned(FCapabilities) then
+    FCapabilities.Free;
+  inherited;
+end;
+
+{ TModelParams }
+
+function TModelParams.Description(const Value: string): TModelParams;
+begin
+  Result := TModelParams(Add('description', Value));
+end;
+
+function TModelParams.Name(const Value: string): TModelParams;
+begin
+  Result := TModelParams(Add('name', Value));
 end;
 
 end.

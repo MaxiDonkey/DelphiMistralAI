@@ -4,7 +4,8 @@ interface
 
 uses
   System.SysUtils, System.Classes, REST.JsonReflect, System.JSON, REST.Json.Types,
-  MistralAI.API.Params, MistralAI.API, MistralAI.Functions.Core;
+  MistralAI.API.Params, MistralAI.API, MistralAI.Functions.Core,
+  MistralAI.Functions.Tools;
 
 type
   /// <summary>
@@ -69,41 +70,6 @@ type
     procedure StringReverter(Data: TObject; Field: string; Arg: string); override;
   end;
 
-  TToolChoice = (
-    /// <summary>
-    /// The model won't call a function and will generate a message instead
-    /// </summary>
-    none,
-    /// <summary>
-    /// The model can choose to either generate a message or call a function
-    /// </summary>
-    auto,
-    /// <summary>
-    /// The model is forced to call a function
-    /// </summary>
-    any);
-
-  TToolChoiceHelper = record helper for TToolChoice
-    function ToString: string;
-  end;
-
-  TChatMessageTool = record
-  private
-    FFunction: IFunctionCore;
-  public
-    /// <summary>
-    /// This method converts the TFunctionCore instance to a JSON object containing the type and
-    /// representation of the function, and handles exceptions by deleting the JSON object and
-    /// propagating the exception if an error occurs
-    /// </summary>
-    function ToJson: TJSONObject;
-    /// <summary>
-    /// The function properties
-    /// </summary>
-    property &Function: IFunctionCore read FFunction write FFunction;
-    class function Add(const AFunction: IFunctionCore): TChatMessageTool; static;
-  end;
-
   TChatMessagePayload = record
   private
     FRole: TMessageRole;
@@ -153,6 +119,9 @@ type
     /// When using JSON mode you MUST also instruct the model to produce JSON yourself with a system or
     /// a user message
     /// </summary>
+    /// <remarks>
+    /// Default value { "type": "text" } if ResponseFormat not called
+    /// </remarks>
     function ResponseFormat(const Value: string = 'json_object'): TChatParams;
     /// <summary>
     /// Whether to stream back partial progress. If set, tokens will be sent as data-only server-sent events as they become available,
@@ -213,35 +182,6 @@ type
     /// Total number of tokens used in the request (prompt + completion)
     /// </summary>
     property TotalTokens: Int64 read FTotal_tokens write FTotal_tokens;
-  end;
-
-  TCalledFunctionSpecifics = class
-  private
-    [JsonNameAttribute('name')]
-    FName: string;
-    [JsonNameAttribute('arguments')]
-    FArguments: string;
-  public
-    /// <summary>
-    /// Name of the called function
-    /// </summary>
-    property Name: string read FName write FName;
-    /// <summary>
-    /// Calculed Arguments for the called function
-    /// </summary>
-    property Arguments: string read FArguments write FArguments;
-  end;
-
-  TCalledFunction = class
-  private
-    [JsonNameAttribute('function')]
-    FFunction: TCalledFunctionSpecifics;
-  public
-    /// <summary>
-    /// Specifics of the called function
-    /// </summary>
-    property &Function: TCalledFunctionSpecifics read FFunction write FFunction;
-    destructor Destroy; override;
   end;
 
   TChatMessage = class
@@ -659,42 +599,6 @@ begin
   finally
     Response.Free;
   end;
-end;
-
-{ TChatMessageTool }
-
-class function TChatMessageTool.Add(
-  const AFunction: IFunctionCore): TChatMessageTool;
-begin
-  Result.&Function := AFunction;
-end;
-
-function TChatMessageTool.ToJson: TJSONObject;
-begin
-  Result := FFunction.ToJson;
-end;
-
-{ TToolChoiceHelper }
-
-function TToolChoiceHelper.ToString: string;
-begin
-  case Self of
-    auto:
-      Exit('auto');
-    any:
-      Exit('any');
-    else
-      Exit('none');
-  end;
-end;
-
-{ TCalledFunction }
-
-destructor TCalledFunction.Destroy;
-begin
-  if Assigned(FFunction) then
-    FFunction.Free;
-  inherited;
 end;
 
 { TChatMessage }

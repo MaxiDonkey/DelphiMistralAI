@@ -5,7 +5,7 @@ interface
 uses
   System.SysUtils, System.Classes, MistralAI.API, System.Net.URLClient,
   MistralAI.Chat, MistralAI.Embeddings, MistralAI.Models, MistralAI.Codestral,
-  MistralAI.Files, MistralAI.FineTunings;
+  MistralAI.Files, MistralAI.FineTunings, MistralAI.Agents;
 
 type
   IMistralAI = interface
@@ -15,6 +15,7 @@ type
     function GetToken: string;
     function GetBaseUrl: string;
     procedure SetBaseUrl(const Value: string);
+    function GetAgentRoute: TAgentRoute;
     function GetChatRoute: TChatRoute;
     function GetCodestralRoute: TCodestralRoute;
     function GetEmbeddings: TEmbeddingsRoute;
@@ -39,6 +40,11 @@ type
     /// If the "CodestralSpec" flag is set to the "Specs" value, then the base URL is thus modified (https://codestral.mistral.ai/v1)
     /// </summary>
     property BaseURL: string read GetBaseUrl write SetBaseUrl;
+    /// <summary>
+    /// Access to the agent completion
+    /// An AI agent is an autonomous system running on large language models (LLM) which, from high-level instructions
+    /// </summary>
+    property Agent: TAgentRoute read GetAgentRoute;
     /// <summary>
     /// Access to the chat completion API allows you to chat with a model fine-tuned to follow instructions.
     /// </summary>
@@ -84,6 +90,7 @@ type
 
   private
     FAPI: TMistralAIAPI;
+    FAgentRoute: TAgentRoute;
     FChatRoute: TChatRoute;
     FCodestralRoute: TCodestralRoute;
     FEmbeddingsRoute: TEmbeddingsRoute;
@@ -95,6 +102,7 @@ type
     procedure SetToken(const Value: string);
     function GetBaseUrl: string;
     procedure SetBaseUrl(const Value: string);
+    function GetAgentRoute: TAgentRoute;
     function GetChatRoute: TChatRoute;
     function GetCodestralRoute: TCodestralRoute;
     function GetEmbeddings: TEmbeddingsRoute;
@@ -120,6 +128,11 @@ type
     property BaseURL: string read GetBaseUrl write SetBaseUrl;
 
   public
+    /// <summary>
+    /// Access to the agent completion.
+    /// An AI agent is an autonomous system running on large language models (LLM) which, from high-level instructions
+    /// </summary>
+    property Agent: TAgentRoute read GetAgentRoute;
     /// <summary>
     /// Access to the chat completion API allows you to chat with a model fine-tuned to follow instructions.
     /// </summary>
@@ -187,6 +200,7 @@ destructor TMistralAI.Destroy;
 begin
   FModelsRoute.Free;
   FEmbeddingsRoute.Free;
+  FAgentRoute.Free;
   FChatRoute.Free;
   if CodestralSpec in FSpecs then
     FCodestralRoute.Free;
@@ -194,6 +208,13 @@ begin
   FFineTuningRoute.Free;
   FAPI.Free;
   inherited;
+end;
+
+function TMistralAI.GetAgentRoute: TAgentRoute;
+begin
+  if not Assigned(FAgentRoute) then
+    FAgentRoute := TAgentRoute.CreateRoute(API);
+  Result := FAgentRoute;
 end;
 
 function TMistralAI.GetAPI: TMistralAIAPI;
@@ -208,7 +229,7 @@ end;
 
 function TMistralAI.GetChatRoute: TChatRoute;
 begin
- if not Assigned(FChatRoute) then
+  if not Assigned(FChatRoute) then
     FChatRoute := TChatRoute.CreateRoute(API);
   Result := FChatRoute;
 end;
