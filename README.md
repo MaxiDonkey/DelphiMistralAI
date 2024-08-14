@@ -553,6 +553,8 @@ As of July 2024, the only fine-tunable models at Mistral are
 
 ### Agents
 
+The official documentation provided by Mistral regarding agents is available [here](https://docs.mistral.ai/capabilities/agents/).
+
 > [!WARNING]
 > As of 08/13/2024, only the API for executing an agent is available; however, no API for creating an agent has been made available.  
 >
