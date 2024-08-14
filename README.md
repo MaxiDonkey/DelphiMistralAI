@@ -556,7 +556,7 @@ As of July 2024, the only fine-tunable models at Mistral are
 > [!WARNING]
 > As of 08/13/2024, only the API for executing an agent is available; however, no API for creating an agent has been made available.  
 >
-> (See the ***MistralAI.Agents.pas*** unit)
+> (See the [***MistralAI.Agents.pas***](https://github.com/MaxiDonkey/DelphiMistralAI/blob/main/source/MistralAI.Agents.pas) unit)
 
 ## Contributing
 
