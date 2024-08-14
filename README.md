@@ -71,7 +71,7 @@ var Models := MistralAI.Models.List;
   try
     for var Model in Models.Data do
       if Model.Capabilities.FineTuning then
-        Memo1.Lines.Add(Model.id + '  (Can fine-tuned)') else
+        Memo1.Lines.Add(Model.id + '  (Can be fine-tuned)') else
         Memo1.Lines.Add(Model.id)
   finally
     Models.Free;
@@ -93,9 +93,9 @@ var Models := MistralAI.Models.List;
 >    - `function Archive(const ModelId: string): TArchivingdModel`
 >    - `function Unarchive(const ModelId: string): TArchivingdModel`  
 >
-> (See the ***TModelsRoute*** class in the ***MistralAI.Models.pas*** unit)
-
-New fields have been added to the data returned concerning the models, allowing for more precise management of information about the models (see the ***TCoreModel*** class and its derived classes in the ***MistralAI.Models.pas*** unit)
+> (See the ***TModelsRoute*** class in the [***MistralAI.Models.pas***](https://github.com/MaxiDonkey/DelphiMistralAI/blob/main/source/MistralAI.Models.pas) unit)
+>
+> New fields have been added to the data returned concerning the models, allowing for more precise management of information about the models (see the ***TCoreModel*** class and its derived classes in the ***MistralAI.Models.pas*** unit)
 
 ### Embeddings
 
@@ -187,7 +187,7 @@ Warning : While this technology is powerful, it also carries potential risks. We
 ```Pascal
 //uses 
 //  MistralAI, MistralAI.Chat,  
-//  MistralAI.Functions.Core, MistralAI.Functions.Example;
+//  MistralAI.Functions.Core, MistralAI.Functions.Tools, MistralAI.Functions.Example;
   
   var WeatherFunc: IFunctionCore := TWeatherReportFunction.Create; //plugin in charge of the external API that can be invoked by the model  
   var Chat := MistralAI.Chat.Create(
