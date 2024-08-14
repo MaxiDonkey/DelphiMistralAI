@@ -95,7 +95,7 @@ var Models := MistralAI.Models.List;
 >
 > (See the [***TModelsRoute***](https://github.com/MaxiDonkey/DelphiMistralAI/blob/b8223fed1ded96e002d89d2bfa4f4f3e3b386bdb/source/MistralAI.Models.pas#L207) class in the [***MistralAI.Models.pas***](https://github.com/MaxiDonkey/DelphiMistralAI/blob/main/source/MistralAI.Models.pas) unit)
 >
-> New fields have been added to the data returned concerning the models, allowing for more precise management of information about the models (see the [***TCoreModel***](https://github.com/MaxiDonkey/DelphiMistralAI/blob/b8223fed1ded96e002d89d2bfa4f4f3e3b386bdb/source/MistralAI.Models.pas#L42) class and its derived classes in the [***MistralAI.Models.pas***](https://github.com/MaxiDonkey/DelphiMistralAI/blob/main/source/MistralAI.Models.pas) unit)
+> New fields have been added to the data returned concerning the models, allowing for more precise management of information about the models (see the [***TCoreModel***](https://github.com/MaxiDonkey/DelphiMistralAI/blob/b8223fed1ded96e002d89d2bfa4f4f3e3b386bdb/source/MistralAI.Models.pas#L42) class and its derived classes in the ***MistralAI.Models.pas*** unit)
 
 ### Embeddings
 
