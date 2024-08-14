@@ -503,7 +503,7 @@ The next step involves creating a fine-tuning job.
 - **hyperparameters**: Adjust the two available hyperparameters, "trainingₛtep" and "learning_rate", according to your preferences.
 
 
-The List/retrieve/cancel functions are also available to manage Jobs. And for the last two functions you will have to provide the job ID as a parameter.
+The [List/Retrieve/Cancel](https://github.com/MaxiDonkey/DelphiMistralAI/blob/79fb8bc1f4082e1d532cb705c65d1d18ac3d730b/source/MistralAI.FineTunings.pas#L590) methods are also available to manage Jobs. And for the last two functions you will have to provide the job ID as a parameter.
 
 **Important Notice**
 
