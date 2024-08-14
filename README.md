@@ -93,7 +93,7 @@ var Models := MistralAI.Models.List;
 >    - `function Archive(const ModelId: string): TArchivingdModel`
 >    - `function Unarchive(const ModelId: string): TArchivingdModel`  
 >
-> (See the ***TModelsRoute*** class in the [***MistralAI.Models.pas***](https://github.com/MaxiDonkey/DelphiMistralAI/blob/main/source/MistralAI.Models.pas) unit)
+> (See the [***TModelsRoute***](https://github.com/MaxiDonkey/DelphiMistralAI/blob/main/source/MistralAI.Models.pas#207) class in the [***MistralAI.Models.pas***](https://github.com/MaxiDonkey/DelphiMistralAI/blob/main/source/MistralAI.Models.pas) unit)
 >
 > New fields have been added to the data returned concerning the models, allowing for more precise management of information about the models (see the ***TCoreModel*** class and its derived classes in the ***MistralAI.Models.pas*** unit)
 
