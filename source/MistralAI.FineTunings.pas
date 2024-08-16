@@ -18,6 +18,8 @@ unit MistralAI.FineTunings;
 | Registration is necessary to obtain the API key needed for "job" integration |
 | (TJobIntegrationsParam).                                                     |
 |                                                                              |
+|     Github repository : https://github.com/MaxiDonkey/DelphiMistralAI        |
+|     Visit the Github repository for the documentation and use examples       |
 +------------------------------------------------------------------------------+
 }
 
