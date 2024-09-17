@@ -275,7 +275,7 @@ as follows :
          Result.OnCancellation :=
            procedure (Sender: TObject)
            begin
-             // Processing when process was canceled
+             // Processing when process has been canceled
            end;
        end);
 ```
