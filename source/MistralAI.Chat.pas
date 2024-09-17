@@ -761,6 +761,7 @@ type
     FOnSuccess: TProc<TObject>;
     FOnProgress: TProc<TObject, TChat>;
     FOnError: TProc<TObject, string>;
+    FOnCancellation: TProc<TObject>;
     FOnDoCancel: TFunc<Boolean>;
 
   public
@@ -848,6 +849,22 @@ type
     /// </code>
     /// </remarks>
     property OnError: TProc<TObject, string> read FOnError write FOnError;
+
+    /// <summary>
+    /// Event triggered when the asynchronous chat request is canceled.
+    /// </summary>
+    /// <remarks>
+    /// The <c>OnCancellation</c> event is fired when the chat request is canceled by the user or the application.
+    /// This can be used to perform clean-up operations or notify the user that the request has been terminated.
+    /// <code>
+    /// OnCancellation :=
+    ///    procedure (Sender: TObject)
+    ///    begin
+    ///      // code to handle chat request cancellation
+    ///    end;
+    /// </code>
+    /// </remarks>
+    property OnCancellation: TProc<TObject> read FOnCancellation write FOnCancellation;
 
     /// <summary>
     /// Function called to determine if the asynchronous chat request should be canceled.
@@ -1076,6 +1093,12 @@ type
     ///       function: Boolean
     ///       begin
     ///         Result := CheckBox1.Checked; // Click on checkbox to cancel
+    ///       end;
+    ///
+    ///     Result.OnCancellation :=
+    ///       procedure (Sender: TObject)
+    ///       begin
+    ///         // Processing when process was canceled
     ///       end;
     ///   end);
     /// </code>
@@ -1419,6 +1442,13 @@ begin
 
                   if Stop then
                     begin
+                      var OnCancellation := AsynChatStreamParams.Params.OnCancellation;
+                      if Assigned(OnCancellation) then
+                        TThread.Queue(nil,
+                        procedure
+                        begin
+                          OnCancellation(Sender)
+                        end);
                       Cancel := True;
                       Exit;
                     end;

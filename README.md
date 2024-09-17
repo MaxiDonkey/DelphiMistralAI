@@ -272,6 +272,12 @@ as follows :
            begin
              Result := CheckBox1.Checked; // Click on checkbox to cancel
            end;
+
+         Result.OnCancellation :=
+           procedure (Sender: TObject)
+           begin
+             // Processing when process was canceled
+           end;
        end);
 ```
 
