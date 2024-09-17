@@ -217,7 +217,7 @@ as follows :
       end);
 ```
 
- 2. Asynchronous stream mode : See [`TAsynChatStreamParams = record`](https://github.com/MaxiDonkey/DelphiMistralAI/blob/e748f7ec0aafb48fa331c708a8f3b75dd888f9a8/source/MistralAI.Chat.pas#L757C3-L757C33)
+ 2. Asynchronous stream mode : See [`TAsynChatStreamParams = record`](https://github.com/MaxiDonkey/DelphiMistralAI/blob/4e017409a8e0e8d3f06baf0714126519b5e00bbd/source/MistralAI.Chat.pas#L757)
 
 ```Pascal
 //uses MistralAI, MistralAI.Functions.Tools, MistralAI.Chat;
