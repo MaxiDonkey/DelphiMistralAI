@@ -181,7 +181,9 @@ You can use asynchronous methods for text completion or chat tasks. For this, yo
 
  2. `procedure AsyncCreateStream(ParamProc: TProc<TChatParams>; Events: TFunc<TAsynChatStreamParams>)`
 
-as follows.
+as follows :
+
+ 1 . Asynchronous mode : See [`TAsynChatParams = record`](https://github.com/MaxiDonkey/DelphiMistralAI/blob/e748f7ec0aafb48fa331c708a8f3b75dd888f9a8/source/MistralAI.Chat.pas#L680)
 
 ```Pascal
 //uses MistralAI, MistralAI.Functions.Tools, MistralAI.Chat;
@@ -215,7 +217,7 @@ as follows.
       end);
 ```
 
-Stream mode
+ 2. Asynchronous stream mode : See [`TAsynChatStreamParams = record`](https://github.com/MaxiDonkey/DelphiMistralAI/blob/e748f7ec0aafb48fa331c708a8f3b75dd888f9a8/source/MistralAI.Chat.pas#L757C3-L757C33)
 
 ```Pascal
 //uses MistralAI, MistralAI.Functions.Tools, MistralAI.Chat;
