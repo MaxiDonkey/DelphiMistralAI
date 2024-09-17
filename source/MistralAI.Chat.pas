@@ -851,7 +851,7 @@ type
     property OnError: TProc<TObject, string> read FOnError write FOnError;
 
     /// <summary>
-    /// Event triggered when the asynchronous chat request is canceled.
+    /// Event triggered when the asynchronous chat request has been canceled.
     /// </summary>
     /// <remarks>
     /// The <c>OnCancellation</c> event is fired when the chat request is canceled by the user or the application.
