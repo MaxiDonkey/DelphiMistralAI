@@ -237,6 +237,18 @@ Stream mode
            procedure (Sender: TObject; Chat: TChat)
            begin
              // Handle progressive updates to the chat response
+             var S := Chat.Choices[0].Delta.Content;
+             var M := Sender as TMemo;
+             M.Lines.BeginUpdate;
+             try
+               for var i := 1 to S.Length do
+                 if (S[i] <> #10) and (S[i] <> #13) then
+                   M.Text := M.Text + S[i] else
+                   M.Text := M.Text + #13#10;
+               M.Perform(WM_VSCROLL, SB_BOTTOM, 0);
+             finally
+               M.Lines.EndUpdate;
+             end;		
            end;
     
          Result.OnSuccess :=
