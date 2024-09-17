@@ -25,23 +25,23 @@ type
     procedure StringReverter(Data: TObject; Field: string; Arg: string); override;
   end;
 
-  TFileParams = class(TMultipartFormData)
+  TUploadParams = class(TMultipartFormData)
     /// <summary>
     /// The File object (not file name) to be uploaded
     /// </summary>
-    function &File(const FileName: string): TFileParams; overload;
+    function &File(const FileName: string): TUploadParams; overload;
     /// <summary>
     /// The File object (not file name) to be uploaded
     /// </summary>
-    function &File(const Stream: TStream; const FileName: string): TFileParams; overload;
+    function &File(const Stream: TStream; const FileName: string): TUploadParams; overload;
     /// <summary>
     /// The intended purpose of the uploaded file. Only accepts fine-tuning (fine-tune) for now
     /// </summary>
-    function Purpose(const Value: string): TFileParams; overload;
+    function Purpose(const Value: string): TUploadParams; overload;
     /// <summary>
     /// The intended purpose of the uploaded file. Only accepts fine-tuning (fine-tune) for now
     /// </summary>
-    function Purpose(const Value: TFilePurpose): TFileParams; overload;
+    function Purpose(const Value: TFilePurpose): TUploadParams; overload;
     constructor Create;  reintroduce;
   end;
 
@@ -150,7 +150,7 @@ type
     /// The size of individual files can be a maximum of 512 MB. The Fine-tuning API only supports .jsonl files
     /// Please contact us if you need to increase these storage limits
     /// </summary>
-    function Upload(ParamProc: TProc<TFileParams>): TFile;
+    function Upload(ParamProc: TProc<TUploadParams>): TFile;
   end;
 
 implementation
@@ -181,33 +181,37 @@ begin
   end;
 end;
 
-{ TFileParams }
+{ TUploadParams }
 
-function TFileParams.&File(const FileName: string): TFileParams;
+function TUploadParams.&File(const FileName: string): TUploadParams;
 begin
   AddFile('file', FileName);
   Result := Self;
 end;
 
-constructor TFileParams.Create;
+constructor TUploadParams.Create;
 begin
   inherited Create(True);
 end;
 
-function TFileParams.&File(const Stream: TStream;
-  const FileName: string): TFileParams;
+function TUploadParams.&File(const Stream: TStream;
+  const FileName: string): TUploadParams;
 begin
+  {$IFDEF VER360}
+  AddStream('file', Stream, True, FileName);
+  {$ELSE}
   AddStream('file', Stream, FileName);
+  {$ENDIF}
   Result := Self;
 end;
 
-function TFileParams.Purpose(const Value: string): TFileParams;
+function TUploadParams.Purpose(const Value: string): TUploadParams;
 begin
   AddField('purpose', Value);
   Result := Self;
 end;
 
-function TFileParams.Purpose(const Value: TFilePurpose): TFileParams;
+function TUploadParams.Purpose(const Value: TFilePurpose): TUploadParams;
 begin
   Result := Purpose(Value.ToString);
 end;
@@ -229,9 +233,9 @@ begin
   Result := API.Get<TFile>('files/' + FileId);
 end;
 
-function TFilesRoute.Upload(ParamProc: TProc<TFileParams>): TFile;
+function TFilesRoute.Upload(ParamProc: TProc<TUploadParams>): TFile;
 begin
-  Result := API.PostForm<TFile, TFileParams>('files', ParamProc);
+  Result := API.PostForm<TFile, TUploadParams>('files', ParamProc);
 end;
 
 { TFiles }

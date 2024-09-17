@@ -175,6 +175,90 @@ See also [Prompting Capabilities](https://docs.mistral.ai/guides/prompting_capab
     end);
 ```
 
+You can use asynchronous methods for text completion or chat tasks. For this, you need to use the two methods
+
+ 1. `procedure AsyncCreate(ParamProc: TProc<TChatParams>; Events: TFunc<TAsynChatParams>)`
+
+ 2. `procedure AsyncCreateStream(ParamProc: TProc<TChatParams>; Events: TFunc<TAsynChatStreamParams>)`
+
+as follows.
+
+```Pascal
+//uses MistralAI, MistralAI.Functions.Tools, MistralAI.Chat;
+
+  MistralAI.Chat.AsyncCreate(
+      procedure (Params: TChatParams)
+      begin
+        Params.Model('my_model');
+        Params.Messages([TChatMessagePayload.User('Hello')]);
+        Params.MaxTokens(1024);
+      end,
+
+      function : TAsynChatParams
+      begin
+        Result.Sender := Memo1; //To force the events to transmit this object 
+
+        Result.OnStart := nil;
+
+        Result.OnSuccess :=
+          procedure (Sender: TObject; Choice: TChatChoices)
+          begin
+            var M := Sender as TMemo;
+            M.Text := Choice.Message.Content;
+          end;
+
+        Result.OnError :=
+          procedure (Sender: TObject; value: string)
+          begin
+            ShowMessage(Value);
+          end;
+      end);
+```
+
+Stream mode
+
+```Pascal
+//uses MistralAI, MistralAI.Functions.Tools, MistralAI.Chat;
+
+  MistralAI.Chat.AsyncCreateStream(
+       procedure(Params: TChatParams)
+       begin
+         Params.Model('my_model');
+         Params.Messages([TChatMessagePayload.User('request')]);
+         Params.MaxTokens(1024);
+         Params.Stream;
+       end,
+    
+       function: TAsynChatStreamParams
+       begin
+         Result.Sender := Memo1;
+    
+         Result.OnProgress :=
+           procedure (Sender: TObject; Chat: TChat)
+           begin
+             // Handle progressive updates to the chat response
+           end;
+    
+         Result.OnSuccess :=
+           procedure (Sender: TObject)
+           begin
+             // Handle success when the operation completes
+           end;
+    
+         Result.OnError :=
+           procedure (Sender: TObject; Value: string)
+           begin
+             ShowMessage(Value); // Display error message
+           end;
+    
+         Result.OnDoCancel :=
+           function: Boolean
+           begin
+             Result := CheckBox1.Checked; // Click on checkbox to cancel
+           end;
+       end);
+```
+
 ### Function calling
 
 Function calling allows Mistral models to connect to external tools. By integrating Mistral models with external tools such as user defined functions or APIs, users can easily build applications catering to specific use cases and practical problems. 

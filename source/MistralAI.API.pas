@@ -135,7 +135,7 @@ implementation
 uses
   REST.Json;
 
-  constructor TMistralAIAPI.Create;
+constructor TMistralAIAPI.Create;
 begin
   inherited;
   FHTTPClient := THTTPClient.Create;
@@ -399,6 +399,7 @@ end;
 
 function TMistralAIAPI.ParseResponse<T>(const Code: Int64; const ResponseText: string): T;
 begin
+  Result := nil;
   case Code of
     200..299:
       try
@@ -407,8 +408,8 @@ begin
         Result := nil;
       end;
     422: ParseValidationError(Code, ResponseText);
-  else
-    ParseError(Code, ResponseText);
+    else
+      ParseError(Code, ResponseText);
   end;
   if not Assigned(Result) then
     raise MistralAIExceptionInvalidResponse.Create(Code, 'Empty or invalid response');
