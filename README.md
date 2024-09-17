@@ -11,7 +11,7 @@ ___
     - [Initialization](#initialization)
     - [Models](#models)
     - [Embeddings](#embeddings)
-    - [Chats](#chats)
+    - [Chats (synchronous/asynchronous)](#chats)
     - [Function calling](#function-calling)
     - [JSON mode](#JSON-mode)
     - [Code generation](#Code-generation)
