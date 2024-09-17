@@ -231,8 +231,10 @@ Stream mode
     
        function: TAsynChatStreamParams
        begin
-         Result.Sender := Memo1;
+         Result.Sender := Memo1;  //Events will return this instance
     
+	 Result.OnStart := nil;   // if nil then; Can be omitted
+
          Result.OnProgress :=
            procedure (Sender: TObject; Chat: TChat)
            begin
