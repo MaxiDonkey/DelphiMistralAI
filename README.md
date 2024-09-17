@@ -93,7 +93,6 @@ var Models := MistralAI.Models.List;
 >    - `function Archive(const ModelId: string): TArchivingdModel`
 >    - `function Unarchive(const ModelId: string): TArchivingdModel`  
 >
-> (See the [***TModelsRoute***](https://github.com/MaxiDonkey/DelphiMistralAI/blob/b8223fed1ded96e002d89d2bfa4f4f3e3b386bdb/source/MistralAI.Models.pas#L207) class in the [***MistralAI.Models.pas***](https://github.com/MaxiDonkey/DelphiMistralAI/blob/main/source/MistralAI.Models.pas) unit)
 >
 > New fields have been added to the data returned concerning the models, allowing for more precise management of information about the models (see the [***TCoreModel***](https://github.com/MaxiDonkey/DelphiMistralAI/blob/b8223fed1ded96e002d89d2bfa4f4f3e3b386bdb/source/MistralAI.Models.pas#L42) class and its derived classes in the ***MistralAI.Models.pas*** unit)
 
@@ -183,7 +182,7 @@ You can use asynchronous methods for text completion or chat tasks. For this, yo
 
 as follows :
 
- 1 . Asynchronous mode : See [`TAsynChatParams = record`](https://github.com/MaxiDonkey/DelphiMistralAI/blob/e748f7ec0aafb48fa331c708a8f3b75dd888f9a8/source/MistralAI.Chat.pas#L680)
+ 1 . Asynchronous mode : See `TAsynChatParams = record`
 
 ```Pascal
 //uses MistralAI, MistralAI.Functions.Tools, MistralAI.Chat;
@@ -217,7 +216,7 @@ as follows :
       end);
 ```
 
- 2. Asynchronous stream mode : See [`TAsynChatStreamParams = record`](https://github.com/MaxiDonkey/DelphiMistralAI/blob/4e017409a8e0e8d3f06baf0714126519b5e00bbd/source/MistralAI.Chat.pas#L757)
+ 2. Asynchronous stream mode : See `TAsynChatStreamParams = record`
 
 ```Pascal
 //uses MistralAI, MistralAI.Functions.Tools, MistralAI.Chat;
@@ -596,7 +595,7 @@ Returns 404 error if the Id does not exists.
     Free;
   end;
 ```
-Refer to the [`TFile`](https://github.com/MaxiDonkey/DelphiMistralAI/blob/2b6f52315ce09af4c5e23e97c44da02543440b48/source/MistralAI.Files.pas#L48) class in the MistralAI.Files.pas unit to understand the information returned by the "Retrieve" method.
+Refer to the `TFile` class in the MistralAI.Files.pas unit to understand the information returned by the "Retrieve" method.
 
 
 #### Create a fine-tuning job
@@ -609,7 +608,7 @@ The next step involves creating a fine-tuning job.
 - **hyperparameters**: Adjust the two available hyperparameters, "trainingₛtep" and "learning_rate", according to your preferences.
 
 
-The [List/Retrieve/Cancel](https://github.com/MaxiDonkey/DelphiMistralAI/blob/79fb8bc1f4082e1d532cb705c65d1d18ac3d730b/source/MistralAI.FineTunings.pas#L590) methods are also available to manage Jobs. And for the last two functions you will have to provide the job ID as a parameter.
+The List/Retrieve/Cancel methods are also available to manage Jobs. And for the last two functions you will have to provide the job ID as a parameter.
 
 **Important Notice**
 
