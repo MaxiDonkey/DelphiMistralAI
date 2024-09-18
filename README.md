@@ -328,7 +328,7 @@ To support both synchronous and asynchronous completion methods, we focused on g
     begin
       Params.Model('pixtral-12b-2409');
       
-      var Ref := ''D:\My_folder\Images\my_image.png'';  // png,  jpeg, gif or webp formats are supported
+      var Ref := 'D:\My_folder\Images\my_image.png';  // png,  jpeg, gif or webp formats are supported
           
       Params.Messages([TChatMessagePayload.User('my query ', [Ref])]);
 
