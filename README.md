@@ -12,7 +12,7 @@ ___
     - [Models](#models)
     - [Embeddings](#embeddings)
     - [Chats (synchronous/asynchronous)](#chats)
-    - [Vision] (#vision)
+    - [Vision](#vision)
         - [Passing an Image URL](#Passing-an-image-url)
         - [Passing a Base64 Encoded Image](#Passing-a-base64-encoded-image)	
     - [Function calling](#function-calling)
