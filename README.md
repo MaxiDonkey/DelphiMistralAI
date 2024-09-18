@@ -300,7 +300,7 @@ To support both synchronous and asynchronous completion methods, we focused on g
     begin
       Params.Model('pixtral-12b-2409');
       
-      // png,  jpeg, gif or webp formats are supported
+      // png, jpeg, gif or webp formats are supported
       var Ref1 := 'https://tripfixers.com/wp-content/uploads/2019/11/eiffel-tower-with-snow.jpeg';
       var Ref2 := 'https://assets.visitorscoverage.com/production/wp-content/uploads/2024/04/AdobeStock_626542468-min-1024x683.jpeg';
       
@@ -328,7 +328,7 @@ To support both synchronous and asynchronous completion methods, we focused on g
     begin
       Params.Model('pixtral-12b-2409');
       
-      var Ref := 'D:\My_folder\Images\my_image.png';  // png,  jpeg, gif or webp formats are supported
+      var Ref := 'D:\My_folder\Images\my_image.png';  // png, jpeg, gif or webp formats are supported
           
       Params.Messages([TChatMessagePayload.User('my query ', [Ref])]);
 
