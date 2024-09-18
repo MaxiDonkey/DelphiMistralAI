@@ -286,6 +286,7 @@ as follows :
 ### Vision
 
 The latest Pixtral 12B adds vision capabilities, allowing to analyze both images and text, expanding its potential for applications requiring multimodal understanding.
+See also [official documentation](https://docs.mistral.ai/capabilities/vision/).
 
 To support both synchronous and asynchronous completion methods, we focused on generating the appropriate payload for message parameters. An overloaded version of the `TChatMessagePayload.User` class function was added, allowing users to include a dynamic array of text elements—either URLs or file paths—alongside the user's text content. Internally, this data is processed to ensure the correct operation of the vision system in both synchronous and asynchronous contexts.
 
