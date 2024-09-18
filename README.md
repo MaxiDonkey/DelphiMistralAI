@@ -12,6 +12,9 @@ ___
     - [Models](#models)
     - [Embeddings](#embeddings)
     - [Chats (synchronous/asynchronous)](#chats)
+    - [Vision] (#vision)
+        - [Passing an Image URL](#Passing-an-image-url)
+        - [Passing a Base64 Encoded Image](#Passing-a-base64-encoded-image)	
     - [Function calling](#function-calling)
     - [JSON mode](#JSON-mode)
     - [Code generation](#Code-generation)
@@ -279,6 +282,68 @@ as follows :
            end;
        end);
 ```
+
+### Vision
+
+The latest Pixtral 12B adds vision capabilities, allowing to analyze both images and text, expanding its potential for applications requiring multimodal understanding.
+
+To support both synchronous and asynchronous completion methods, we focused on generating the appropriate payload for message parameters. An overloaded version of the `TChatMessagePayload.User` class function was added, allowing users to include a dynamic array of text elements—either URLs or file paths—alongside the user's text content. Internally, this data is processed to ensure the correct operation of the vision system in both synchronous and asynchronous contexts.
+
+
+#### Passing an Image URL
+
+```Pascal
+//uses MistralAI, MistralAI.Functions.Tools, MistralAI.Chat;
+
+  var Chat := MistralAI.Chat.Create(
+    procedure (Params: TChatParams)
+    begin
+      Params.Model('pixtral-12b-2409');
+      
+      // png,  jpeg, gif or webp formats are supported
+      var Ref1 := 'https://tripfixers.com/wp-content/uploads/2019/11/eiffel-tower-with-snow.jpeg';
+      var Ref2 := 'https://assets.visitorscoverage.com/production/wp-content/uploads/2024/04/AdobeStock_626542468-min-1024x683.jpeg';
+      
+      Params.Messages([TChatMessagePayload.User('what are the differences between two images?', [Ref1, Ref2])]);
+
+      Params.MaxTokens(1024);
+    end);
+  try
+    for var Choice in Chat.Choices do
+      Memo1.Lines.Add(Choice.Message.Content);
+  finally
+    Chat.Free;
+  end;
+  
+```
+
+#### Passing a Base64 Encoded Image
+
+
+```Pascal
+//uses MistralAI, MistralAI.Functions.Tools, MistralAI.Chat;
+
+  var Chat := MistralAI.Chat.Create(
+    procedure (Params: TChatParams)
+    begin
+      Params.Model('pixtral-12b-2409');
+      
+      var Ref := ''D:\My_folder\Images\my_image.png'';  // png,  jpeg, gif or webp formats are supported
+          
+      Params.Messages([TChatMessagePayload.User('my query ', [Ref])]);
+
+      Params.MaxTokens(1024);
+    end);
+  try
+    for var Choice in Chat.Choices do
+      Memo1.Lines.Add(Choice.Message.Content);
+  finally
+    Chat.Free;
+  end;
+  
+```
+
+
 
 ### Function calling
 
