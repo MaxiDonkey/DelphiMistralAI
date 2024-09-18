@@ -9,8 +9,8 @@ interface
 
 uses
   System.SysUtils, System.Classes, REST.JsonReflect, System.JSON, System.Threading,
-  REST.Json.Types, MistralAI.API.Params, MistralAI.API, MistralAI.Functions.Core,
-  MistralAI.Functions.Tools, MistralAI.Params.Core;
+  REST.Json.Types, System.NetEncoding, System.Net.Mime, MistralAI.API.Params,
+  MistralAI.API, MistralAI.Functions.Core, MistralAI.Functions.Tools, MistralAI.Params.Core;
 
 type
   /// <summary>
@@ -95,7 +95,7 @@ type
     /// <summary>
     /// Incomplete model output due to max_tokens parameter or token limit
     /// </summary>
-    length,
+    length_limit,
 
     /// <summary>
     /// model_length
@@ -183,6 +183,56 @@ type
   end;
 
   /// <summary>
+  /// The <c>TVisionSource</c> record represents an image source used in the vision system.
+  /// The source can either be a URL linking to an image or the image itself encoded in Base64 format.
+  /// </summary>
+  /// <remarks>
+  /// The <c>TVisionSource</c> record is responsible for holding the image data and validating its format.
+  /// It supports two types of image sources: a secure HTTPS URL or a Base64-encoded image.
+  /// The record includes methods to create and validate these sources.
+  /// Example usage:
+  /// <code>
+  /// var Source: TVisionSource;
+  /// Source := TVisionSource.Create('https://example.com/image.jpg');
+  /// or
+  /// Source := TVisionSource.Create('c:\my_folder\my_file.webp');
+  /// </code>
+  /// </remarks>
+  TVisionSource = record
+  private
+    FSource: string;
+    FValue: WideString;
+    procedure FileCheck;
+  public
+    /// <summary>
+    /// The value field must be either a URL linking to the image or the image itself
+    /// in Base64 format, included with the request.
+    /// </summary>
+    property Data: WideString read FValue write FValue;
+
+    /// <summary>
+    /// Creates an instance of <c>TVisionSource</c> based on the provided value.
+    /// This method determines whether the provided value is a secure HTTPS URL or a Base64-encoded image.
+    /// </summary>
+    /// <param name="Value">
+    /// The value representing the image source, which must either be a URL (starting with "https") or a Base64-encoded string.
+    /// If the value is a URL, it must use HTTPS; otherwise, an exception will be raised.
+    /// </param>
+    /// <returns>
+    /// A <c>TVisionSource</c> object that contains the image source and its type (either a URL or a Base64-encoded image).
+    /// </returns>
+    /// <exception cref="Exception">
+    /// Thrown if the provided URL is not secure (i.e., does not use HTTPS).
+    /// </exception>
+    /// <remarks>
+    /// This function verifies if the provided value starts with "https". If it does, it treats the value as a URL.
+    /// If the value does not begin with "https" but starts with "http", an exception is raised to enforce a secure connection.
+    /// If neither condition is met, the method attempts to handle the value as a Base64-encoded image or a file.
+    /// </remarks>
+    class function Create(const Value: string): TVisionSource; overload; static;
+  end;
+
+  /// <summary>
   /// The <c>TChatMessagePayload</c> record represents a chat message payload, which includes both the role of the message sender and the content of the message.
   /// This type is used to distinguish between different participants in the conversation (e.g., user, assistant, or system) and manage the flow of messages accordingly.
   /// </summary>
@@ -195,6 +245,7 @@ type
   private
     FRole: TMessageRole;
     FContent: string;
+    FVisionSources: TArray<TVisionSource>;
   public
 
     /// <summary>
@@ -214,6 +265,18 @@ type
     /// in the chat, whether it's from the user, the assistant, or the system.
     /// </remarks>
     property Content: string read FContent write FContent;
+
+    /// <summary>
+    /// Represents an array of <c>TVisionSource</c> objects that contain image sources for the vision system.
+    /// Each <c>TVisionSource</c> object stores the image either as a URL or a Base64-encoded string.
+    /// </summary>
+    /// <value>
+    /// A dynamic array (<c>TArray</c>) of <c>TVisionSource</c> objects. This array holds the image sources used in the vision system.
+    /// </value>
+    /// <remarks>
+    /// The <c>TVisionSource</c> objects in this array can be used to provide images to the system. Each source is verified as a secure HTTPS URL or a Base64-encoded image.
+    /// </remarks>
+    property VisionSources: TArray<TVisionSource> read FVisionSources write FVisionSources;
 
     /// <summary>
     /// Creates a new chat message payload with the role of the assistant.
@@ -255,7 +318,26 @@ type
     /// <remarks>
     /// This method is used to create messages from the user's perspective, typically representing inputs or queries in the conversation.
     /// </remarks>
-    class function User(const Content: string): TChatMessagePayload; static;
+    class function User(const Content: string): TChatMessagePayload; overload; static;
+
+    /// <summary>
+    /// Creates a new chat message payload with the role of the user and includes associated vision sources.
+    /// </summary>
+    /// <param name="Content">
+    /// The content of the message that the user is sending.
+    /// </param>
+    /// <param name="VisionSrc">
+    /// An array of strings representing vision sources.
+    /// </param>
+    /// <returns>
+    /// A <c>TChatMessagePayload</c> instance with the role set to "user", the provided content, and the specified vision sources.
+    /// </returns>
+    /// <remarks>
+    /// This method is used to create messages from the user's perspective that include both text content and optional vision sources.
+    /// The vision sources can be URLs or Base64-encoded images, and they are used to enhance the message with visual information.
+    /// </remarks>
+    class function User(const Content: string;
+      const VisionSrc: TArray<string>): TChatMessagePayload; overload; static;
   end;
 
   /// <summary>
@@ -1098,7 +1180,7 @@ type
     ///     Result.OnCancellation :=
     ///       procedure (Sender: TObject)
     ///       begin
-    ///         // Processing when process was canceled
+    ///         // Processing when process has been canceled
     ///       end;
     ///   end);
     /// </code>
@@ -1110,7 +1192,7 @@ type
 implementation
 
 uses
-  system.StrUtils, Rest.Json, System.Rtti;
+  system.StrUtils, Rest.Json, System.Rtti, MistralAI.NetEncoding.Base64;
 
 { TMessageRoleHelper }
 
@@ -1159,22 +1241,53 @@ end;
 function TChatParams.Messages(
   const Value: TArray<TChatMessagePayload>): TChatParams;
 var
-  Item: TChatMessagePayload;
   JSON: TJSONObject;
-  Items: TJSONArray;
 begin
-  Items := TJSONArray.Create;
+  var Items := TJSONArray.Create;
   try
-    for Item in Value do
+    for var Item in Value do
       begin
-        JSON := TJSONObject.Create;
-        {--- Add role }
-        JSON.AddPair('role', Item.Role.ToString);
 
-        {--- Add content }
-        if not Item.Content.IsEmpty then
-          JSON.AddPair('content', Item.Content);
-        Items.Add(JSON);
+        if Length(Item.FVisionSources) = 0 then
+          begin
+
+            JSON := TJSONObject.Create;
+            {--- Add role }
+            JSON.AddPair('role', Item.Role.ToString);
+
+            {--- Add content }
+            if not Item.Content.IsEmpty then
+            JSON.AddPair('content', Item.Content);
+            Items.Add(JSON);
+          end
+        else
+          begin
+            var SubItems := TJSONArray.Create;
+
+            JSON := TJSONObject.Create;
+            {"type": "text", "text": "What’s in this image?"}
+            JSON.AddPair('type', 'text');
+            JSON.AddPair('text', Item.Content);
+            SubItems.Add(JSON);
+
+            for var Source in Item.VisionSources do
+              begin
+                JSON := TJSONObject.Create;
+                {"type": "image_url", "image_url": "Url or Image content to base64 string"}
+                JSON.AddPair('type', 'image_url');
+                JSON.AddPair('image_url', Source.Data);
+                SubItems.Add(JSON);
+              end;
+
+            JSON := TJSONObject.Create;
+            {"role": "user/assistant"}
+            JSON.AddPair('role', Item.Role.ToString);
+            {"content": "content_value"}
+            JSON.AddPair('content', SubItems);
+
+            Items.Add(JSON);
+          end;
+
       end;
   except
     Items.Free;
@@ -1261,6 +1374,15 @@ begin
   Result.FContent := Content;
 end;
 
+class function TChatMessagePayload.User(const Content: string;
+  const VisionSrc: TArray<string>): TChatMessagePayload;
+begin
+  Result.FRole := TMessageRole.user;
+  Result.FContent := Content;
+  for var Item in VisionSrc do
+    Result.VisionSources := Result.VisionSources + [TVisionSource.Create(Item)];         
+end;
+
 class function TChatMessagePayload.User(
   const Content: string): TChatMessagePayload;
 begin
@@ -1276,7 +1398,7 @@ begin
     0 :
       Exit(stop);
     1 :
-      Exit(length);
+      Exit(length_limit);
     2 :
       Exit(model_length);
     3 :
@@ -1292,7 +1414,7 @@ begin
   case Self of
     stop:
       Exit('stop');
-    length:
+    length_limit:
       Exit('length');
     model_length:
       Exit('model_length');
@@ -1436,8 +1558,7 @@ begin
                     TThread.Queue(nil,
                         procedure
                         begin
-                          if OnDoCancel() then
-                            Stop := True;
+                          Stop := OnDoCancel();
                         end);
 
                   if Stop then
@@ -1575,6 +1696,44 @@ begin
   for var Tool in FToolsCalls do
     Tool.Free;
   inherited;
+end;
+
+{ TVisionSource }
+
+class function TVisionSource.Create(const Value: string): TVisionSource;
+begin
+  {--- Set value into the source }
+  Result.FSource := Value;
+
+  {--- Extract the first five chars into the signal variable }
+  var Signal := EmptyStr;
+  if Value.Length >= 5 then
+    Signal := AnsiLowerCase(Copy(Value, 1, 5));
+
+  {--- Check URL secure }
+  if Signal = 'https' then
+    begin
+      Result.Data := Value;
+    end
+  else
+    begin
+      {--- Raise an exception on URL not secure }
+      if (Value.Length >= 4) and (AnsiLowerCase(Copy(Value, 1, 4))  = 'http') then
+        raise Exception.Create('Invalid URL: Secure HTTPS connection required');
+
+      {--- handle the value as a Base64-encoded image or a file}
+      Result.FileCheck;
+    end;
+end;
+
+procedure TVisionSource.FileCheck;
+begin
+  var MimeType := ResolveMimeType(FSource);
+
+  if IndexStr(MimeType, ['image/png', 'image/jpeg', 'image/gif', 'image/webp']) = -1 then
+    raise Exception.Create('Unsupported image format');
+
+  Data :=  Format('data:%s;base64,%s', [MimeType, EncodeBase64(FSource)]);
 end;
 
 end.
