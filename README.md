@@ -181,6 +181,8 @@ See also [Prompting Capabilities](https://docs.mistral.ai/guides/prompting_capab
     end);
 ```
 
+#### Asynchronous
+
 You can use asynchronous methods for text completion or chat tasks. For this, you need to use the two methods
 
  1. `procedure AsyncCreate(ParamProc: TProc<TChatParams>; Events: TFunc<TAsynChatParams>)`
@@ -222,8 +224,6 @@ as follows :
           end;
       end);
 ```
-
-#### Asynchronous
 
  2. Asynchronous stream mode : See `TAsynChatStreamParams = record`
 
