@@ -11,7 +11,9 @@ ___
     - [Initialization](#initialization)
     - [Models](#models)
     - [Embeddings](#embeddings)
-    - [Chats (synchronous/asynchronous)](#chats)
+    - [Chats](#chats)
+        - [Synchronous](#Synchronous)
+        - [Asynchronous](#Asynchronous)
     - [Vision](#vision)
         - [Passing an Image URL](#Passing-an-image-url)
         - [Passing a Base64 Encoded Image](#Passing-a-base64-encoded-image)	
@@ -133,6 +135,8 @@ Using the API to create and maintain conversations. You have the option to eithe
 
 See also [Prompting Capabilities](https://docs.mistral.ai/guides/prompting_capabilities/) at the MistralAI web site.
 
+#### Synchronous
+
 ```Pascal
 //uses MistralAI, MistralAI.Functions.Tools, MistralAI.Chat;  
 
@@ -218,6 +222,8 @@ as follows :
           end;
       end);
 ```
+
+#### Asynchronous
 
  2. Asynchronous stream mode : See `TAsynChatStreamParams = record`
 
