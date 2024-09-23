@@ -4,6 +4,7 @@ ___
 ![GitHub](https://img.shields.io/badge/IDE%20Version-Delphi%2010.3/11/12-yellow)
 ![GitHub](https://img.shields.io/badge/platform-all%20platforms-green)
 
+Updated the : 09/23/2024
 
 - [Introduction](#Introduction)
 - [Remarks](#remarks)
@@ -64,6 +65,15 @@ uses MistralAI;
 var MistralAI: IMistralAI := TMistralAI.Create(API_TOKEN);
 ```
 
+You can also go through the factory:
+
+> [!NOTE]
+>```Pascal
+>uses MistralAI;
+>
+>var MistralAI := TMistralAIFactory.CreateInstance(API_TOKEN);
+>```
+
 ### Models
 
 List the various models available in the API. You can refer to the Models documentation to understand what models are available.
@@ -83,23 +93,53 @@ var Models := MistralAI.Models.List;
   end;
 ```
 
-> [!NOTE]
-> Update 08/2024:
+Asynchronously, we proceed as follows:
+
+> [!TIP]
+>```Pascal
+>//uses MistralAI, MistralAI.Models;
 >
-> Model management has been strengthened with the introduction of the following APIs:
+>MistralAI.Models.AsyncList(
+>    function : TAsyncModelsParams
+>    begin
+>      Result.Sender := Memo1;  //Uses a TMemo for displaying
 >
->  - Find a model by its Id 
->    - `function Retrieve(const ModelId: string): TModel`
+>      Result.OnStart := nil;
+>        
+>      Result.OnSuccess :=
+>        procedure (Sender: TObject; List: TModels)
+>        begin
+>          var M := Sender as TMemo;
 >
->  - Update a fine-tuned model by its Id, including updates to the model's name and description 
->    - `function Update(const ModelId: string; ParamProc: TProc<TModelParams>): TFineTunedModel`
->
->  - Archive or unarchive a fine-tuned model by its Id.
->    - `function Archive(const ModelId: string): TArchivingdModel`
->    - `function Unarchive(const ModelId: string): TArchivingdModel`  
->
->
-> New fields have been added to the data returned concerning the models, allowing for more precise management of information about the models (see the [***TCoreModel***](https://github.com/MaxiDonkey/DelphiMistralAI/blob/b8223fed1ded96e002d89d2bfa4f4f3e3b386bdb/source/MistralAI.Models.pas#L42) class and its derived classes in the ***MistralAI.Models.pas*** unit)
+>          M.Lines.BeginUpdate;
+>          try
+>            for var Model in List.Data do
+>              if Model.Capabilities.FineTuning then
+>                M.Lines.Add(Model.id + '  (Can fine-tuned)') else
+>                M.Lines.Add(Model.id)
+>              end
+>          finally
+>            M.Perform(WM_VSCROLL, SB_BOTTOM, 0);
+>            M.Lines.EndUpdate;	
+>          end;
+>    end);
+>```
+
+The `TModelRoute` class exposes the following methods: 
+  - `function Delete(const ModelId: string): TModelDeletion` 
+  - `function Retrieve(const ModelId: string): TModel` 
+  - `function Update(const ModelId: string; ParamProc: TProc< TModelParams>): TFineTunedModel` 
+  - `function Archive(const ModelId: string): TArchivingModel` 
+  - `function Unarchive(const ModelId: string): TArchivingModel` 
+
+> [!TIP]
+>As well as their asynchronous equivalent 
+>  - `procedure AsyncDelete(const ModelId: string; const CallBacks: TFunc<TAsyncModelDeletion>);` 
+>  - `procedure AsyncRetrieve(const ModelId: string; const CallBacks: TFunc<TAsyncModelParams>)` 
+>  - `procedure AsyncUpdate(const ModelId: string; ParamProc: TProc<TModelParams>; const CallBacks: TFunc<TAsyncFineTuneModelParams>)` 
+>  - `procedure AsyncArchive(const ModelId: string; const CallBacks: TFunc<TAsynArchivingModelParams>)` 
+>  - `procedure AsyncUnarchive(const ModelId: string; const CallBacks: TFunc<TAsynArchivingModelParams>)`
+
 
 ### Embeddings
 
@@ -128,6 +168,42 @@ See also [tokenization](https://docs.mistral.ai/guides/tokenization/) at the Mis
     Embeddings.Free;
   end;
 ```
+
+Asynchronously, we proceed as follows:
+
+> [!TIP]
+>```Pascal
+>//uses MistralAI, MistralAI.Embeddings;
+>
+>  MistralAI.Embeddings.AsyncCreate(
+>    procedure (Params: TEmbeddingParams)
+>    begin
+>      Params.Input(['Text to vectorize']);
+>    end,
+>
+>    function : TAsyncEmbeddingsParams
+>    begin
+>      Result.Sender := Memo1;
+>
+>      Result.OnSuccess :=
+>        procedure (Sender: TObject; Result: TEmbeddings)
+>        begin
+>          var M := Sender as TMemo;
+>          M.Lines.BeginUpdate;
+>          try
+>            for var Value in Result.Data do
+>              begin
+>                M.Lines.Add('-----------------------------' + Value.index.ToString);
+>                for var Item in Value.Embedding do
+>                  M.Lines.Add(Item.ToString);
+>              end;
+>          finally
+>            M.Perform(WM_VSCROLL, SB_BOTTOM, 0);
+>            M.Lines.EndUpdate;
+>          end;
+>        end
+>    end);
+>```
 
 ### Chats
 
@@ -206,15 +282,16 @@ as follows :
 
       function : TAsynChatParams
       begin
-        Result.Sender := Memo1; //To force the events to transmit this object 
+        Result.Sender := Memo1; //Uses TMemo for displaying 
 
         Result.OnStart := nil;
 
         Result.OnSuccess :=
-          procedure (Sender: TObject; Choice: TChatChoices)
+          procedure (Sender: TObject; Chat: TChat)
           begin
             var M := Sender as TMemo;
-            M.Text := Choice.Message.Content;
+            for var Choice in Chat.Choices do
+              M.Lines.Add(Choice.Message.Content + sLineBreak);
           end;
 
         Result.OnError :=
@@ -243,7 +320,7 @@ as follows :
        begin
          Result.Sender := Memo1;  //Events will return this instance
     
-	 Result.OnStart := nil;   // if nil then; Can be omitted
+         Result.OnStart := nil;   // if nil then; Can be omitted
 
          Result.OnProgress :=
            procedure (Sender: TObject; Chat: TChat)
@@ -256,7 +333,7 @@ as follows :
                for var i := 1 to S.Length do
                  if (S[i] <> #10) and (S[i] <> #13) then
                    M.Text := M.Text + S[i] else
-                   M.Text := M.Text + #13#10;
+                   M.Text := M.Text + sLineBreak;
                M.Perform(WM_VSCROLL, SB_BOTTOM, 0);
              finally
                M.Lines.EndUpdate;
@@ -307,7 +384,7 @@ To support both synchronous and asynchronous completion methods, we focused on g
     begin
       Params.Model('pixtral-12b-2409');
       
-      // png, jpeg, gif or webp formats are supported
+      // png, jpeg, gif and webp formats are supported
       var Ref1 := 'https://tripfixers.com/wp-content/uploads/2019/11/eiffel-tower-with-snow.jpeg';
       var Ref2 := 'https://assets.visitorscoverage.com/production/wp-content/uploads/2024/04/AdobeStock_626542468-min-1024x683.jpeg';
       
@@ -335,7 +412,7 @@ To support both synchronous and asynchronous completion methods, we focused on g
     begin
       Params.Model('pixtral-12b-2409');
       
-      var Ref := 'D:\My_folder\Images\my_image.png';  // png, jpeg, gif or webp formats are supported
+      var Ref := 'D:\My_folder\Images\my_image.png';  // png, jpeg, gif and webp formats are supported
           
       Params.Messages([TChatMessagePayload.User('my query ', [Ref])]);
 
@@ -456,10 +533,26 @@ When instantiating the interface managing the ***TMistralAI*** type class, the `
 
 The resulting interface will handle both **CodeStral** functionality as well as chat-type interactions.
 
+> [!TIP]
+> In the above examples we use synchronous methods. Here is the asynchronous equivalent :
+>
+>  - `procedure AsyncCreate(ParamProc: TProc<TCodestralParams>; CallBacks: TFunc<TAsynCodeParams>);`
+>
+>  - `procedure AsyncCreateStream(ParamProc: TProc<TCodestralParams>; CallBacks: TFunc<TAsynCodeStreamParams>);`
+>
+
 ```Pascal
 uses MistralAI;
 
 var CodingModel: IMistralAI := TMistralAI.Create(API_TOKEN, [CodestralSpec]);
+```
+
+You can also go through the factory:
+
+```Pascal
+uses MistralAI;
+
+var CodingModel := TMistralAIFactory.CreateInstance(API_TOKEN, [CodestralSpec]);
 ```
 
 #### Code completion
@@ -593,6 +686,9 @@ However, it is crucial to understand that chat usage requires using only the **"
 When choosing between prompt engineering and fine-tuning for an AI model, it's advisable to start with prompt engineering due to its speed and lower resource requirements. Fine-tuning, however, offers better performance and alignment with specific tasks, making it ideal for specialized applications and cost reduction.
 
 See also [Fine-tuning description](https://docs.mistral.ai/capabilities/finetuning/) at the **MistralAI** web site.
+
+> [!TIP]
+> Des méthodes synchrones et asynchrones existent également pour le fine-tuning ainsi que pour la gestion des fichiers. Voir la classe `TFilesRoute` dans l'unité **MistralAI.Files** et la classe `TFineTuningRoute` dans l'unité **MistralAI.FineTunings**
 
 
 #### Files
@@ -736,6 +832,11 @@ The official documentation provided by Mistral regarding agents is available [he
 > As of 08/13/2024, only the API for executing an agent is available; however, no API for creating an agent has been made available.  
 >
 > (See the [***MistralAI.Agents.pas***](https://github.com/MaxiDonkey/DelphiMistralAI/blob/main/source/MistralAI.Agents.pas) unit)
+>
+> To create an agent you must go through the [platform](https://console.mistral.ai/build/agents/new)
+
+> [!TIP]
+> The execution of an agent can be done both synchronously and asynchronously. See the class `TAgentRoute` in the **MistralAI.Agents** unit.
 
 ## Contributing
 
