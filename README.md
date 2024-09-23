@@ -688,8 +688,7 @@ When choosing between prompt engineering and fine-tuning for an AI model, it's a
 See also [Fine-tuning description](https://docs.mistral.ai/capabilities/finetuning/) at the **MistralAI** web site.
 
 > [!TIP]
-> Des méthodes synchrones et asynchrones existent également pour le fine-tuning ainsi que pour la gestion des fichiers. Voir la classe `TFilesRoute` dans l'unité **MistralAI.Files** et la classe `TFineTuningRoute` dans l'unité **MistralAI.FineTunings**
-
+> Synchronous and asynchronous methods also exist for fine-tuning as well as file handling. See the TFilesRoute class in the MistralAI.Files unit and the TFineTuningRoute class in the MistralAI.FineTunings unit
 
 #### Files
 
