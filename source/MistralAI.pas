@@ -13,6 +13,25 @@ uses
   MistralAI.Files, MistralAI.FineTunings, MistralAI.Agents;
 
 type
+  /// <summary>
+  /// The IMistralAI interface provides access to the various features and routes of the Mistral AI API.
+  /// This interface allows interaction with different services such as agents, chat, code completion,
+  /// embeddings, file management, fine-tuning, and model information.
+  /// </summary>
+  /// <remarks>
+  /// This interface should be implemented by any class that wants to provide a structured way of accessing
+  /// the Mistral AI services. It includes methods and properties for authenticating with an API key,
+  /// configuring the base URL, and accessing different API routes.
+  ///
+  /// To use this interface, instantiate a class that implements it, set the required properties such as
+  /// <see cref="Token"/> and <see cref="BaseURL"/>, and call the relevant methods for the desired operations.
+  /// <code>
+  ///   var MistralAI: IMistralAI := TMistralAI.Create(API_TOKEN);
+  ///   or
+  ///   var CodestralAI: IMistralAI := TMistralAI.Create(API_TOKEN, [CodestralSpec]);
+  /// </code>
+  /// <seealso cref="TMistralAI"/>
+  /// </remarks>
   IMistralAI = interface
     ['{CB506753-77B2-4BD6-A2F8-216433D444A8}']
     function GetAPI: TMistralAIAPI;
@@ -29,54 +48,93 @@ type
     function GetModels: TModelsRoute;
 
     /// <summary>
-    /// Direct access to queries
+    /// the main API object used for making requests.
     /// </summary>
+    /// <returns>
+    /// An instance of TMistralAIAPI for making API calls.
+    /// </returns>
     property API: TMistralAIAPI read GetAPI;
-    /// <summary>
-    /// The OpenAI API uses API keys for authentication.
-    /// Visit your API Keys page (https://console.mistral.ai/user/api-keys) to retrieve the API key you'll use in your requests.
-    /// Remember that your API key is a secret! Do not share it with others or expose it in any client-side code (browsers, apps).
-    /// Production requests must be routed through your own backend server where your API key can be securely
-    /// loaded from an environment variable or key management service.
+    /// Sets or retrieves the API token for authentication.
     /// </summary>
+    /// <param name="Value">
+    /// The API token as a string.
+    /// </param>
+    /// <returns>
+    /// The current API token.
+    /// </returns>
     property Token: string read GetToken write SetToken;
     /// <summary>
-    /// Base Url (https://api.mistral.ai/v1) by default
-    /// If the "CodestralSpec" flag is set to the "Specs" value, then the base URL is thus modified (https://codestral.mistral.ai/v1)
+    /// Sets or retrieves the base URL for API requests.
+    /// Default is https://api.mistral.ai/v1.
     /// </summary>
+    /// <param name="Value">
+    /// The base URL as a string.
+    /// </param>
+    /// <returns>
+    /// The current base URL.
+    /// </returns>
     property BaseURL: string read GetBaseUrl write SetBaseUrl;
     /// <summary>
-    /// Access to the agent completion
-    /// An AI agent is an autonomous system running on large language models (LLM) which, from high-level instructions
+    /// Provides access to agent completion API.
+    /// An AI agent is an autonomous system using large language models (LLM) to perform tasks based on high-level instructions.
     /// </summary>
+    /// <returns>
+    /// An instance of TAgentRoute for agent-related operations.
+    /// </returns>
     property Agent: TAgentRoute read GetAgentRoute;
     /// <summary>
-    /// Access to the chat completion API allows you to chat with a model fine-tuned to follow instructions.
+    /// Provides access to the chat completion API.
+    /// Allows for interaction with models fine-tuned for instruction-based dialogue.
     /// </summary>
+    /// <returns>
+    /// An instance of TChatRoute for chat-related operations.
+    /// </returns>
     property Chat: TChatRoute read GetChatRoute;
     /// <summary>
-    /// Access to the Codestral Completion API allows you to design or complete code with a template configured to follow instructions.
+    /// Provides access to the Codestral Completion API.
+    /// Allows for code design or completion using a template configured to follow specific instructions.
     /// </summary>
+    /// <returns>
+    /// An instance of TCodestralRoute for code completion operations.
+    /// </returns>
     property Codestral: TCodestralRoute read GetCodestralRoute;
     /// <summary>
-    /// Access to the embeddings API allows you to embed sentences
+    /// Provides access to the embeddings API.
+    /// Enables the embedding of sentences or documents.
     /// </summary>
+    /// <returns>
+    /// An instance of TEmbeddingsRoute for embedding operations.
+    /// </returns>
     property Embeddings: TEmbeddingsRoute read GetEmbeddings;
     /// <summary>
-    /// Files are used to upload documents that can be used with features like Fine-tuning.
+    /// Provides access to the file management API.
+    /// Files can be uploaded and used with features such as fine-tuning.
     /// </summary>
+    /// <returns>
+    /// An instance of TFilesRoute for file-related operations.
+    /// </returns>
     property &File: TFilesRoute read GetFilesRoute;
     /// <summary>
-    /// Fine tuning jobs for your organization and user
+    /// Provides access to fine-tuning API for user and organization.
+    /// Allows managing fine-tuning jobs.
     /// </summary>
+    /// <returns>
+    /// An instance of TFineTuningRoute for fine-tuning operations.
+    /// </returns>
     property FineTuning: TFineTuningRoute read GetFineTuningRoute;
     /// <summary>
     /// Lists and describes the various models available in the API.
     /// You can refer to the Models documentation to understand what models are available and the differences between them.
     /// </summary>
+    /// <returns>
+    /// An instance of TModelsRoute for model-related operations.
+    /// </returns>
     property Models: TModelsRoute read GetModels;
   end;
 
+  /// <summary>
+  /// Specification taken into account
+  /// </summary>
   TSpec = (
     /// <summary>
     /// The "codestral" specification is taken into account in the instantiation of the class
@@ -88,6 +146,21 @@ type
   /// </summary>
   TSpecs = set of TSpec;
 
+  TMistralAIFactory = class
+    class function CreateInstance(const AToken: string; Specs: TSpecs = []): IMistralAI;
+  end;
+
+  /// <summary>
+  /// The TMistralAI class provides access to the various features and routes of the Mistral AI API.
+  /// This class allows interaction with different services such as agents, chat, code completion,
+  /// embeddings, file management, fine-tuning, and model information.
+  /// </summary>
+  /// <remarks>
+  /// This class should be implemented by any class that wants to provide a structured way of accessing
+  /// the Mistral AI services. It includes methods and properties for authenticating with an API key,
+  /// configuring the base URL, and accessing different API routes.
+  /// <seealso cref="TMistralAI"/>
+  /// </remarks>
   TMistralAI = class(TInterfacedObject, IMistralAI)
   strict private
     FSpecs: TSpecs;
@@ -116,52 +189,90 @@ type
     function GetModels: TModelsRoute;
   public
     /// <summary>
-    /// Direct access to API
+    /// the main API object used for making requests.
     /// </summary>
+    /// <returns>
+    /// An instance of TMistralAIAPI for making API calls.
+    /// </returns>
     property API: TMistralAIAPI read GetAPI;
     /// <summary>
-    /// The OpenAI API uses API keys for authentication.
-    /// Visit your API Keys page (https://console.mistral.ai/user/api-keys) to retrieve the API key you'll use in your requests.
-    /// Remember that your API key is a secret! Do not share it with others or expose it in any client-side code (browsers, apps).
-    /// Production requests must be routed through your own backend server where your API key can be securely
-    /// loaded from an environment variable or key management service.
+    /// Sets or retrieves the API token for authentication.
     /// </summary>
+    /// <param name="Value">
+    /// The API token as a string.
+    /// </param>
+    /// <returns>
+    /// The current API token.
+    /// </returns>
     property Token: string read GetToken write SetToken;
     /// <summary>
-    /// Base Url (https://api.mistral.ai/v1)
+    /// Sets or retrieves the base URL for API requests.
+    /// Default is https://api.mistral.ai/v1.
     /// </summary>
+    /// <param name="Value">
+    /// The base URL as a string.
+    /// </param>
+    /// <returns>
+    /// The current base URL.
+    /// </returns>
     property BaseURL: string read GetBaseUrl write SetBaseUrl;
 
   public
     /// <summary>
-    /// Access to the agent completion.
-    /// An AI agent is an autonomous system running on large language models (LLM) which, from high-level instructions
+    /// Provides access to agent completion API.
+    /// An AI agent is an autonomous system using large language models (LLM) to perform tasks based on high-level instructions.
     /// </summary>
+    /// <returns>
+    /// An instance of TAgentRoute for agent-related operations.
+    /// </returns>
     property Agent: TAgentRoute read GetAgentRoute;
     /// <summary>
-    /// Access to the chat completion API allows you to chat with a model fine-tuned to follow instructions.
+    /// Provides access to the chat completion API.
+    /// Allows for interaction with models fine-tuned for instruction-based dialogue.
     /// </summary>
+    /// <returns>
+    /// An instance of TChatRoute for chat-related operations.
+    /// </returns>
     property Chat: TChatRoute read GetChatRoute;
     /// <summary>
-    /// Access to the Codestral Completion API allows you to design or complete code with a template configured to follow instructions.
+    /// Provides access to the Codestral Completion API.
+    /// Allows for code design or completion using a template configured to follow specific instructions.
     /// </summary>
+    /// <returns>
+    /// An instance of TCodestralRoute for code completion operations.
+    /// </returns>
     property Codestral: TCodestralRoute read GetCodestralRoute;
     /// <summary>
-    /// Access to the embeddings API allows you to embed sentences
+    /// Provides access to the embeddings API.
+    /// Enables the embedding of sentences or documents.
     /// </summary>
+    /// <returns>
+    /// An instance of TEmbeddingsRoute for embedding operations.
+    /// </returns>
     property Embeddings: TEmbeddingsRoute read GetEmbeddings;
     /// <summary>
-    /// Files are used to upload documents that can be used with features like Fine-tuning.
+    /// Provides access to the file management API.
+    /// Files can be uploaded and used with features such as fine-tuning.
     /// </summary>
+    /// <returns>
+    /// An instance of TFilesRoute for file-related operations.
+    /// </returns>
     property &File: TFilesRoute read GetFilesRoute;
-    /// <summary>
-    /// Fine tuning jobs for your organization and user
+    // <summary>
+    /// Provides access to fine-tuning API for user and organization.
+    /// Allows managing fine-tuning jobs.
     /// </summary>
+    /// <returns>
+    /// An instance of TFineTuningRoute for fine-tuning operations.
+    /// </returns>
     property FineTuning: TFineTuningRoute read GetFineTuningRoute;
     /// <summary>
     /// Lists and describes the various models available in the API.
     /// You can refer to the Models documentation to understand what models are available and the differences between them.
     /// </summary>
+    /// <returns>
+    /// An instance of TModelsRoute for model-related operations.
+    /// </returns>
     property Models: TModelsRoute read GetModels;
   public
     constructor Create; overload;
@@ -288,6 +399,14 @@ end;
 procedure TMistralAI.SetToken(const Value: string);
 begin
   FAPI.Token := Value;
+end;
+
+{ TMistralAIFactory }
+
+class function TMistralAIFactory.CreateInstance(const AToken: string;
+  Specs: TSpecs): IMistralAI;
+begin
+  Result := TMistralAI.Create(AToken, Specs);
 end;
 
 end.

@@ -1,38 +1,37 @@
 unit MistralAI.Chat;
 
-{+-----------------------------------------------------------------------------+
- |     Github repository : https://github.com/MaxiDonkey/DelphiMistralAI       |
- |     Visit the Github repository for the documentation and use examples      |
- +-----------------------------------------------------------------------------+}
+{-------------------------------------------------------------------------------
+
+      Github repository : https://github.com/MaxiDonkey/DelphiMistralAI
+      Visit the Github repository for the documentation and use examples
+
+ ------------------------------------------------------------------------------}
 
 interface
 
 uses
   System.SysUtils, System.Classes, REST.JsonReflect, System.JSON, System.Threading,
   REST.Json.Types, System.NetEncoding, System.Net.Mime, MistralAI.API.Params,
-  MistralAI.API, MistralAI.Functions.Core, MistralAI.Functions.Tools, MistralAI.Params.Core;
+  MistralAI.API, MistralAI.Functions.Core, MistralAI.Functions.Tools,
+  MistralAI.Vision.Params, MistralAI.Async.Support, MistralAI.Params.Core;
 
 type
   /// <summary>
   /// Type of message role
   /// </summary>
   TMessageRole = (
-
     /// <summary>
     /// System message
     /// </summary>
     system,
-
     /// <summary>
     /// User message
     /// </summary>
     user,
-
     /// <summary>
     /// Assistant message
     /// </summary>
     assistant,
-
     /// <summary>
     /// Function message
     /// </summary>
@@ -43,7 +42,6 @@ type
   /// between <c>TMessageRole</c> values and their string representations.
   /// </summary>
   TMessageRoleHelper = record helper for TMessageRole
-
     /// <summary>
     /// Converts the current <c>TMessageRole</c> value to its corresponding string representation.
     /// </summary>
@@ -60,7 +58,6 @@ type
     /// </code>
     /// </remarks>
     function ToString: string;
-
     /// <summary>
     /// Converts a string representation of a <c>TMessageRole</c> into its corresponding enumeration value.
     /// </summary>
@@ -83,30 +80,25 @@ type
   end;
 
   /// <summary>
-  /// Finish reason
+  /// Represents the different reasons why the processing of a request can terminate.
   /// </summary>
   TFinishReason = (
-
     /// <summary>
     /// API returned complete model output
     /// </summary>
     stop,
-
     /// <summary>
     /// Incomplete model output due to max_tokens parameter or token limit
     /// </summary>
     length_limit,
-
     /// <summary>
     /// model_length
     /// </summary>
     model_length,
-
     /// <summary>
     /// An error was encountered while processing the request
     /// </summary>
     error,
-
     /// <summary>
     /// A function must be invoked before further processing of the request
     /// </summary>
@@ -116,7 +108,6 @@ type
   /// Helper record for the <c>TFinishReason</c> enumeration, providing utility methods for conversion between string representations and <c>TFinishReason</c> values.
   /// </summary>
   TFinishReasonHelper = record helper for TFinishReason
-
     /// <summary>
     /// Converts the current <c>TFinishReason</c> value to its string representation.
     /// </summary>
@@ -124,7 +115,6 @@ type
     /// A string representing the current <c>TFinishReason</c> value.
     /// </returns>
     function ToString: string;
-
     /// <summary>
     /// Creates a <c>TFinishReason</c> value from its corresponding string representation.
     /// </summary>
@@ -149,7 +139,6 @@ type
   /// </remarks>
   TFinishReasonInterceptor = class(TJSONInterceptorStringToString)
   public
-
     /// <summary>
     /// Converts the <c>TFinishReason</c> value of the specified field to a string during JSON serialization.
     /// </summary>
@@ -163,7 +152,6 @@ type
     /// The string representation of the <c>TFinishReason</c> value.
     /// </returns>
     function StringConverter(Data: TObject; Field: string): string; override;
-
     /// <summary>
     /// Converts a string back to a <c>TFinishReason</c> value for the specified field during JSON deserialization.
     /// </summary>
@@ -183,56 +171,6 @@ type
   end;
 
   /// <summary>
-  /// The <c>TVisionSource</c> record represents an image source used in the vision system.
-  /// The source can either be a URL linking to an image or the image itself encoded in Base64 format.
-  /// </summary>
-  /// <remarks>
-  /// The <c>TVisionSource</c> record is responsible for holding the image data and validating its format.
-  /// It supports two types of image sources: a secure HTTPS URL or a Base64-encoded image.
-  /// The record includes methods to create and validate these sources.
-  /// Example usage:
-  /// <code>
-  /// var Source: TVisionSource;
-  /// Source := TVisionSource.Create('https://example.com/image.jpg');
-  /// or
-  /// Source := TVisionSource.Create('c:\my_folder\my_file.webp');
-  /// </code>
-  /// </remarks>
-  TVisionSource = record
-  private
-    FSource: string;
-    FValue: WideString;
-    procedure FileCheck;
-  public
-    /// <summary>
-    /// The value field must be either a URL linking to the image or the image itself
-    /// in Base64 format, included with the request.
-    /// </summary>
-    property Data: WideString read FValue write FValue;
-
-    /// <summary>
-    /// Creates an instance of <c>TVisionSource</c> based on the provided value.
-    /// This method determines whether the provided value is a secure HTTPS URL or a Base64-encoded image.
-    /// </summary>
-    /// <param name="Value">
-    /// The value representing the image source, which must either be a URL (starting with "https") or a Base64-encoded string.
-    /// If the value is a URL, it must use HTTPS; otherwise, an exception will be raised.
-    /// </param>
-    /// <returns>
-    /// A <c>TVisionSource</c> object that contains the image source and its type (either a URL or a Base64-encoded image).
-    /// </returns>
-    /// <exception cref="Exception">
-    /// Thrown if the provided URL is not secure (i.e., does not use HTTPS).
-    /// </exception>
-    /// <remarks>
-    /// This function verifies if the provided value starts with "https". If it does, it treats the value as a URL.
-    /// If the value does not begin with "https" but starts with "http", an exception is raised to enforce a secure connection.
-    /// If neither condition is met, the method attempts to handle the value as a Base64-encoded image or a file.
-    /// </remarks>
-    class function Create(const Value: string): TVisionSource; overload; static;
-  end;
-
-  /// <summary>
   /// The <c>TChatMessagePayload</c> record represents a chat message payload, which includes both the role of the message sender and the content of the message.
   /// This type is used to distinguish between different participants in the conversation (e.g., user, assistant, or system) and manage the flow of messages accordingly.
   /// </summary>
@@ -247,7 +185,6 @@ type
     FContent: string;
     FVisionSources: TArray<TVisionSource>;
   public
-
     /// <summary>
     /// Gets or sets the role of the message.
     /// </summary>
@@ -256,7 +193,6 @@ type
     /// or "system" (representing system-level messages). This property is essential for contextualizing the content of the message within the chat.
     /// </remarks>
     property Role: TMessageRole read FRole write FRole;
-
     /// <summary>
     /// Gets or sets the content of the message.
     /// </summary>
@@ -265,7 +201,6 @@ type
     /// in the chat, whether it's from the user, the assistant, or the system.
     /// </remarks>
     property Content: string read FContent write FContent;
-
     /// <summary>
     /// Represents an array of <c>TVisionSource</c> objects that contain image sources for the vision system.
     /// Each <c>TVisionSource</c> object stores the image either as a URL or a Base64-encoded string.
@@ -277,7 +212,6 @@ type
     /// The <c>TVisionSource</c> objects in this array can be used to provide images to the system. Each source is verified as a secure HTTPS URL or a Base64-encoded image.
     /// </remarks>
     property VisionSources: TArray<TVisionSource> read FVisionSources write FVisionSources;
-
     /// <summary>
     /// Creates a new chat message payload with the role of the assistant.
     /// </summary>
@@ -291,7 +225,6 @@ type
     /// This method is a convenience for creating assistant messages. Use this method when the assistant needs to respond to the user or system.
     /// </remarks>
     class function Assistant(const Content: string): TChatMessagePayload; static;
-
     /// <summary>
     /// Creates a new chat message payload with the role of the system.
     /// </summary>
@@ -305,7 +238,6 @@ type
     /// This method is used to create system-level messages, which may be used for notifications, warnings, or other system-related interactions.
     /// </remarks>
     class function System(const Content: string): TChatMessagePayload; static;
-
     /// <summary>
     /// Creates a new chat message payload with the role of the user.
     /// </summary>
@@ -319,7 +251,6 @@ type
     /// This method is used to create messages from the user's perspective, typically representing inputs or queries in the conversation.
     /// </remarks>
     class function User(const Content: string): TChatMessagePayload; overload; static;
-
     /// <summary>
     /// Creates a new chat message payload with the role of the user and includes associated vision sources.
     /// </summary>
@@ -368,114 +299,138 @@ type
   /// This example shows how to instantiate and configure a <c>TChatParams</c> object for interacting with an AI model.
   /// </remarks>
   TChatParams = class(TJSONParam)
-
     /// <summary>
-    /// Specifies the model ID to be used for generating responses.
-    /// You can retrieve the list of available models using the "List Available Models" API.
+    /// Specifies the identifier of the model to use.
+    /// Currently compatible with "mistral-tiny" or "mistral-large-latest".
     /// </summary>
-    /// <param name="Value">The model ID as a string.</param>
-    /// <returns>A <c>TChatParams</c> instance with the specified model ID.</returns>
-    /// <seealso href="https://docs.mistral.ai/models/">See the official documentation for available models.</seealso>
-    function Model(const Value: string): TChatParams;
-
-    /// <summary>
-    /// Sets the maximum number of tokens that the model can generate in a single response.
-    /// </summary>
-    /// <param name="Value">The maximum number of tokens. The default is 16.</param>
-    /// <returns>A <c>TChatParams</c> instance with the specified maximum token limit.</returns>
+    /// <param name="Value">
+    /// The model ID to be used for the completion.
+    /// Ensure that the specified model is supported and correctly spelled.
+    /// </param>
+    /// <returns>
+    /// The updated <c>TChatParams</c> instance.
+    /// </returns>
     /// <remarks>
-    /// The total token count, which includes the prompt tokens and the <c>max_tokens</c> value, must not exceed the model's context length.
+    /// This parameter is required and determines which model will process the request.
     /// </remarks>
+    function Model(const Value: string): TChatParams;
+    /// <summary>
+    /// Sets the maximum number of tokens to generate in the completion.
+    /// The total token count of your prompt plus <c>max_tokens</c> cannot exceed the model's context length.
+    /// </summary>
+    /// <param name="Value">
+    /// The maximum number of tokens to generate.
+    /// Choose an appropriate value based on your prompt length to avoid exceeding the model's limit.
+    /// </param>
+    /// <returns>
+    /// The updated <c>TChatParams</c> instance.
+    /// </returns>
     function MaxTokens(const Value: Integer = 16): TChatParams;
-
     /// <summary>
     /// Provides the prompt(s) for the model to generate completions from, structured as a list of messages with roles (user, assistant, system) and content.
     /// </summary>
     /// <param name="Value">An array of <c>TChatMessagePayload</c> representing the messages in the conversation.</param>
-    /// <returns>A <c>TChatParams</c> instance with the specified messages.</returns>
+    /// <returns>
+    /// The updated <c>TChatParams</c> instance.
+    /// </returns>
     /// <remarks>
     /// The first message should have either a "user" or "system" role to initiate the conversation properly.
     /// </remarks>
     function Messages(const Value: TArray<TChatMessagePayload>): TChatParams;
-
     /// <summary>
     /// Specifies the format in which the model should return the response. This can include formats like JSON or plain text.
     /// </summary>
     /// <param name="Value">The desired response format, with the default being <c>"json_object"</c>.</param>
-    /// <returns>A <c>TChatParams</c> instance with the specified response format.</returns>
+    /// <returns>
+    /// The updated <c>TChatParams</c> instance.
+    /// </returns>
     /// <remarks>
     /// If not specified, the default value is <c>{ "type": "text" }</c>. When using JSON mode, it's necessary to instruct the model to produce JSON explicitly through the system or user messages.
     /// </remarks>
     function ResponseFormat(const Value: string = 'json_object'): TChatParams;
-
     /// <summary>
-    /// Enables or disables token streaming. When enabled, the model will return tokens incrementally as they are generated.
+    /// Specifies whether to stream back partial progress as server-sent events (SSE).
+    /// If <c>true</c>, tokens are sent as they become available.
+    /// If <c>false</c>, the server will hold the request open until timeout or completion.
     /// </summary>
-    /// <param name="Value">A boolean indicating whether to enable streaming. Default is <c>True</c>.</param>
-    /// <returns>A <c>TChatParams</c> instance with streaming enabled or disabled.</returns>
-    /// <remarks>
-    /// When enabled, tokens will be streamed as server-sent events. The stream ends with a <c>data: [DONE]</c> message.
-    /// If disabled, the full result is returned in a single response after completion.
-    /// </remarks>
+    /// <param name="Value">
+    /// A boolean value indicating whether to enable streaming. Default is <c>true</c>, meaning streaming is enabled by default.
+    /// </param>
+    /// <returns>
+    /// The updated <c>TChatParams</c> instance.
+    /// </returns>
     function Stream(const Value: Boolean = True): TChatParams;
-
     /// <summary>
-    /// Specifies the sampling temperature for response generation. Higher values increase randomness, while lower values make the response more deterministic.
+    /// Sets the sampling temperature to use for the model's output.
+    /// Higher values like 0.8 make the output more random, while lower values like 0.2 make it more focused and deterministic.
     /// </summary>
-    /// <param name="Value">A floating-point value between 0.0 and 1.0, with a default of 0.7.</param>
-    /// <returns>A <c>TChatParams</c> instance with the specified temperature.</returns>
-    /// <remarks>
-    /// Use higher values (e.g., 0.8) for more creative and varied responses, and lower values (e.g., 0.2) for more focused and predictable outcomes.
-    /// </remarks>
+    /// <param name="Value">
+    /// The temperature value between 0.0 and 1.0. Default is 0.7.
+    /// A temperature of 0 makes the model deterministic, while a temperature of 1 allows for maximum creativity.
+    /// </param>
+    /// <returns>
+    /// The updated <c>TChatParams</c> instance.
+    /// </returns>
     function Temperature(const Value: Single = 0.7): TChatParams;
-
     /// <summary>
-    /// Sets the top-p value for nucleus sampling, determining which tokens to consider based on their cumulative probability mass.
+    /// Sets the nucleus sampling probability mass for the model (Top-p).
+    /// For example, 0.1 means only the tokens comprising the top 10% probability mass are considered.
     /// </summary>
-    /// <param name="Value">A floating-point value between 0.0 and 1.0, with a default of 1.0.</param>
-    /// <returns>A <c>TChatParams</c> instance with the specified top-p value.</returns>
-    /// <remarks>
-    /// A lower top-p value (e.g., 0.1) considers only the top 10% of most probable tokens, reducing variability in the output.
-    /// </remarks>
+    /// <param name="Value">
+    /// The <c>top_p</c> value between 0.0 and 1.0. Default is 1.
+    /// Lower values limit the model to consider only the most probable options.
+    /// </param>
+    /// <returns>
+    /// The updated <c>TChatParams</c> instance.
+    /// </returns>
     function TopP(const Value: Single = 1): TChatParams;
-
     /// <summary>
     /// Determines whether a safety prompt should be injected automatically before the conversation starts.
     /// </summary>
-    /// <param name="Value">A boolean indicating whether to enable the safety prompt. Default is <c>False</c>.</param>
-    /// <returns>A <c>TChatParams</c> instance with the safety prompt setting applied.</returns>
+    /// <param name="Value">
+    /// A boolean indicating whether to enable the safety prompt. Default is <c>False</c>.
+    /// </param>
+    /// <returns>
+    /// The updated <c>TChatParams</c> instance.
+    /// </returns>
     function SafePrompt(const Value: Boolean = False): TChatParams;
-
     /// <summary>
     /// Specifies a list of tools that the model can use to generate structured outputs such as JSON inputs for function calls.
     /// </summary>
-    /// <param name="Value">An array of <c>TChatMessageTool</c> representing the tools available to the model.</param>
-    /// <returns>A <c>TChatParams</c> instance with the specified tools.</returns>
+    /// <param name="Value">
+    /// An array of <c>TChatMessageTool</c> representing the tools available to the model.
+    /// </param>
+    /// <returns>
+    /// The updated <c>TChatParams</c> instance.
+    /// </returns>
     /// <remarks>
     /// These tools can include functions that the model can utilize when generating output. For example, they can help the model produce structured data for specific tasks.
     /// </remarks>
     function Tools(const Value: TArray<TChatMessageTool>): TChatParams;
-
     /// <summary>
     /// Configures how the model interacts with functions. This can either prevent, allow, or require function calls depending on the setting.
     /// </summary>
-    /// <param name="Value">The <c>TToolChoice</c> setting for function interaction, with a default of "auto".</param>
-    /// <returns>A <c>TChatParams</c> instance with the specified tool choice.</returns>
+    /// <param name="Value">
+    /// The <c>TToolChoice</c> setting for function interaction, with a default of "auto".
+    /// </param>
+    /// <returns>
+    /// The updated <c>TChatParams</c> instance.
+    /// </returns>
     /// <remarks>
     /// If set to <c>none</c>, the model will not call any functions and will generate a message instead. If set to <c>auto</c>, the model can choose between generating a message or calling a function. If set to <c>any</c>, the model is required to call a function.
     /// </remarks>
     function ToolChoice(const Value: TToolChoice = auto): TChatParams;
-
     /// <summary>
     /// Sets the random seed for deterministic results during sampling.
     /// </summary>
     /// <param name="Value">An integer value to be used as the seed.</param>
-    /// <returns>A <c>TChatParams</c> instance with the specified random seed.</returns>
+    /// <returns>
+    /// The updated <c>TChatParams</c> instance.
+    /// </returns>
     /// <remarks>
     /// Providing a random seed ensures that multiple calls with the same parameters produce the same results, useful for testing or reproducible outcomes.
     /// </remarks>
     function RandomSeed(const Value: Integer): TChatParams;
-
     /// <summary>
     /// Constructor to initialize the <c>TChatParams</c> object with default values.
     /// </summary>
@@ -495,14 +450,11 @@ type
   private
     [JsonNameAttribute('prompt_tokens')]
     FPrompt_tokens: Int64;
-
     [JsonNameAttribute('completion_tokens')]
     FCompletion_tokens: Int64;
-
     [JsonNameAttribute('total_tokens')]
     FTotal_tokens: Int64;
   public
-
     /// <summary>
     /// The number of tokens consumed by the prompt in the chat request.
     /// </summary>
@@ -511,7 +463,6 @@ type
     /// It's useful for understanding how much of the token limit is being consumed by the user's query or system instructions.
     /// </remarks>
     property PromptTokens: Int64 read FPrompt_tokens write FPrompt_tokens;
-
     /// <summary>
     /// The number of tokens consumed by the completion generated by the model.
     /// </summary>
@@ -520,7 +471,6 @@ type
     /// This helps in determining the token cost of the AI's output relative to the prompt size.
     /// </remarks>
     property CompletionTokens: Int64 read FCompletion_tokens write FCompletion_tokens;
-
     /// <summary>
     /// The total number of tokens used for the entire chat request, including both the prompt and the completion.
     /// </summary>
@@ -546,14 +496,11 @@ type
   private
     [JsonNameAttribute('role')]
     FRole: string;
-
     [JsonNameAttribute('content')]
     FContent: string;
-
     [JsonNameAttribute('tool_calls')]
     FToolsCalls: TArray<TCalledFunction>;
   public
-
     /// <summary>
     /// The role of the author of this message, indicating the sender (e.g., user, assistant, or system).
     /// </summary>
@@ -562,7 +509,6 @@ type
     /// "assistant" for responses generated by the AI, or "system" for control messages.
     /// </remarks>
     property Role: string read FRole write FRole;
-
     /// <summary>
     /// The contents of the message.
     /// </summary>
@@ -570,7 +516,6 @@ type
     /// The <c>Content</c> property stores the actual message text. This can include user inputs, assistant-generated replies, or system instructions.
     /// </remarks>
     property Content: string read FContent write FContent;
-
     /// <summary>
     /// A list of tool calls to be executed for query completion.
     /// </summary>
@@ -579,7 +524,6 @@ type
     /// This is typically used when the assistant needs to call external APIs or perform specific actions before delivering a final response.
     /// </remarks>
     property ToolsCalls: TArray<TCalledFunction> read FToolsCalls write FToolsCalls;
-
     /// <summary>
     /// Destructor to release any resources used by this instance.
     /// </summary>
@@ -602,17 +546,13 @@ type
   private
     [JsonNameAttribute('index')]
     FIndex: Int64;
-
     [JsonNameAttribute('message')]
     FMessage: TChatMessage;
-
     [JsonReflectAttribute(ctString, rtString, TFinishReasonInterceptor)]
     FFinish_reason: TFinishReason;
-
     [JsonNameAttribute('delta')]
     FDelta: TChatMessage;
   public
-
     /// <summary>
     /// The index of the choice in the list of possible choices generated by the model.
     /// </summary>
@@ -621,7 +561,6 @@ type
     /// This is useful when multiple options are generated for completion, and each one is referenced by its index.
     /// </remarks>
     property Index: Int64 read FIndex write FIndex;
-
     /// <summary>
     /// A chat completion message generated by the AI model.
     /// </summary>
@@ -630,7 +569,6 @@ type
     /// This is typically a complete message representing the AI's response to a user or system message.
     /// </remarks>
     property Message: TChatMessage read FMessage write FMessage;
-
     /// <summary>
     /// A chat completion delta representing partial responses generated during streaming.
     /// </summary>
@@ -639,7 +577,6 @@ type
     /// This allows the model to progressively generate and deliver a response before it is fully completed.
     /// </remarks>
     property Delta: TChatMessage read FDelta write FDelta;
-
     /// <summary>
     /// The reason the model stopped generating tokens.
     /// </summary>
@@ -648,7 +585,6 @@ type
     /// in the conversation, hitting a token limit, or encountering a stop sequence provided by the user.
     /// </remarks>
     property FinishReason: TFinishReason read FFinish_reason write FFinish_reason;
-
     /// <summary>
     /// Destructor to clean up resources used by the <c>TChatChoices</c> instance.
     /// </summary>
@@ -670,23 +606,17 @@ type
   private
     [JsonNameAttribute('id')]
     FId: string;
-
     [JsonNameAttribute('object')]
     FObject: string;
-
     [JsonNameAttribute('created')]
     FCreated: Int64;
-
     [JsonNameAttribute('model')]
     FModel: string;
-
     [JsonNameAttribute('choices')]
     FChoices: TArray<TChatChoices>;
-
     [JsonNameAttribute('usage')]
     FUsage: TChatUsage;
   public
-
     /// <summary>
     /// A unique identifier for the chat completion.
     /// </summary>
@@ -695,7 +625,6 @@ type
     /// This is useful for tracking and managing chat sessions or retrieving the results of a particular interaction.
     /// </remarks>
     property Id: string read FId write FId;
-
     /// <summary>
     /// The object type, which is always "chat.completion".
     /// </summary>
@@ -704,7 +633,6 @@ type
     /// providing a clear indication of the response type when working with multiple object types in a system.
     /// </remarks>
     property &Object: string read FObject write FObject;
-
     /// <summary>
     /// The Unix timestamp (in seconds) of when the chat completion was created.
     /// </summary>
@@ -713,7 +641,6 @@ type
     /// useful for logging, auditing, or ordering chat completions chronologically.
     /// </remarks>
     property Created: Int64 read FCreated write FCreated;
-
     /// <summary>
     /// The model used for the chat completion.
     /// </summary>
@@ -722,7 +649,6 @@ type
     /// when comparing results across different models or tracking which model versions are producing responses.
     /// </remarks>
     property Model: string read FModel write FModel;
-
     /// <summary>
     /// A list of chat completion choices generated by the model.
     /// </summary>
@@ -731,7 +657,6 @@ type
     /// generated by the AI model. There may be multiple choices if the request asked for more than one completion.
     /// </remarks>
     property Choices: TArray<TChatChoices> read FChoices write FChoices;
-
     /// <summary>
     /// Usage statistics for the completion request, including token counts for the prompt and completion.
     /// </summary>
@@ -740,7 +665,6 @@ type
     /// tokens used in the prompt and those generated in the completion. This data is important for monitoring API usage and costs.
     /// </remarks>
     property Usage: TChatUsage read FUsage write FUsage;
-
     /// <summary>
     /// Destructor to clean up resources used by this <c>TChat</c> instance.
     /// </summary>
@@ -752,223 +676,47 @@ type
   end;
 
   /// <summary>
-  /// Record used to manage asynchronous events for a chat request.
+  /// Manages asynchronous chat callBacks for a chat request using <c>TChat</c> as the response type.
   /// </summary>
   /// <remarks>
-  /// The <c>TAsynChatParams</c> record is designed to handle the lifecycle of an asynchronous chat operation.
-  /// It contains event handlers that trigger on different stages of the process: start, success, and error.
-  /// This allows for non-blocking operations and provides an easy way to handle the result of an asynchronous request.
+  /// The <c>TAsynChatParams</c> type extends the <c>TAsynParams&lt;TChat&gt;</c> record to handle the lifecycle of an asynchronous chat operation.
+  /// It provides event handlers that trigger at various stages, such as when the operation starts, completes successfully, or encounters an error.
+  /// This structure facilitates non-blocking chat operations and is specifically tailored for scenarios where multiple choices from a chat model are required.
   /// </remarks>
-  TAsynChatParams = record
-  private
-    FSender: TObject;
-    FOnStart: TProc<TObject>;
-    FOnSuccess: TProc<TObject, TChatChoices>;
-    FOnError: TProc<TObject, string>;
-
-  public
-    /// <summary>
-    /// The object representing the sender of the asynchronous operation.
-    /// </summary>
-    /// <value>
-    /// An instance of <c>TObject</c> that refers to the sender of the event.
-    /// </value>
-    property Sender: TObject read FSender write FSender;
-
-    /// <summary>
-    /// Event triggered when the asynchronous operation starts.
-    /// </summary>
-    /// <value>
-    /// A procedure that takes <c>TObject</c> as a parameter, representing the sender.
-    /// </value>
-    /// <remarks>
-    /// Example usage:
-    /// <code>
-    /// Result.OnStart := procedure(Sender: TObject)
-    /// begin
-    ///   ShowMessage('Chat operation started');
-    /// end;
-    /// </code>
-    /// </remarks>
-    property OnStart: TProc<TObject> read FOnStart write FOnStart;
-
-    /// <summary>
-    /// Event triggered when the asynchronous operation completes successfully.
-    /// </summary>
-    /// <value>
-    /// A procedure that takes <c>TObject</c> and <c>TChatChoices</c> as parameters.
-    /// The <c>TObject</c> represents the sender, and <c>TChatChoices</c> contains the chat response data.
-    /// </value>
-    /// <remarks>
-    /// Example usage:
-    /// <code>
-    /// Result.OnSuccess := procedure(Sender: TObject; Choices: TChatChoices)
-    /// begin
-    ///   Memo1.Text := Choices.Message.Content;
-    /// end;
-    /// </code>
-    /// </remarks>
-    property OnSuccess: TProc<TObject, TChatChoices> read FOnSuccess write FOnSuccess;
-
-    /// <summary>
-    /// Event triggered when the asynchronous operation fails.
-    /// </summary>
-    /// <value>
-    /// A procedure that takes <c>TObject</c> and a <c>string</c> as parameters.
-    /// The <c>TObject</c> represents the sender, and the <c>string</c> contains the error message.
-    /// </value>
-    /// <remarks>
-    /// Example usage:
-    /// <code>
-    /// Result.OnError := procedure(Sender: TObject; ErrorMessage: string)
-    /// begin
-    ///   ShowMessage('Error occurred: ' + ErrorMessage);
-    /// end;
-    /// </code>
-    /// </remarks>
-    property OnError: TProc<TObject, string> read FOnError write FOnError;
-  end;
+  TAsynChatParams = TAsyncCallBack<TChat>;
 
   /// <summary>
-  /// Record used to manage asynchronous events for a streaming chat request.
+  /// Manages asynchronous streaming chat callBacks for a chat request using <c>TChat</c> as the response type.
   /// </summary>
   /// <remarks>
-  /// <c>TAsynChatStreamParams</c> allows you to handle the lifecycle of a chat request in streaming mode.
-  /// It provides callbacks for different stages such as when the request starts, progresses, succeeds, encounters an error, or needs to be canceled.
+  /// The <c>TAsynChatStreamParams</c> type extends the <c>TAsynStreamParams&lt;TChat&gt;</c> record to support the lifecycle of an asynchronous streaming chat operation.
+  /// It provides callbacks for different stages, including when the operation starts, progresses with new data chunks, completes successfully, or encounters an error.
+  /// This structure is ideal for handling scenarios where the chat response is streamed incrementally, providing real-time updates to the user interface.
   /// </remarks>
-  TAsynChatStreamParams = record
-  private
-    FSender: TObject;
-    FOnStart: TProc<TObject>;
-    FOnSuccess: TProc<TObject>;
-    FOnProgress: TProc<TObject, TChat>;
-    FOnError: TProc<TObject, string>;
-    FOnCancellation: TProc<TObject>;
-    FOnDoCancel: TFunc<Boolean>;
+  TAsynChatStreamParams = TAsyncStreamCallBack<TChat>;
 
-  public
-    /// <summary>
-    /// The object representing the sender of the asynchronous operation.
-    /// </summary>
-    /// <remarks>
-    /// The <c>Sender</c> property is used to identify or store a reference to the object that initiated the chat request,
-    /// which can be useful for context within the callback procedures.
-    /// </remarks>
-    property Sender: TObject read FSender write FSender;
-
-    /// <summary>
-    /// Event triggered when the asynchronous chat request starts.
-    /// </summary>
-    /// <remarks>
-    /// The <c>OnStart</c> event is called when the chat request begins. It can be used to set up any initial state or display a loading indicator to the user.
-    /// <code>
-    /// OnStart :=
-    ///    procedure (Sender: TObject)
-    ///    begin
-    ///      // code when chat request begin
-    ///    end;
-    /// </code>
-    /// </remarks>
-    property OnStart: TProc<TObject> read FOnStart write FOnStart;
-
-    /// <summary>
-    /// Event triggered when the asynchronous chat request completes successfully.
-    /// </summary>
-    /// <remarks>
-    /// The <c>OnSuccess</c> event is invoked when the streaming process finishes successfully.
-    /// It does not provide additional data, as the result is expected to have been handled progressively via the <c>OnProgress</c> event.
-    /// <code>
-    /// OnSuccess :=
-    ///    procedure (Sender: TObject)
-    ///    begin
-    ///      // code when the streaming process finishes successfully
-    ///    end;
-    /// </code>
-    /// </remarks>
-    property OnSuccess: TProc<TObject> read FOnSuccess write FOnSuccess;
-
-    /// <summary>
-    /// Event triggered to handle progress during the streaming chat request.
-    /// </summary>
-    /// <param name="Sender">
-    /// The object that initiated the request, typically used for context.
-    /// </param>
-    /// <param name="Chat">
-    /// The <c>TChat</c> object representing the current response chunk received from the model.
-    /// This event can be used to update the user interface as new tokens are streamed in.
-    /// </param>
-    /// <remarks>
-    /// The <c>OnProgress</c> event is fired every time a new chunk of data is received during the streaming process.
-    /// This allows the application to handle the response progressively as it is generated by the model.
-    /// <code>
-    /// OnProgress :=
-    ///    procedure (Sender: TObject; Chat: TChat)
-    ///    begin
-    ///      // code to handle the response progressively
-    ///    end;
-    /// </code>
-    /// </remarks>
-    property OnProgress: TProc<TObject, TChat> read FOnProgress write FOnProgress;
-
-    /// <summary>
-    /// Event triggered when an error occurs during the asynchronous chat request.
-    /// </summary>
-    /// <param name="Sender">
-    /// The object that initiated the request, typically used for context.
-    /// </param>
-    /// <param name="ErrorMessage">
-    /// The error message received, which can be logged or displayed to the user.
-    /// </param>
-    /// <remarks>
-    /// The <c>OnError</c> event is called when an error occurs during the streaming process.
-    /// This can be used to handle failures, show error messages, or perform any necessary clean-up actions.
-    /// <code>
-    /// OnError :=
-    ///    procedure (Sender: TObject; message: string)
-    ///    begin
-    ///      // code to handle an error occurs during the streaming process
-    ///    end;
-    /// </code>
-    /// </remarks>
-    property OnError: TProc<TObject, string> read FOnError write FOnError;
-
-    /// <summary>
-    /// Event triggered when the asynchronous chat request has been canceled.
-    /// </summary>
-    /// <remarks>
-    /// The <c>OnCancellation</c> event is fired when the chat request is canceled by the user or the application.
-    /// This can be used to perform clean-up operations or notify the user that the request has been terminated.
-    /// <code>
-    /// OnCancellation :=
-    ///    procedure (Sender: TObject)
-    ///    begin
-    ///      // code to handle chat request cancellation
-    ///    end;
-    /// </code>
-    /// </remarks>
-    property OnCancellation: TProc<TObject> read FOnCancellation write FOnCancellation;
-
-    /// <summary>
-    /// Function called to determine if the asynchronous chat request should be canceled.
-    /// </summary>
-    /// <returns>
-    /// A <c>Boolean</c> value indicating whether the request should be canceled (<c>True</c>) or allowed to continue (<c>False</c>).
-    /// </returns>
-    /// <remarks>
-    /// The <c>OnDoCancel</c> function is periodically invoked to check whether the user or application has requested to cancel the chat request.
-    /// If the function returns <c>True</c>, the streaming process will be aborted.
-    /// <code>
-    /// OnDoCancel :=
-    ///    function : Boolean
-    ///    begin
-    ///      Result := ... // True to stop the streaming process
-    ///    end;
-    /// </code>
-    /// </remarks>
-    property OnDoCancel: TFunc<Boolean> read FOnDoCancel write FOnDoCancel;
-  end;
-
-
+  /// <summary>
+  /// Represents a callback procedure used during the reception of responses from a chat request in streaming mode.
+  /// </summary>
+  /// <param name="Chat">
+  /// The <c>TChat</c> object containing the current information about the response generated by the model.
+  /// If this value is <c>nil</c>, it indicates that the data stream is complete.
+  /// </param>
+  /// <param name="IsDone">
+  /// A boolean flag indicating whether the streaming process is complete.
+  /// If <c>True</c>, it means the model has finished sending all response data.
+  /// </param>
+  /// <param name="Cancel">
+  /// A boolean flag that can be set to <c>True</c> within the callback to cancel the streaming process.
+  /// If set to <c>True</c>, the streaming will be terminated immediately.
+  /// </param>
+  /// <remarks>
+  /// This callback is invoked multiple times during the reception of the response data from the model.
+  /// It allows for real-time processing of received messages and interaction with the user interface or other systems
+  /// based on the state of the data stream.
+  /// When the <c>IsDone</c> parameter is <c>True</c>, it indicates that the model has finished responding,
+  /// and the <c>Chat</c> parameter will be <c>nil</c>.
+  /// </remarks>
   TChatEvent = reference to procedure(var Chat: TChat; IsDone: Boolean; var Cancel: Boolean);
 
   /// <summary>
@@ -1000,58 +748,17 @@ type
   /// </remarks>
   TChatRoute = class(TMistralAIAPIRoute)
   public
-
-    /// <summary>
-    /// Creates a completion for the chat message using the provided parameters.
-    /// </summary>
-    /// <param name="ParamProc">
-    /// A procedure used to configure the parameters for the chat request, such as selecting the model, providing messages, setting token limits, etc.
-    /// </param>
-    /// <returns>
-    /// Returns a <c>TChat</c> object that contains the chat response, including the choices generated by the model.
-    /// </returns>
-    /// <exception cref="MistralAIExceptionAPI">
-    /// Thrown when there is an error in the communication with the API or other underlying issues in the API call.
-    /// </exception>
-    /// <exception cref="MistralAIExceptionInvalidRequestError">
-    /// Thrown when the request is invalid, such as when required parameters are missing or values exceed allowed limits.
-    /// </exception>
-    /// <remarks>
-    /// The <c>Create</c> method sends a chat completion request and waits for the full response. The returned <c>TChat</c> object contains the model's generated response, including multiple choices if available.
-    /// Example usage:
-    /// <code>
-    /// var
-    ///   Chat: TChat;
-    /// begin
-    ///   Chat := MistralAI.Chat.Create(
-    ///     procedure (Params: TChatParams)
-    ///     begin
-    ///       Params.Model('my_model');
-    ///       Params.Messages([TChatMessagePayload.User('Hello !')]);
-    ///       Params.MaxTokens(1024);
-    ///     end);
-    ///   try
-    ///     for var Choice in Chat.Choices do
-    ///       Memo1.Lines.Add(Choice.Message.Content);
-    ///   finally
-    ///     Chat.Free;
-    ///   end;
-    /// end;
-    /// </code>
-    /// </remarks>
-    function Create(ParamProc: TProc<TChatParams>): TChat;
-
     /// <summary>
     /// Create an asynchronous completion for chat message
     /// </summary>
     /// <param name="ParamProc">
     /// A procedure to configure the parameters for the chat request, such as model selection, messages, and other parameters.
     /// </param>
-    /// <param name="Events">
+    /// <param name="CallBacks">
     /// A function that returns a record containing event handlers for the asynchronous chat completion, such as on success and on error.
     /// </param>
     /// <remarks>
-    /// This procedure initiates an asynchronous request to generate a chat completion based on the provided parameters. The response or error is handled by the provided events.
+    /// This procedure initiates an asynchronous request to generate a chat completion based on the provided parameters. The response or error is handled by the provided callBacks.
     /// <code>
     /// MistralAI.Chat.AsyncCreate(
     ///   procedure (Params: TChatParams)
@@ -1062,14 +769,15 @@ type
     ///   end,
     ///   function: TAsynChatParams
     ///   begin
-    ///     Result.Sender := Memo1;  //Events will return this instance
+    ///     Result.Sender := Memo1;  // callBacks will return this instance
     ///
     ///     Result.OnStart := nil;   // if nil then; Can be omitted
     ///
-    ///     Result.OnSuccess := procedure (Sender: TObject; Choice: TChatChoices)
+    ///     Result.OnSuccess := procedure (Sender: TObject; Chat: TChat)
     ///     begin
     ///       var M := Sender as TMemo;
-    ///       M.Text := Choice.Message.Content;
+    ///       for var Choice in Chat.Choices do
+    ///         M.Lines.Add(Choice.Message.Content + sLineBreak);
     ///     end;
     ///
     ///     Result.OnError := procedure (Sender: TObject; Value: string)
@@ -1079,61 +787,14 @@ type
     ///   end);
     /// </code>
     /// </remarks>
-    procedure AsyncCreate(ParamProc: TProc<TChatParams>; Events: TFunc<TAsynChatParams>);
-
-    /// <summary>
-    /// Creates a chat message completion with a streamed response.
-    /// </summary>
-    /// <param name="ParamProc">
-    /// A procedure used to configure the parameters for the chat request, such as selecting the model, providing messages, and adjusting other settings like token limits or temperature.
-    /// </param>
-    /// <param name="Event">
-    /// A callback of type <c>TChatEvent</c> that is triggered with each chunk of data received during the streaming process. It includes the current state of the <c>TChat</c> object, a flag indicating if the stream is done, and a boolean to handle cancellation.
-    /// </param>
-    /// <returns>
-    /// Returns <c>True</c> if the streaming process started successfully, <c>False</c> otherwise.
-    /// </returns>
-    /// <remarks>
-    /// This method initiates a chat request in streaming mode, where the response is delivered incrementally in real-time.
-    /// The <c>Event</c> callback will be invoked multiple times as tokens are received.
-    /// When the response is complete, the <c>IsDone</c> flag will be set to <c>True</c>, and the <c>Chat</c> object will be <c>nil</c>.
-    /// The streaming process can be interrupted by setting the <c>Cancel</c> flag to <c>True</c> within the event.
-    /// Example usage:
-    /// <code>
-    /// var
-    ///   Chat: TChat;
-    /// begin
-    ///   MistralAI.Chat.CreateStream(
-    ///     procedure (Params: TChatParams)
-    ///     begin
-    ///       Params.Model('my_model');
-    ///       Params.Messages([TChatMessagePayload.User('Hello')]);
-    ///       Params.MaxTokens(1024);
-    ///       Params.Stream;
-    ///     end,
-    ///     procedure(var Chat: TChat; IsDone: Boolean; var Cancel: Boolean)
-    ///     begin
-    ///       if IsDone then
-    ///         Memo1.Lines.Add('Stream completed')
-    ///       else if Assigned(Chat) then
-    ///         Memo1.Lines.Add(Chat.Choices[0].Message.Content);
-    ///
-    ///       // Cancel streaming if needed
-    ///       Cancel := CheckBox1.Checked;
-    ///     end
-    ///   );
-    /// end;
-    /// </code>
-    /// </remarks>
-    function CreateStream(ParamProc: TProc<TChatParams>; Event: TChatEvent): Boolean;
-
+    procedure AsyncCreate(ParamProc: TProc<TChatParams>; CallBacks: TFunc<TAsynChatParams>);
     /// <summary>
     /// Creates an asynchronous streaming chat completion request.
     /// </summary>
     /// <param name="ParamProc">
     /// A procedure used to configure the parameters for the chat request, including the model, messages, and additional options such as max tokens and streaming mode.
     /// </param>
-    /// <param name="Events">
+    /// <param name="CallBacks">
     /// A function that returns a <c>TAsynChatStreamParams</c> record which contains event handlers for managing different stages of the streaming process: progress updates, success, errors, and cancellation.
     /// </param>
     /// <remarks>
@@ -1185,14 +846,98 @@ type
     ///   end);
     /// </code>
     /// </remarks>
-    procedure ASyncCreateStream(ParamProc: TProc<TChatParams>;
-      Events: TFunc<TAsynChatStreamParams>);
+    procedure AsyncCreateStream(ParamProc: TProc<TChatParams>;
+      CallBacks: TFunc<TAsynChatStreamParams>);
+    /// <summary>
+    /// Creates a completion for the chat message using the provided parameters.
+    /// </summary>
+    /// <param name="ParamProc">
+    /// A procedure used to configure the parameters for the chat request, such as selecting the model, providing messages, setting token limits, etc.
+    /// </param>
+    /// <returns>
+    /// Returns a <c>TChat</c> object that contains the chat response, including the choices generated by the model.
+    /// </returns>
+    /// <exception cref="MistralAIExceptionAPI">
+    /// Thrown when there is an error in the communication with the API or other underlying issues in the API call.
+    /// </exception>
+    /// <exception cref="MistralAIExceptionInvalidRequestError">
+    /// Thrown when the request is invalid, such as when required parameters are missing or values exceed allowed limits.
+    /// </exception>
+    /// <remarks>
+    /// The <c>Create</c> method sends a chat completion request and waits for the full response. The returned <c>TChat</c> object contains the model's generated response, including multiple choices if available.
+    /// Example usage:
+    /// <code>
+    /// var
+    ///   Chat: TChat;
+    /// begin
+    ///   Chat := MistralAI.Chat.Create(
+    ///     procedure (Params: TChatParams)
+    ///     begin
+    ///       Params.Model('my_model');
+    ///       Params.Messages([TChatMessagePayload.User('Hello !')]);
+    ///       Params.MaxTokens(1024);
+    ///     end);
+    ///   try
+    ///     for var Choice in Chat.Choices do
+    ///       Memo1.Lines.Add(Choice.Message.Content);
+    ///   finally
+    ///     Chat.Free;
+    ///   end;
+    /// end;
+    /// </code>
+    /// </remarks>
+    function Create(ParamProc: TProc<TChatParams>): TChat;
+    /// <summary>
+    /// Creates a chat message completion with a streamed response.
+    /// </summary>
+    /// <param name="ParamProc">
+    /// A procedure used to configure the parameters for the chat request, such as selecting the model, providing messages, and adjusting other settings like token limits or temperature.
+    /// </param>
+    /// <param name="Event">
+    /// A callback of type <c>TChatEvent</c> that is triggered with each chunk of data received during the streaming process. It includes the current state of the <c>TChat</c> object, a flag indicating if the stream is done, and a boolean to handle cancellation.
+    /// </param>
+    /// <returns>
+    /// Returns <c>True</c> if the streaming process started successfully, <c>False</c> otherwise.
+    /// </returns>
+    /// <remarks>
+    /// This method initiates a chat request in streaming mode, where the response is delivered incrementally in real-time.
+    /// The <c>Event</c> callback will be invoked multiple times as tokens are received.
+    /// When the response is complete, the <c>IsDone</c> flag will be set to <c>True</c>, and the <c>Chat</c> object will be <c>nil</c>.
+    /// The streaming process can be interrupted by setting the <c>Cancel</c> flag to <c>True</c> within the event.
+    /// Example usage:
+    /// <code>
+    /// var
+    ///   Chat: TChat;
+    /// begin
+    ///   MistralAI.Chat.CreateStream(
+    ///     procedure (Params: TChatParams)
+    ///     begin
+    ///       Params.Model('my_model');
+    ///       Params.Messages([TChatMessagePayload.User('Hello')]);
+    ///       Params.MaxTokens(1024);
+    ///       Params.Stream;
+    ///     end,
+    ///     procedure(var Chat: TChat; IsDone: Boolean; var Cancel: Boolean)
+    ///     begin
+    ///       if IsDone then
+    ///         Memo1.Lines.Add('Stream completed')
+    ///       else if Assigned(Chat) then
+    ///         Memo1.Lines.Add(Chat.Choices[0].Message.Content);
+    ///
+    ///       // Cancel streaming if needed
+    ///       Cancel := CheckBox1.Checked;
+    ///     end
+    ///   );
+    /// end;
+    /// </code>
+    /// </remarks>
+    function CreateStream(ParamProc: TProc<TChatParams>; Event: TChatEvent): Boolean;
   end;
 
 implementation
 
 uses
-  system.StrUtils, Rest.Json, System.Rtti, MistralAI.NetEncoding.Base64;
+  system.StrUtils, Rest.Json, System.Rtti;
 
 { TMessageRoleHelper }
 
@@ -1247,22 +992,12 @@ begin
   try
     for var Item in Value do
       begin
+        var SubItems: TJSONArray := nil;
 
-        if Length(Item.FVisionSources) = 0 then
+        if Length(Item.FVisionSources) > 0 then
+          {--- Processing with images }
           begin
-
-            JSON := TJSONObject.Create;
-            {--- Add role }
-            JSON.AddPair('role', Item.Role.ToString);
-
-            {--- Add content }
-            if not Item.Content.IsEmpty then
-            JSON.AddPair('content', Item.Content);
-            Items.Add(JSON);
-          end
-        else
-          begin
-            var SubItems := TJSONArray.Create;
+            SubItems := TJSONArray.Create;
 
             JSON := TJSONObject.Create;
             {"type": "text", "text": "What’s in this image?"}
@@ -1278,22 +1013,23 @@ begin
                 JSON.AddPair('image_url', Source.Data);
                 SubItems.Add(JSON);
               end;
-
-            JSON := TJSONObject.Create;
-            {"role": "user/assistant"}
-            JSON.AddPair('role', Item.Role.ToString);
-            {"content": "content_value"}
-            JSON.AddPair('content', SubItems);
-
-            Items.Add(JSON);
           end;
 
+        JSON := TJSONObject.Create;
+        {--- Add role}
+        JSON.AddPair('role', Item.Role.ToString);
+        {--- Add content}
+        if Length(Item.FVisionSources) > 0 then
+          JSON.AddPair('content', SubItems) else
+          JSON.AddPair('content', Item.Content);
+        Items.Add(JSON);
       end;
   except
     Items.Free;
     raise;
   end;
   Result := TChatParams(Add('messages', Items));
+  Exit;
 end;
 
 function TChatParams.Model(const Value: string): TChatParams;
@@ -1464,106 +1200,68 @@ end;
 { TChatRoute }
 
 procedure TChatRoute.AsyncCreate(ParamProc: TProc<TChatParams>;
-  Events: TFunc<TAsynChatParams>);
+  CallBacks: TFunc<TAsynChatParams>);
 begin
-  var AsynChatParams := TUseParamsFactory<TAsynChatParams>.CreateInstance;
-  AsynChatParams.Assign(Events);
-
-  var Task: ITask := TTask.Create(
-          procedure()
-          begin
-            var Sender := AsynChatParams.Params.Sender;
-            if not Assigned(Sender) then
-              Sender := Self;
-
-            var OnStart := AsynChatParams.Params.OnStart;
-            if Assigned(OnStart) then
-              TThread.Queue(nil,
-                procedure
-                begin
-                  OnStart(Sender);
-                end);
-
-            try
-              var Chat := API.Post<TChat, TChatParams>('chat/completions', ParamProc);
-
-              try
-                var OnSuccess := AsynChatParams.Params.OnSuccess;
-                if Assigned(OnSuccess) then
-                  for var Choice in Chat.Choices do
-                    begin
-                      OnSuccess(Sender, Choice);
-                    end;
-
-              finally
-                TThread.Queue(nil,
-                  procedure
-                  begin
-                    Chat.Free;
-                  end);
-              end;
-
-            except
-              on E: Exception do
-                begin
-                  var Error := AcquireExceptionObject;
-                  try
-                    var ErrorMsg := (Error as Exception).Message;
-                    var OnError := AsynChatParams.Params.OnError;
-                    if Assigned(OnError) then
-                      TThread.Queue(nil,
-                      procedure
-                      begin
-                        OnError(Sender, ErrorMsg);
-                      end);
-                  finally
-                    Error.Free;
-                  end;
-                end;
-            end;
-
-          end);
-  Task.Start;
+  with TAsyncCallBackExec<TAsynChatParams, TChat>.Create(CallBacks) do
+  try
+    Sender := Use.Param.Sender;
+    OnStart := Use.Param.OnStart;
+    OnSuccess := Use.Param.OnSuccess;
+    OnError := Use.Param.OnError;
+    Run(
+      function: TChat
+      begin
+        Result := Self.Create(ParamProc);
+      end);
+  finally
+    Free;
+  end;
 end;
 
-procedure TChatRoute.ASyncCreateStream(ParamProc: TProc<TChatParams>;
-  Events: TFunc<TAsynChatStreamParams>);
+procedure TChatRoute.AsyncCreateStream(ParamProc: TProc<TChatParams>;
+  CallBacks: TFunc<TAsynChatStreamParams>);
 begin
-  var AsynChatStreamParams := TUseParamsFactory<TAsynChatStreamParams>.CreateInstance;
-  AsynChatStreamParams.Assign(Events);
+  var CallBackParams := TUseParamsFactory<TAsynChatStreamParams>.CreateInstance(CallBacks);
+
+  var Sender := CallBackParams.Param.Sender;
+  var OnStart := CallBackParams.Param.OnStart;
+  var OnSuccess := CallBackParams.Param.OnSuccess;
+  var OnProgress := CallBackParams.Param.OnProgress;
+  var OnError := CallBackParams.Param.OnError;
+  var OnCancellation := CallBackParams.Param.OnCancellation;
+  var OnDoCancel := CallBackParams.Param.OnDoCancel;
 
   var Task: ITask := TTask.Create(
           procedure()
           begin
-            var Sender := AsynChatStreamParams.Params.Sender;
+            {--- Pass the instance of the current class in case no value was specified. }
             if not Assigned(Sender) then
               Sender := Self;
 
-            var OnStart := AsynChatStreamParams.Params.OnStart;
+            {--- Trigger OnStart callback }
             if Assigned(OnStart) then
               TThread.Queue(nil,
                 procedure
                 begin
                   OnStart(Sender);
                 end);
-
             try
               var Stop := False;
 
-              var Success := CreateStream(ParamProc,
+              {--- Processing }
+              CreateStream(ParamProc,
                 procedure (var Chat: TChat; IsDone: Boolean; var Cancel: Boolean)
                 begin
-                  var OnDoCancel := AsynChatStreamParams.Params.OnDoCancel;
+                  {--- Check that the process has not been canceled }
                   if Assigned(OnDoCancel) then
                     TThread.Queue(nil,
                         procedure
                         begin
                           Stop := OnDoCancel();
                         end);
-
                   if Stop then
                     begin
-                      var OnCancellation := AsynChatStreamParams.Params.OnCancellation;
+                      {--- Trigger when processus was stopped }
                       if Assigned(OnCancellation) then
                         TThread.Queue(nil,
                         procedure
@@ -1573,25 +1271,29 @@ begin
                       Cancel := True;
                       Exit;
                     end;
-
                   if not IsDone and Assigned(Chat) then
                     begin
-                      var OnProgress := AsynChatStreamParams.Params.OnProgress;
                       var LocalChat := Chat;
                       Chat := nil;
 
+                      {--- Triggered when processus is progressing }
                       if Assigned(OnProgress) then
-                        TThread.Queue(nil,
+                        TThread.Synchronize(TThread.Current,
                         procedure
                         begin
-                          OnProgress(Sender, LocalChat);
-                          LocalChat.Free;
+                          try
+                            OnProgress(Sender, LocalChat);
+                          finally
+                            {--- Makes sure to release the instance containing the data obtained
+                                 following processing}
+                            LocalChat.Free;
+                          end;
                         end);
                     end
                   else
                   if IsDone then
                     begin
-                      var OnSuccess := AsynChatStreamParams.Params.OnSuccess;
+                      {--- Trigger OnEnd callback when the process is done }
                       if Assigned(OnSuccess) then
                         TThread.Queue(nil,
                         procedure
@@ -1600,16 +1302,14 @@ begin
                         end);
                     end;
                 end);
-                if not Success then
-                  raise Exception.Create('Error');
-
             except
               on E: Exception do
                 begin
                   var Error := AcquireExceptionObject;
                   try
                     var ErrorMsg := (Error as Exception).Message;
-                    var OnError := AsynChatStreamParams.Params.OnError;
+
+                    {--- Trigger OnError callback if the process has failed }
                     if Assigned(OnError) then
                       TThread.Queue(nil,
                       procedure
@@ -1617,6 +1317,7 @@ begin
                         OnError(Sender, ErrorMsg);
                       end);
                   finally
+                    {--- Ensures that the instance of the caught exception is released}
                     Error.Free;
                   end;
                 end;
@@ -1696,44 +1397,6 @@ begin
   for var Tool in FToolsCalls do
     Tool.Free;
   inherited;
-end;
-
-{ TVisionSource }
-
-class function TVisionSource.Create(const Value: string): TVisionSource;
-begin
-  {--- Set value into the source }
-  Result.FSource := Value;
-
-  {--- Extract the first five chars into the signal variable }
-  var Signal := EmptyStr;
-  if Value.Length >= 5 then
-    Signal := AnsiLowerCase(Copy(Value, 1, 5));
-
-  {--- Check URL secure }
-  if Signal = 'https' then
-    begin
-      Result.Data := Value;
-    end
-  else
-    begin
-      {--- Raise an exception on URL not secure }
-      if (Value.Length >= 4) and (AnsiLowerCase(Copy(Value, 1, 4))  = 'http') then
-        raise Exception.Create('Invalid URL: Secure HTTPS connection required');
-
-      {--- handle the value as a Base64-encoded image or a file}
-      Result.FileCheck;
-    end;
-end;
-
-procedure TVisionSource.FileCheck;
-begin
-  var MimeType := ResolveMimeType(FSource);
-
-  if IndexStr(MimeType, ['image/png', 'image/jpeg', 'image/gif', 'image/webp']) = -1 then
-    raise Exception.Create('Unsupported image format');
-
-  Data :=  Format('data:%s;base64,%s', [MimeType, EncodeBase64(FSource)]);
 end;
 
 end.

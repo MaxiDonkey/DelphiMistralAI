@@ -3,9 +3,8 @@ unit MistralAI.API.Params;
 interface
 
 uses
-  System.Classes, System.JSON, System.SysUtils, System.Types,
-  System.RTTI, REST.JsonReflect, REST.Json.Interceptors,
-  System.Generics.Collections;
+  System.Classes, System.JSON, System.SysUtils, System.Types, System.RTTI,
+  REST.JsonReflect, REST.Json.Interceptors, System.Generics.Collections;
 
 type
   TJSONInterceptorStringToString = class(TJSONInterceptor)

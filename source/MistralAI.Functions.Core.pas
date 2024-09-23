@@ -6,89 +6,119 @@ uses
   System.SysUtils, System.Classes, System.JSON;
 
 type
+  /// <summary>
+  /// Interface defining the core structure and functionality of a function in the system.
+  /// </summary>
+  /// <remarks>
+  /// This interface outlines the basic properties and methods that any function implementation must include.
+  /// </remarks>
   IFunctionCore = interface
     ['{2D8EA8C5-1E60-481D-B95F-2EFFE2CF6A7D}']
-    function GetDescription: string;
-    function GetName: string;
-    function GetParameters: string;
-    function GetType: string;
-    function Execute(const Arguments: string): string;
     /// <summary>
-    /// This method converts the TFunctionCore instance to a JSON object containing the type and
-    /// representation of the function, and handles exceptions by deleting the JSON object and
-    /// propagating the exception if an error occurs
+    /// Retrieves the description of the function.
     /// </summary>
+    function GetDescription: string;
+    /// <summary>
+    /// Retrieves the name of the function.
+    /// </summary>
+    function GetName: string;
+    /// <summary>
+    /// Retrieves the parameters required by the function, represented as a JSON schema.
+    /// </summary>
+    function GetParameters: string;
+    /// <summary>
+    /// Retrieves the type of the function, typically "function".
+    /// </summary>
+    function GetType: string;
+    /// <summary>
+    /// Executes the function with the provided arguments and returns the result as a string.
+    /// </summary>
+    /// <param name="Arguments">The arguments passed to the function in JSON format.</param>
+    /// <returns>The result of the function execution as a string.</returns>
+    function Execute(const Arguments: string): string;
+     /// <summary>
+    /// Converts the TFunctionCore instance to a JSON object that contains its type and representation.
+    /// </summary>
+    /// <returns>A JSON object representing the function instance.</returns>
     function ToJson: TJSONObject;
     /// <summary>
-    /// This method composes a string representation of the TFunctionCore instance, including
-    /// its description, name and parameters, formatted in JSON style
+    /// Creates a string representation of the TFunctionCore instance in JSON format, including its description, name, and parameters.
     /// </summary>
+    /// <returns>A string representation of the function in JSON format.</returns>
     function ToString: string;
     /// <summary>
-    /// A summary of the function's purpose, utilized by the model to determine the timing and method
-    /// for invoking the function.
+    /// A brief description of the function's purpose, used by the model to determine when and how to call the function.
     /// </summary>
     property Description: string read GetDescription;
     /// <summary>
-    /// The identifier for the function that will be invoked. It should only include characters from
-    /// a-z, A-Z, 0-9, underscores, or dashes, and must not exceed 64 characters in length.
+    /// The unique identifier of the function that will be called. It must only contain characters from a-z, A-Z, 0-9, underscores, or dashes, and should not exceed 64 characters in length.
     /// </summary>
     property Name: string read GetName;
-    /// <summary>
-    /// The arguments that the function requires, defined using a JSON Schema object. Refer to the guide
-    /// for sample implementations and consult the JSON Schema documentation for details on formatting.
-    /// For a function that does not accept any parameters, use the specification
-    /// {"type": "object", "properties": {}}
+    //// <summary>
+    /// The parameters required by the function, specified as a JSON schema. If no parameters are required, use the schema: {"type": "object", "properties": {}}.
     /// </summary>
     property Parameters: string read GetParameters;
     /// <summary>
-    /// The type of the tool. Currently, only "function" is supported
+    /// The type of the tool. Currently, only "function" is supported.
     /// </summary>
     property &Type: string read GetType;
   end;
 
+  /// <summary>
+  /// Abstract base class for implementing core function behavior.
+  /// </summary>
+  /// <remarks>
+  /// This class provides basic implementations for some methods and defines the structure that derived classes must follow.
+  /// </remarks>
   TFunctionCore = class abstract(TinterfacedObject, IFunctionCore)
-  private
-    FDescription: string;
-    FName: string;
-    FParameters: string;
   protected
+    /// <summary>
+    /// Retrieves the description of the function. Derived classes must implement this method.
+    /// </summary>
     function GetDescription: string; virtual; abstract;
+     /// <summary>
+    /// Retrieves the name of the function. Derived classes must implement this method.
+    /// </summary>
     function GetName: string; virtual; abstract;
+    /// <summary>
+    /// Retrieves the parameters required by the function, represented as a JSON schema. Derived classes must implement this method.
+    /// </summary>
     function GetParameters: string; virtual; abstract;
+    /// <summary>
+    /// Retrieves the type of the function, which is "function" by default.
+    /// </summary>
     function GetType: string; virtual;
   public
+    /// <summary>
+    /// Executes the function with the provided arguments and returns the result as a string. Derived classes must implement this method.
+    /// </summary>
+    /// <param name="Arguments">The arguments passed to the function in JSON format.</param>
+    /// <returns>The result of the function execution as a string.</returns>
     function Execute(const Arguments: string): string; virtual; abstract;
     /// <summary>
-    /// This method converts the TFunctionCore instance to a JSON object containing the type and
-    /// representation of the function, and handles exceptions by deleting the JSON object and
-    /// propagating the exception if an error occurs
+    /// Converts the TFunctionCore instance to a JSON object that contains its type and representation.
     /// </summary>
+    /// <returns>A JSON object representing the function instance.</returns>
     function ToJson: TJSONObject;
     /// <summary>
-    /// This method composes a string representation of the TFunctionCore instance, including
-    /// its description, name and parameters, formatted in JSON style
+    /// Creates a string representation of the TFunctionCore instance in JSON format, including its description, name, and parameters.
     /// </summary>
+    /// <returns>A string representation of the function in JSON format.</returns>
     function ToString: string; override;
     /// <summary>
-    /// A summary of the function's purpose, utilized by the model to determine the timing and method
-    /// for invoking the function.
+    /// A brief description of the function's purpose, used by the model to determine when and how to call the function.
     /// </summary>
     property Description: string read GetDescription;
     /// <summary>
-    /// The identifier for the function that will be invoked. It should only include characters from
-    /// a-z, A-Z, 0-9, underscores, or dashes, and must not exceed 64 characters in length.
+    /// The unique identifier of the function that will be called. It must only contain characters from a-z, A-Z, 0-9, underscores, or dashes, and should not exceed 64 characters in length.
     /// </summary>
     property Name: string read GetName;
     /// <summary>
-    /// The arguments that the function requires, defined using a JSON Schema object. Refer to the guide
-    /// for sample implementations and consult the JSON Schema documentation for details on formatting.
-    /// For a function that does not accept any parameters, use the specification
-    /// {"type": "object", "properties": {}}
+    /// The parameters required by the function, specified as a JSON schema. If no parameters are required, use the schema: {"type": "object", "properties": {}}.
     /// </summary>
     property Parameters: string read GetParameters;
     /// <summary>
-    /// The type of the tool. Currently, only "function" is supported
+    /// The type of the tool. Currently, only "function" is supported.
     /// </summary>
     property &Type: string read GetType;
   end;
