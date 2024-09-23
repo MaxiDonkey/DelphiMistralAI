@@ -548,12 +548,12 @@ var CodingModel: IMistralAI := TMistralAI.Create(API_TOKEN, [CodestralSpec]);
 ```
 
 You can also go through the factory:
-
-```Pascal
-uses MistralAI;
-
-var CodingModel := TMistralAIFactory.CreateInstance(API_TOKEN, [CodestralSpec]);
-```
+> [!NOTE]
+> ```Pascal
+> uses MistralAI;
+>
+> var CodingModel := TMistralAIFactory.CreateInstance(API_TOKEN, [CodestralSpec]);
+> ```
 
 #### Code completion
 
