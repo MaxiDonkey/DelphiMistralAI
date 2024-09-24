@@ -3,8 +3,9 @@
 ___
 ![GitHub](https://img.shields.io/badge/IDE%20Version-Delphi%2010.3/11/12-yellow)
 ![GitHub](https://img.shields.io/badge/platform-all%20platforms-green)
+![GitHub](https://img.shields.io/badge/Update%-09/23/2024-blue)
 
-Updated the : 09/23/2024
+
 
 - [Introduction](#Introduction)
 - [Remarks](#remarks)
@@ -35,13 +36,19 @@ Updated the : 09/23/2024
     - [Agents](#Agents)
 - [Contributing](#contributing)
 - [License](#license)
-
+<br/>
+<br/>
+<br/>
+<br/>
 ## Introduction
 
 Welcome to the unofficial Delphi **MistralAI** API library. This project aims to provide a `Delphi` interface for interacting with the **MistralAI** public API, making it easier to integrate advanced natural language processing features into your `Delphi` applications. Whether you want to generate text, create embeddings, use chat models, or generate code, this library offers a simple and effective solution.
 
 **MistralAI** is a powerful natural language processing API that enables developers to incorporate advanced AI functionalities into their applications. For more details, visit the [official MistralAI documentation](https://docs.mistral.ai/api/).
-
+<br/>
+<br/>
+<br/>
+<br/>
 ## Remarks 
 
 > [!IMPORTANT]
@@ -269,102 +276,106 @@ as follows :
 
  1 . Asynchronous mode : See `TAsynChatParams = record`
 
-```Pascal
-//uses MistralAI, MistralAI.Functions.Tools, MistralAI.Chat;
-
-  MistralAI.Chat.AsyncCreate(
-      procedure (Params: TChatParams)
-      begin
-        Params.Model('my_model');
-        Params.Messages([TChatMessagePayload.User('Hello')]);
-        Params.MaxTokens(1024);
-      end,
-
-      function : TAsynChatParams
-      begin
-        Result.Sender := Memo1; //Uses TMemo for displaying 
-
-        Result.OnStart := nil;
-
-        Result.OnSuccess :=
-          procedure (Sender: TObject; Chat: TChat)
-          begin
-            var M := Sender as TMemo;
-            for var Choice in Chat.Choices do
-              M.Lines.Add(Choice.Message.Content + sLineBreak);
-          end;
-
-        Result.OnError :=
-          procedure (Sender: TObject; value: string)
-          begin
-            ShowMessage(Value);
-          end;
-      end);
-```
+> [!TIP]
+>```Pascal
+>//uses MistralAI, MistralAI.Functions.Tools, MistralAI.Chat;
+>
+>  MistralAI.Chat.AsyncCreate(
+>      procedure (Params: TChatParams)
+>      begin
+>        Params.Model('my_model');
+>        Params.Messages([TChatMessagePayload.User('Hello')]);
+>        Params.MaxTokens(1024);
+>      end,
+>
+>      function : TAsynChatParams
+>      begin
+>        Result.Sender := Memo1; //Uses TMemo for displaying 
+>
+>        Result.OnStart := nil;
+>
+>        Result.OnSuccess :=
+>          procedure (Sender: TObject; Chat: TChat)
+>          begin
+>            var M := Sender as TMemo;
+>            for var Choice in Chat.Choices do
+>              M.Lines.Add(Choice.Message.Content + sLineBreak);
+>          end;
+>
+>        Result.OnError :=
+>          procedure (Sender: TObject; value: string)
+>          begin
+>            ShowMessage(Value);
+>          end;
+>      end);
+>```
+>
 
  2. Asynchronous stream mode : See `TAsynChatStreamParams = record`
 
-```Pascal
-//uses MistralAI, MistralAI.Functions.Tools, MistralAI.Chat;
-
-  MistralAI.Chat.AsyncCreateStream(
-       procedure(Params: TChatParams)
-       begin
-         Params.Model('my_model');
-         Params.Messages([TChatMessagePayload.User('request')]);
-         Params.MaxTokens(1024);
-         Params.Stream;
-       end,
-    
-       function: TAsynChatStreamParams
-       begin
-         Result.Sender := Memo1;  //Events will return this instance
-    
-         Result.OnStart := nil;   // if nil then; Can be omitted
-
-         Result.OnProgress :=
-           procedure (Sender: TObject; Chat: TChat)
-           begin
-             // Handle progressive updates to the chat response
-             var S := Chat.Choices[0].Delta.Content;
-             var M := Sender as TMemo;
-             M.Lines.BeginUpdate;
-             try
-               for var i := 1 to S.Length do
-                 if (S[i] <> #10) and (S[i] <> #13) then
-                   M.Text := M.Text + S[i] else
-                   M.Text := M.Text + sLineBreak;
-               M.Perform(WM_VSCROLL, SB_BOTTOM, 0);
-             finally
-               M.Lines.EndUpdate;
-             end;		
-           end;
-    
-         Result.OnSuccess :=
-           procedure (Sender: TObject)
-           begin
-             // Handle success when the operation completes
-           end;
-    
-         Result.OnError :=
-           procedure (Sender: TObject; Value: string)
-           begin
-             ShowMessage(Value); // Display error message
-           end;
-    
-         Result.OnDoCancel :=
-           function: Boolean
-           begin
-             Result := CheckBox1.Checked; // Click on checkbox to cancel
-           end;
-
-         Result.OnCancellation :=
-           procedure (Sender: TObject)
-           begin
-             // Processing when process has been canceled
-           end;
-       end);
-```
+> [!TIP]
+>```Pascal
+>//uses MistralAI, MistralAI.Functions.Tools, MistralAI.Chat;
+>
+>  MistralAI.Chat.AsyncCreateStream(
+>       procedure(Params: TChatParams)
+>       begin
+>         Params.Model('my_model');
+>         Params.Messages([TChatMessagePayload.User('request')]);
+>         Params.MaxTokens(1024);
+>         Params.Stream;
+>       end,
+>    
+>       function: TAsynChatStreamParams
+>       begin
+>         Result.Sender := Memo1;  //Events will return this instance
+>    
+>         Result.OnStart := nil;   // if nil then; Can be omitted
+>
+>         Result.OnProgress :=
+>           procedure (Sender: TObject; Chat: TChat)
+>           begin
+>             // Handle progressive updates to the chat response
+>             var S := Chat.Choices[0].Delta.Content;
+>             var M := Sender as TMemo;
+>             M.Lines.BeginUpdate;
+>             try
+>               for var i := 1 to S.Length do
+>                 if (S[i] <> #10) and (S[i] <> #13) then
+>                   M.Text := M.Text + S[i] else
+>                   M.Text := M.Text + sLineBreak;
+>               M.Perform(WM_VSCROLL, SB_BOTTOM, 0);
+>             finally
+>               M.Lines.EndUpdate;
+>             end;		
+>           end;
+>    
+>         Result.OnSuccess :=
+>           procedure (Sender: TObject)
+>           begin
+>             // Handle success when the operation completes
+>           end;
+>    
+>         Result.OnError :=
+>           procedure (Sender: TObject; Value: string)
+>           begin
+>             ShowMessage(Value); // Display error message
+>           end;
+>    
+>         Result.OnDoCancel :=
+>           function: Boolean
+>           begin
+>             Result := CheckBox1.Checked; // Click on checkbox to cancel
+>           end;
+>
+>         Result.OnCancellation :=
+>           procedure (Sender: TObject)
+>           begin
+>             // Processing when process has been canceled
+>           end;
+>       end);
+>```
+>
 
 ### Vision
 
@@ -527,12 +538,6 @@ See also [Code generation](https://docs.mistral.ai/capabilities/code_generation/
 To utilize the Delphi classes managing the **Codestral** function, you are required to create a new KEY on the ***Mistral.ai website***. Please note that obtaining this key necessitates providing a valid phone number. 
 Go to this address to create a key for using **Codestral** [Key creation](https://console.mistral.ai/codestral)
 
-#### Codestral initialization
-
-When instantiating the interface managing the ***TMistralAI*** type class, the `CodestralSpec` specification must be specified in the `create` constructor.
-
-The resulting interface will handle both **CodeStral** functionality as well as chat-type interactions.
-
 > [!TIP]
 > In the above examples we use synchronous methods. Here is the asynchronous equivalent :
 >
@@ -540,6 +545,12 @@ The resulting interface will handle both **CodeStral** functionality as well as 
 >
 >  - `procedure AsyncCreateStream(ParamProc: TProc<TCodestralParams>; CallBacks: TFunc<TAsynCodeStreamParams>);`
 >
+
+#### Codestral initialization
+
+When instantiating the interface managing the ***TMistralAI*** type class, the `CodestralSpec` specification must be specified in the `create` constructor.
+
+The resulting interface will handle both **CodeStral** functionality as well as chat-type interactions.
 
 ```Pascal
 uses MistralAI;
