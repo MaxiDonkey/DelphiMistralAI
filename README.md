@@ -63,8 +63,6 @@ Welcome to the unofficial Delphi **MistralAI** API library. This project aims to
 ## Usage
 
 <br/>
-<br/>
-
 
 ### Initialization
 
