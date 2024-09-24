@@ -12,6 +12,7 @@ ___
 - [Remarks](#remarks)
 - [Usage](#usage)
     - [Initialization](#initialization)
+    - [Callbacks : asynchronous mode](#Callbacks-:- asynchronous-mode)
     - [Models](#models)
     - [Embeddings](#embeddings)
     - [Chats](#chats)
@@ -83,6 +84,10 @@ You can also go through the factory:
 >
 >var MistralAI := TMistralAIFactory.CreateInstance(API_TOKEN);
 >```
+
+<br/>
+
+### Callbacks : asynchronous mode
 
 <br/>
 
