@@ -576,7 +576,6 @@ See also [documentation](https://docs.mistral.ai/capabilities/json_mode/) at the
 See also [Code generation](https://docs.mistral.ai/capabilities/code_generation/) at the MistralAI web site.
 
 <br/>
-<br/>
 
 #### Before using
 
