@@ -89,7 +89,35 @@ You can also go through the factory:
 
 ### Callbacks (asynchronous mode)
 
+In the context of asynchronous methods, for a method that does not involve streaming, callbacks use the following generic record: `TAsyncCallBack<T> = record` defined in the `MistralAI.Async.Support.pas` unit. This record exposes the following properties:
+
+```Pascal
+   TAsyncCallBack<T> = record
+   ... 
+       Sender: TObject;
+       OnStart: TProc<TObject>;
+       OnSuccess: TProc<TObject, T>;
+       OnError: TProc<TObject, string>; 
+```
 <br/>
+
+For methods requiring streaming, callbacks use the generic record `TAsyncStreamCallBack<T> = record`, also defined in the `MistralAI.Async.Support.pas` unit. This record exposes the following properties:
+
+```Pascal
+   TAsyncCallBack<T> = record
+   ... 
+       Sender: TObject;
+       OnStart: TProc<TObject>;
+       OnSuccess: TProc<TObject>;
+       OnProgress: TProc<TObject, T>;
+       OnError: TProc<TObject, string>;
+       OnCancellation: TProc<TObject>;
+       OnDoCancel: TFunc<Boolean>;
+```
+
+The name of each property is self-explanatory; if needed, refer to the internal documentation for more details.
+
+<br>
 
 ### Models
 
