@@ -49,7 +49,6 @@ Welcome to the unofficial Delphi **MistralAI** API library. This project aims to
 **MistralAI** is a powerful natural language processing API that enables developers to incorporate advanced AI functionalities into their applications. For more details, visit the [official MistralAI documentation](https://docs.mistral.ai/api/).
 
 <br/>
-<br/>
 
 ## Remarks 
 
@@ -58,7 +57,6 @@ Welcome to the unofficial Delphi **MistralAI** API library. This project aims to
 > This is an unofficial library. **MistralAI** does not provide any official library for `Delphi`.
 > This repository contains `Delphi` implementation over [MistralAI](https://docs.mistral.ai/api/) public API.
 
-<br/>
 <br/>
 
 ## Usage
@@ -86,7 +84,6 @@ You can also go through the factory:
 >var MistralAI := TMistralAIFactory.CreateInstance(API_TOKEN);
 >```
 
-<br/>
 <br/>
 
 ### Models
@@ -158,7 +155,6 @@ The `TModelRoute` class exposes the following methods:
 >  - `procedure AsyncUnarchive(const ModelId: string; const CallBacks: TFunc<TAsynArchivingModelParams>)`
 
 <br/>
-<br/>
 
 ### Embeddings
 
@@ -188,7 +184,6 @@ See also [tokenization](https://docs.mistral.ai/guides/tokenization/) at the Mis
   end;
 ```
 
-<br/>
 <br/>
 
 Asynchronously, we proceed as follows:
@@ -228,7 +223,6 @@ Asynchronously, we proceed as follows:
 >```
 
 <br/>
-<br/>
 
 ### Chats
 
@@ -259,7 +253,6 @@ See also [Prompting Capabilities](https://docs.mistral.ai/guides/prompting_capab
 ```
 
 <br/>
-<br/>
 
 ### Stream mode
 
@@ -287,7 +280,6 @@ See also [Prompting Capabilities](https://docs.mistral.ai/guides/prompting_capab
     end);
 ```
 
-<br/>
 <br/>
 
 #### Asynchronous
@@ -337,7 +329,6 @@ as follows :
 >```
 >
 
-<br/>
 <br/>
 
  2. Asynchronous stream mode : See `TAsynChatStreamParams = record`
@@ -407,7 +398,6 @@ as follows :
 >
 
 <br/>
-<br/>
 
 ### Vision
 
@@ -446,7 +436,6 @@ To support both synchronous and asynchronous completion methods, we focused on g
 ```
 
 <br/>
-<br/>
 
 #### Passing a Base64 Encoded Image
 
@@ -474,7 +463,6 @@ To support both synchronous and asynchronous completion methods, we focused on g
   
 ```
 
-<br/>
 <br/>
 
 ### Function calling
@@ -541,7 +529,6 @@ end;
 ```
 
 <br/>
-<br/>
 
 ### JSON mode
 
@@ -568,7 +555,6 @@ See also [documentation](https://docs.mistral.ai/capabilities/json_mode/) at the
   end;
 ```
 
-<br/>
 <br/>
 
 ### Code generation
@@ -636,7 +622,6 @@ You can also go through the factory:
 ```
 
 <br/>
-<br/>
 
 #### Streamed Code completion
 
@@ -663,7 +648,6 @@ You can also go through the factory:
     end);
 ```
 
-<br/>
 <br/>
 
 #### Fill in the middle
@@ -750,7 +734,6 @@ However, it is crucial to understand that chat usage requires using only the **"
   end;
 ```
 
-<br/>
 <br/>
 
 ### Fine-tuning
