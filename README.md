@@ -76,7 +76,7 @@ uses MistralAI;
 var MistralAI: IMistralAI := TMistralAI.Create(API_TOKEN);
 ```
 
-You can also go through the factory:
+You can also use the factory:
 
 > [!NOTE]
 >```Pascal
@@ -624,7 +624,7 @@ uses MistralAI;
 var CodingModel: IMistralAI := TMistralAI.Create(API_TOKEN, [CodestralSpec]);
 ```
 
-You can also go through the factory:
+You can also use the factory:
 > [!NOTE]
 > ```Pascal
 > uses MistralAI;
