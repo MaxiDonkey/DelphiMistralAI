@@ -62,8 +62,6 @@ Welcome to the unofficial Delphi **MistralAI** API library. This project aims to
 
 ## Usage
 
-<br/>
-
 ### Initialization
 
 To initialize the API instance, you need to [obtain an API token from MistralAI](https://console.mistral.ai/api-keys/).
