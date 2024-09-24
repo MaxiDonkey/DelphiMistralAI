@@ -236,7 +236,6 @@ Using the API to create and maintain conversations. You have the option to eithe
 See also [Prompting Capabilities](https://docs.mistral.ai/guides/prompting_capabilities/) at the MistralAI web site.
 
 <br/>
-<br/>
 
 #### Synchronous
 
