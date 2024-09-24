@@ -698,7 +698,6 @@ This feature allows users to set the beginning of their code with a `prompt` and
 The model will create the intermediate code completing the codes provided to the `prompt` and `suffix` parameters.
 
 <br/>
-<br/>
 
 #### Stop tokens
 
@@ -724,7 +723,6 @@ It is advisable to include stop tokens when integrating with IDE autocomplete to
   end;
 ```
 
-<br/>
 <br/>
 
 #### End points
@@ -763,7 +761,6 @@ See also [Fine-tuning description](https://docs.mistral.ai/capabilities/finetuni
 > [!TIP]
 > Synchronous and asynchronous methods also exist for fine-tuning as well as file handling. See the TFilesRoute class in the MistralAI.Files unit and the TFineTuningRoute class in the MistralAI.FineTunings unit
 
-<br/>
 <br/>
 
 #### Files
@@ -841,7 +838,6 @@ Returns 404 error if the Id does not exists.
 Refer to the `TFile` class in the MistralAI.Files.pas unit to understand the information returned by the "Retrieve" method.
 
 <br/>
-<br/>
 
 #### Create a fine-tuning job
 
@@ -887,7 +883,6 @@ As of July 2024, the only fine-tunable models at Mistral are
 ```
 
 <br/>
-<br/>
 
 #### Delete a fine-tuned model
 
@@ -905,7 +900,6 @@ As of July 2024, the only fine-tunable models at Mistral are
 ```
 
 <br/>
-<br/>
 
 ### Agents
 
@@ -922,13 +916,11 @@ The official documentation provided by Mistral regarding agents is available [he
 > The execution of an agent can be done both synchronously and asynchronously. See the class `TAgentRoute` in the **MistralAI.Agents** unit.
 
 <br/>
-<br/>
 
 ## Contributing
 
 Pull requests are welcome. If you're planning to make a major change, please open an issue first to discuss your proposed changes.
 
-<br/>
 <br/>
 
 ## License
