@@ -87,7 +87,7 @@ You can also go through the factory:
 
 <br/>
 
-### Callbacks : asynchronous mode
+### Callbacks (asynchronous mode)
 
 <br/>
 
