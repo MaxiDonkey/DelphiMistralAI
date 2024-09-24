@@ -464,7 +464,7 @@ type
   /// MistralAI environment. It enables the handling of the response containing a collection
   /// of models through a callback mechanism, facilitating non-blocking data retrieval.
   /// </remarks>
-  TAsyncModelsParams = TAsyncCallBack<TModels>;
+  TAsynModels = TAsyncCallBack<TModels>;
 
   /// <summary>
   /// Represents an asynchronous callback parameter for model deletion operations.
@@ -475,7 +475,7 @@ type
   /// This type is essential for managing deletion results in a non-blocking manner, enabling
   /// efficient UI updates or further processing based on the deletion status.
   /// </remarks>
-  TAsyncModelDeletion = TAsyncCallBack<TModelDeletion>;
+  TAsynModelDeletion = TAsyncCallBack<TModelDeletion>;
 
   /// <summary>
   /// Represents an asynchronous callback parameter for retrieving details of a specific model.
@@ -486,7 +486,7 @@ type
   /// and capabilities in a non-blocking fashion. This is particularly useful for updating UI elements
   /// or triggering additional actions based on the model's properties.
   /// </remarks>
-  TAsyncModelParams = TAsyncCallBack<TModel>;
+  TAsynModel = TAsyncCallBack<TModel>;
 
   /// <summary>
   /// Represents an asynchronous callback parameter for updating a fine-tuned model.
@@ -497,7 +497,7 @@ type
   /// This is useful for reflecting changes in the user interface or performing further processing
   /// based on the updated model information.
   /// </remarks>
-  TAsyncFineTuneModelParams = TAsyncCallBack<TFineTunedModel>;
+  TAsynFineTuneModel = TAsyncCallBack<TFineTunedModel>;
 
   /// <summary>
   /// Represents an asynchronous callback parameter for archiving or unarchiving a model.
@@ -507,7 +507,7 @@ type
   /// It allows handling the response, which indicates the status of the operation, in a non-blocking manner.
   /// This type is essential for updating the state of the model in the application without blocking the main thread.
   /// </remarks>
-  TAsynArchivingModelParams = TAsyncCallBack<TArchivingModel>;
+  TAsynArchivingModel = TAsyncCallBack<TArchivingModel>;
 
   /// <summary>
   /// The TModelsRoute class provides various methods for managing Large Language Models (LLMs)
@@ -528,8 +528,20 @@ type
     /// <remarks>
     /// Use this method to get a list of all models available in the MistralAI environment.
     /// This is useful for obtaining an overview of the models you have access to.
+    ///
+    /// <code>
+    ///  MistralAI.Models.AsyncList(
+    ///     function : TAsynModels
+    ///     begin
+    ///       Result.OnSuccess :=
+    ///         procedure (Sender: TObject; List: TModels)
+    ///         begin
+    ///           // Handle List
+    ///         end
+    ///     end);
+    /// </code>
     /// </remarks>
-    procedure AsyncList(const CallBacks: TFunc<TAsyncModelsParams>);
+    procedure AsyncList(const CallBacks: TFunc<TAsynModels>);
     /// <summary>
     /// Asynchronously deletes a fine-tuned model.
     /// </summary>
@@ -538,8 +550,20 @@ type
     /// <remarks>
     /// Deleting a model is a permanent action. Use this method with caution, as it will remove
     /// the model and its metadata from the MistralAI environment.
+    ///
+    /// <code>
+    ///  MistralAI.Models.AsyncDelete( ModelId,
+    ///     function : TAsynModelDeletion
+    ///     begin
+    ///       Result.OnSuccess :=
+    ///         procedure (Sender: TObject; Model: TModels)
+    ///         begin
+    ///           //Handle success
+    ///         end
+    ///     end);
+    /// </code>
     /// </remarks>
-    procedure AsyncDelete(const ModelId: string; const CallBacks: TFunc<TAsyncModelDeletion>);
+    procedure AsyncDelete(const ModelId: string; const CallBacks: TFunc<TAsynModelDeletion>);
     /// <summary>
     /// Asynchronously retrieves the details of a model.
     /// </summary>
@@ -548,8 +572,20 @@ type
     /// <remarks>
     /// This method is useful for fetching detailed information about a specific model,
     /// including its metadata, capabilities, and current status.
+    ///
+    /// <code>
+    ///  MistralAI.Models.AsyncRetrieve( ModelId,
+    ///     function : TAsynModel
+    ///     begin
+    ///       Result.OnSuccess :=
+    ///         procedure (Sender: TObject; Model: TModel)
+    ///         begin
+    ///           //Handle success
+    ///         end
+    ///     end);
+    /// </code>
     /// </remarks>
-    procedure AsyncRetrieve(const ModelId: string; const CallBacks: TFunc<TAsyncModelParams>);
+    procedure AsyncRetrieve(const ModelId: string; const CallBacks: TFunc<TAsynModel>);
     /// <summary>
     /// Asynchronously updates the details of a fine-tuned model.
     /// </summary>
@@ -559,9 +595,25 @@ type
     /// <remarks>
     /// Use this method to change the name or description of a fine-tuned model. Ensure that the
     /// provided parameters are valid, as incorrect data might result in unexpected behavior.
+    ///
+    /// <code>
+    ///  MistralAI.Models.AsyncUpdate( ModelId,
+    ///     procedure (Params: TModelParams)
+    ///     begin
+    ///       // Define updating params
+    ///     end,
+    ///     function : TAsynFineTuneModel
+    ///     begin
+    ///       Result.OnSuccess :=
+    ///         procedure (Sender: TObject; Model: TFineTunedModel)
+    ///         begin
+    ///           //Handle success
+    ///         end
+    ///     end);
+    /// </code>
     /// </remarks>
     procedure AsyncUpdate(const ModelId: string; ParamProc: TProc<TModelParams>;
-      const CallBacks: TFunc<TAsyncFineTuneModelParams>);
+      const CallBacks: TFunc<TAsynFineTuneModel>);
     /// <summary>
     /// Asynchronously archives a fine-tuned model.
     /// </summary>
@@ -570,8 +622,20 @@ type
     /// <remarks>
     /// Archiving a model will make it unavailable for use. This is typically used to manage
     /// storage or to keep the model's state intact while it is not actively in use.
+    ///
+    /// <code>
+    ///  MistralAI.Models.AsyncArchive( ModelId,
+    ///     function : TAsynArchivingModel
+    ///     begin
+    ///       Result.OnSuccess :=
+    ///         procedure (Sender: TObject; Model: TArchivingModel)
+    ///         begin
+    ///           //Handle success
+    ///         end
+    ///     end);
+    /// </code>
     /// </remarks>
-    procedure AsyncArchive(const ModelId: string; const CallBacks: TFunc<TAsynArchivingModelParams>);
+    procedure AsyncArchive(const ModelId: string; const CallBacks: TFunc<TAsynArchivingModel>);
     /// <summary>
     /// Asynchronously un-archives a fine-tuned model.
     /// </summary>
@@ -580,8 +644,20 @@ type
     /// <remarks>
     /// Un-archiving a model will restore it to an active state, making it available for use again.
     /// This is typically used for bringing back models that were previously archived.
+    ///
+    ///  <code>
+    ///  MistralAI.Models.AsyncUnarchive( ModelId,
+    ///     function : TAsynArchivingModel
+    ///     begin
+    ///       Result.OnSuccess :=
+    ///         procedure (Sender: TObject; Model: TArchivingModel)
+    ///         begin
+    ///           //Handle success
+    ///         end
+    ///     end);
+    /// </code>
     /// </remarks>
-    procedure AsyncUnarchive(const ModelId: string; const CallBacks: TFunc<TAsynArchivingModelParams>);
+    procedure AsyncUnarchive(const ModelId: string; const CallBacks: TFunc<TAsynArchivingModel>);
     /// <summary>
     /// Lists the currently available models.
     /// </summary>
@@ -589,6 +665,14 @@ type
     /// <remarks>
     /// This method provides a synchronous way to fetch all models in the MistralAI environment.
     /// It is useful for applications where synchronous data access is required.
+    /// <code>
+    ///   var Models := MistralAI.Models.List;
+    ///   try
+    ///     // List processing
+    ///   finally
+    ///     Models.Free;
+    ///   end;
+    /// </code>
     /// </remarks>
     function List: TModels;
     /// <summary>
@@ -599,6 +683,15 @@ type
     /// <remarks>
     /// Deleting a fine-tuned model removes it permanently from the MistralAI environment.
     /// This action cannot be undone, so use it with caution.
+    /// <code>
+    ///   with MistralAI.Models.Delete('ModelId');
+    ///   try
+    ///     if Deleted then
+    ///       WriteLn('Modèle deleted');
+    ///   finally
+    ///     Free;
+    ///   end;
+    /// </code>
     /// </remarks>
     function Delete(const ModelId: string): TModelDeletion;
     /// <summary>
@@ -610,6 +703,14 @@ type
     /// This method is used to access detailed information about a specific model, including its
     /// creation date, owner, and capabilities. This is useful for managing and reviewing model
     /// details.
+    /// <code>
+    ///   with MistralAI.Models.Retrieve('ModelId');
+    ///   try
+    ///     // Model found processing
+    ///   finally
+    ///     Free;
+    ///   end;
+    /// </code>
     /// </remarks>
     function Retrieve(const ModelId: string): TModel;
     /// <summary>
@@ -621,6 +722,20 @@ type
     /// <remarks>
     /// Use this method to change specific details of a fine-tuned model, such as its name or
     /// description. This is useful for managing model metadata.
+    /// <code>
+    ///   var FineTuned := MistralAI.Models.Retrieve(
+    ///          'ModelId',
+    ///          procedure (Params: TModelParams)
+    ///          begin
+    ///            // Define params to retrieve the model
+    ///          end);
+    ///   if Assigned(FineTuned) then
+    ///     try
+    ///       // Handle FineTuned.job
+    ///     finally
+    ///       FineTuned.Free;
+    ///     end;
+    /// </code>
     /// </remarks>
     function Update(const ModelId: string; ParamProc: TProc<TModelParams>): TFineTunedModel;
     /// <summary>
@@ -632,6 +747,14 @@ type
     /// Archiving a model makes it unavailable for use but preserves its state and metadata.
     /// This is useful for managing storage and ensuring that models are not used when they are
     /// not needed.
+    /// <code>
+    ///   with MistralAI.Models.Archive('ModelId');
+    ///   try
+    ///     // Model is archived
+    ///   finally
+    ///     Free;
+    ///   end;
+    /// </code>
     /// </remarks>
     function Archive(const ModelId: string): TArchivingModel;
     /// <summary>
@@ -642,6 +765,13 @@ type
     /// <remarks>
     /// Un-archiving a model restores it to an active state, making it available for use again.
     /// This is useful for reactivating models that were previously archived.
+    /// <code>
+    ///   with MistralAI.Models.Unarchive('ModelId');
+    ///   try
+    ///     // Model is unarchived
+    ///   finally
+    ///     Free;
+    ///   end;
     /// </remarks>
     function Unarchive(const ModelId: string): TArchivingModel;
   end;
@@ -665,9 +795,9 @@ begin
 end;
 
 procedure TModelsRoute.AsyncArchive(const ModelId: string;
-  const CallBacks: TFunc<TAsynArchivingModelParams>);
+  const CallBacks: TFunc<TAsynArchivingModel>);
 begin
-  with TAsyncCallBackExec<TAsynArchivingModelParams, TArchivingModel>.Create(CallBacks) do
+  with TAsyncCallBackExec<TAsynArchivingModel, TArchivingModel>.Create(CallBacks) do
   try
     Sender := Use.Param.Sender;
     OnStart := Use.Param.OnStart;
@@ -684,9 +814,9 @@ begin
 end;
 
 procedure TModelsRoute.AsyncDelete(const ModelId: string;
-  const CallBacks: TFunc<TAsyncModelDeletion>);
+  const CallBacks: TFunc<TAsynModelDeletion>);
 begin
-  with TAsyncCallBackExec<TAsyncModelDeletion, TModelDeletion>.Create(CallBacks) do
+  with TAsyncCallBackExec<TAsynModelDeletion, TModelDeletion>.Create(CallBacks) do
   try
     Sender := Use.Param.Sender;
     OnStart := Use.Param.OnStart;
@@ -702,9 +832,9 @@ begin
   end;
 end;
 
-procedure TModelsRoute.AsyncList(const CallBacks: TFunc<TAsyncModelsParams>);
+procedure TModelsRoute.AsyncList(const CallBacks: TFunc<TAsynModels>);
 begin
-  with TAsyncCallBackExec<TAsyncModelsParams, TModels>.Create(CallBacks) do
+  with TAsyncCallBackExec<TAsynModels, TModels>.Create(CallBacks) do
   try
     Sender := Use.Param.Sender;
     OnStart := Use.Param.OnStart;
@@ -721,9 +851,9 @@ begin
 end;
 
 procedure TModelsRoute.AsyncRetrieve(const ModelId: string;
-  const CallBacks: TFunc<TAsyncModelParams>);
+  const CallBacks: TFunc<TAsynModel>);
 begin
-  with TAsyncCallBackExec<TAsyncModelParams, TModel>.Create(CallBacks) do
+  with TAsyncCallBackExec<TAsynModel, TModel>.Create(CallBacks) do
   try
     Sender := Use.Param.Sender;
     OnStart := Use.Param.OnStart;
@@ -740,9 +870,9 @@ begin
 end;
 
 procedure TModelsRoute.AsyncUnarchive(const ModelId: string;
-  const CallBacks: TFunc<TAsynArchivingModelParams>);
+  const CallBacks: TFunc<TAsynArchivingModel>);
 begin
-  with TAsyncCallBackExec<TAsynArchivingModelParams, TArchivingModel>.Create(CallBacks) do
+  with TAsyncCallBackExec<TAsynArchivingModel, TArchivingModel>.Create(CallBacks) do
   try
     Sender := Use.Param.Sender;
     OnStart := Use.Param.OnStart;
@@ -760,9 +890,9 @@ end;
 
 procedure TModelsRoute.AsyncUpdate(const ModelId: string;
   ParamProc: TProc<TModelParams>;
-  const CallBacks: TFunc<TAsyncFineTuneModelParams>);
+  const CallBacks: TFunc<TAsynFineTuneModel>);
 begin
-  with TAsyncCallBackExec<TAsyncFineTuneModelParams, TFineTunedModel>.Create(CallBacks) do
+  with TAsyncCallBackExec<TAsynFineTuneModel, TFineTunedModel>.Create(CallBacks) do
   try
     Sender := Use.Param.Sender;
     OnStart := Use.Param.OnStart;

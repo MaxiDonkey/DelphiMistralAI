@@ -348,21 +348,21 @@ type
   /// Manages asynchronous chat callBacks for a chat request using <c>TAgent</c> as the response type.
   /// </summary>
   /// <remarks>
-  /// The <c>TAsynAgentParams</c> type extends the <c>TAsynParams&lt;TAgent&gt;</c> record to handle the lifecycle of an asynchronous chat operation.
+  /// The <c>TAsynAgent</c> type extends the <c>TAsynParams&lt;TAgent&gt;</c> record to handle the lifecycle of an asynchronous chat operation.
   /// It provides event handlers that trigger at various stages, such as when the operation starts, completes successfully, or encounters an error.
   /// This structure facilitates non-blocking chat operations and is specifically tailored for scenarios where multiple choices from a chat model are required.
   /// </remarks>
-  TAsynAgentParams = TAsyncCallBack<TAgent>;
+  TAsynAgent = TAsyncCallBack<TAgent>;
 
   /// <summary>
   /// Manages asynchronous streaming chat callBacks for a chat request using <c>TAgentt</c> as the response type.
   /// </summary>
   /// <remarks>
-  /// The <c>TAsynAgentStreamParams</c> type extends the <c>TAsynStreamParams&lt;TAgent&gt;</c> record to support the lifecycle of an asynchronous streaming chat operation.
+  /// The <c>TAsynAgentStream</c> type extends the <c>TAsynStreamParams&lt;TAgent&gt;</c> record to support the lifecycle of an asynchronous streaming chat operation.
   /// It provides callbacks for different stages, including when the operation starts, progresses with new data chunks, completes successfully, or encounters an error.
   /// This structure is ideal for handling scenarios where the chat response is streamed incrementally, providing real-time updates to the user interface.
   /// </remarks>
-  TAsynAgentStreamParams = TAsyncStreamCallBack<TAgent>;
+  TAsynAgentStream = TAsyncStreamCallBack<TAgent>;
 
   /// <summary>
   /// A callback type for handling streamed agent responses during asynchronous operations.
@@ -406,12 +406,12 @@ type
     /// This procedure initiates an asynchronous request to generate a chat completion based on the provided parameters. The response or error is handled by the provided callbacks.
     /// <code>
     /// // Example usage:
-    /// AgentRoute.AsyncCreate(
+    /// MistralAI.Agent.AsyncCreate(
     ///   procedure(Params: TAgentParams)
     ///   begin
-    ///     Params.AgentId('agent_id').Messages(MessagesArray);
+    ///     // Define agent parameters
     ///   end,
-    ///   function: TAsynAgentParams
+    ///   function: TAsynAgent
     ///   begin
     ///     Result.OnSuccess :=
     ///        procedure(Sender: TObject; Agent: TAgent)
@@ -426,8 +426,7 @@ type
     ///   end);
     /// </code>
     /// </remarks>
-    procedure AsyncCreate(ParamProc: TProc<TAgentParams>; CallBacks: TFunc<TAsynAgentParams>);
-
+    procedure AsyncCreate(ParamProc: TProc<TAgentParams>; CallBacks: TFunc<TAsynAgent>);
     /// <summary>
     /// Creates an asynchronous streaming agent completion request.
     /// </summary>
@@ -435,19 +434,19 @@ type
     /// A procedure used to configure the parameters for the agent request, including the model, messages, and additional options such as max tokens and streaming mode.
     /// </param>
     /// <param name="CallBacks">
-    /// A function that returns a <c>TAsynAgentStreamParams</c> record which contains event handlers for managing different stages of the streaming process: progress updates, success, errors, and cancellation.
+    /// A function that returns a <c>TAsynAgentStream</c> record which contains event handlers for managing different stages of the streaming process: progress updates, success, errors, and cancellation.
     /// </param>
     /// <remarks>
     /// This procedure initiates an asynchronous chat operation in streaming mode, where tokens are progressively received and processed.
     /// The provided event handlers allow for handling progress (i.e., receiving tokens in real time), detecting success, managing errors, and enabling cancellation logic.
     /// <code>
     /// // Example usage:
-    /// AgentRoute.AsyncStreamCreate(
+    /// MistralAI.Agent.AsyncStreamCreate(
     ///   procedure(Params: TAgentParams)
     ///   begin
-    ///     Params.AgentId('agent_id').Messages(MessagesArray);
+    ///     // Define agent parameters
     ///   end,
-    ///   function: TAsynAgentParams
+    ///   function: TAsynAgentStream
     ///   begin
     ///     Result.OnProgress :=
     ///        procedure (Sender: TObject; Chat : TChat)
@@ -467,14 +466,13 @@ type
     ///     Result.OnDoCancel :=
     ///        function : Boolean
     ///        begin
-    ///          Result := CheckBox1.Checked;
+    ///          Result := CheckBox1.Checked; // Click the CheckBox to cancel
     ///        end;
     ///   end);
     /// </code>
     /// </remarks>
     procedure AsyncCreateStream(ParamProc: TProc<TAgentParams>;
-      CallBacks: TFunc<TAsynAgentStreamParams>);
-
+      CallBacks: TFunc<TAsynAgentStream>);
     /// <summary>
     /// Creates a completion for an agent synchronously.
     /// </summary>
@@ -488,6 +486,20 @@ type
     /// <exception cref="MistralAIExceptionInvalidRequestError"> MistralAIExceptionInvalidRequestError </exception>
     /// <remarks>
     /// This function sends a synchronous request to create an agent completion based on the provided parameters.
+    ///
+    /// <code>
+    ///   var Agent := MistralAI.Agent.Create(
+    ///     procedure (Params: TAgentParams)
+    ///     begin
+    ///       // Define agent parameters
+    ///     end);
+    ///   try
+    ///     for var Choice in Agent.Choices do
+    ///       WriteLn(Choice.Message.Content);
+    ///   finally
+    ///     Agent.Free;
+    ///   end;
+    /// </code>
     /// </remarks>
     function Create(ParamProc: TProc<TAgentParams>): TAgent;
     /// <summary>
@@ -504,6 +516,19 @@ type
     /// </returns>
     /// <remarks>
     /// The <c>Agent</c> object will be <c>nil</c> when all data is received.
+    ///
+    /// <code>
+    ///    MistralAI.Agent.Create(
+    ///     procedure (Params: TAgentParams)
+    ///     begin
+    ///       // Define agent parameters
+    ///     end,
+    ///
+    ///     procedure(var Agent: TAgent; IsDone: Boolean; var Cancel: Boolean)
+    ///     begin
+    ///       // handle displaying
+    ///     end);
+    /// </code>
     /// </remarks>
     function CreateStream(ParamProc: TProc<TAgentParams>; Event: TAgentEvent): Boolean;
   end;
@@ -712,9 +737,9 @@ end;
 { TAgentRoute }
 
 procedure TAgentRoute.AsyncCreate(ParamProc: TProc<TAgentParams>;
-  CallBacks: TFunc<TAsynAgentParams>);
+  CallBacks: TFunc<TAsynAgent>);
 begin
-  with TAsyncCallBackExec<TAsynAgentParams, TAgent>.Create(CallBacks) do
+  with TAsyncCallBackExec<TAsynAgent, TAgent>.Create(CallBacks) do
   try
     Sender := Use.Param.Sender;
     OnStart := Use.Param.OnStart;
@@ -731,9 +756,9 @@ begin
 end;
 
 procedure TAgentRoute.AsyncCreateStream(ParamProc: TProc<TAgentParams>;
-  CallBacks: TFunc<TAsynAgentStreamParams>);
+  CallBacks: TFunc<TAsynAgentStream>);
 begin
-  var CallBackParams := TUseParamsFactory<TAsynAgentStreamParams>.CreateInstance(CallBacks);
+  var CallBackParams := TUseParamsFactory<TAsynAgentStream>.CreateInstance(CallBacks);
 
   var Sender := CallBackParams.Param.Sender;
   var OnStart := CallBackParams.Param.OnStart;
@@ -762,7 +787,7 @@ begin
 
               {--- Processing }
               CreateStream(ParamProc,
-                procedure (var Chat: TChat; IsDone: Boolean; var Cancel: Boolean)
+                procedure (var Agent: TAgent; IsDone: Boolean; var Cancel: Boolean)
                 begin
                   {--- Check that the process has not been canceled }
                   if Assigned(OnDoCancel) then
@@ -783,10 +808,10 @@ begin
                       Cancel := True;
                       Exit;
                     end;
-                  if not IsDone and Assigned(Chat) then
+                  if not IsDone and Assigned(Agent) then
                     begin
-                      var LocalChat := Chat;
-                      Chat := nil;
+                      var LocalAgent := Agent;
+                      Agent := nil;
 
                       {--- Triggered when processus is progressing }
                       if Assigned(OnProgress) then
@@ -794,11 +819,11 @@ begin
                         procedure
                         begin
                           try
-                            OnProgress(Sender, LocalChat);
+                            OnProgress(Sender, LocalAgent);
                           finally
                             {--- Makes sure to release the instance containing the data obtained
                                  following processing}
-                            LocalChat.Free;
+                            LocalAgent.Free;
                           end;
                         end);
                     end

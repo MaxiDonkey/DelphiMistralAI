@@ -477,21 +477,21 @@ type
   /// Manages asynchronous chat events for a chat request using <c>TCodestral</c> as the response type.
   /// </summary>
   /// <remarks>
-  /// The <c>TAsynCodeParams</c> type extends the <c>TAsynParams&lt;TCodestral&gt;</c> record to handle the lifecycle of an asynchronous chat operation.
+  /// The <c>TAsynCode</c> type extends the <c>TAsynParams&lt;TCodestral&gt;</c> record to handle the lifecycle of an asynchronous chat operation.
   /// It provides event handlers that trigger at various stages, such as when the operation starts, completes successfully, or encounters an error.
   /// This structure facilitates non-blocking chat operations and is specifically tailored for scenarios where multiple choices from a chat model are required.
   /// </remarks>
-  TAsynCodeParams = TAsyncCallBack<TCodestral>;
+  TAsynCode = TAsyncCallBack<TCodestral>;
 
   /// <summary>
   /// Manages asynchronous streaming chat events for a chat request using <c>TCodestral</c> as the response type.
   /// </summary>
   /// <remarks>
-  /// The <c>TAsynCodeStreamParams</c> type extends the <c>TAsynStreamParams&lt;TCodestral&gt;</c> record to support the lifecycle of an asynchronous streaming chat operation.
+  /// The <c>TAsynCodeStream</c> type extends the <c>TAsynStreamParams&lt;TCodestral&gt;</c> record to support the lifecycle of an asynchronous streaming chat operation.
   /// It provides callbacks for different stages, including when the operation starts, progresses with new data chunks, completes successfully, or encounters an error.
   /// This structure is ideal for handling scenarios where the chat response is streamed incrementally, providing real-time updates to the user interface.
   /// </remarks>
-  TAsynCodeStreamParams = TAsyncStreamCallBack<TCodestral>;
+  TAsynCodeStream = TAsyncStreamCallBack<TCodestral>;
 
   /// <summary>
   /// Represents a callback procedure used during the reception of responses from a codestral request in streaming mode.
@@ -559,33 +559,31 @@ type
     /// This procedure initiates an asynchronous request to generate a codestral completion based on the provided parameters. The response or error is handled by the provided callBacks.
     /// <code>
     /// MistralAI.Codestral.AsyncCreate(
-    ///   procedure (Params: TCodestralParams)
+    ///   procedure (Params: TChatParams)
     ///   begin
-    ///     Params.Model('my_model');
-    ///     Params.Prompt('Generate a code snippet');
-    ///     Params.MaxTokens(1024);
+    ///     // Define codestral parameters
     ///   end,
-    ///   function: TAsynCodeParams
+    ///
+    ///   function: TAsynCode
     ///   begin
-    ///     Result.Sender := Memo1;  // callBacks will return this instance
+    ///     Result.Sender := Memo1;  // Instance passed to callback parameter
     ///
-    ///     Result.OnStart := nil;   // if nil then; Can be omitted
+    ///     Result.OnStart := nil;   // If nil then; Can be omitted
     ///
-    ///     Result.OnSuccess := procedure (Sender: TObject; Code: TCodeStral)
+    ///     Result.OnSuccess := procedure (Sender: TObject; Chat: TChat)
     ///     begin
-    ///       var M := Sender as TMemo;
-    ///       for var Choice in Code.Choices do
-    ///         M.Lines.Add(Choice.Message.Content + sLineBreak);
+    ///       var M := Sender as TMemo; // Because Result.Sender = Memo1
+    ///       // Handle success operation
     ///     end;
     ///
     ///     Result.OnError := procedure (Sender: TObject; Value: string)
     ///     begin
-    ///       ShowMessage(Value);
+    ///       // Handle error message
     ///     end;
     ///   end);
     /// </code>
     /// </remarks>
-    procedure AsyncCreate(ParamProc: TProc<TCodestralParams>; CallBacks: TFunc<TAsynCodeParams>);
+    procedure AsyncCreate(ParamProc: TProc<TCodestralParams>; CallBacks: TFunc<TAsynCode>);
     /// <summary>
     /// Creates an asynchronous streaming codestral completion request.
     /// </summary>
@@ -593,59 +591,52 @@ type
     /// A procedure used to configure the parameters for the codestral request, including the model, messages, and additional options such as max tokens and streaming mode.
     /// </param>
     /// <param name="CallBacks">
-    /// A function that returns a <c>TAsynCodeStreamParams</c> record which contains event handlers for managing different stages of the streaming process: progress updates, success, errors, and cancellation.
+    /// A function that returns a <c>TAsynCodeStream</c> record which contains event handlers for managing different stages of the streaming process: progress updates, success, errors, and cancellation.
     /// </param>
     /// <remarks>
     /// This procedure initiates an asynchronous codestral operation in streaming mode, where tokens are progressively received and processed.
     /// The provided event handlers allow for handling progress (i.e., receiving tokens in real time), detecting success, managing errors, and enabling cancellation logic.
     /// <code>
-    /// MistralAI.Codestral.AsyncCreateStream(
-    ///   procedure(Params: TCodestralParams)
+    /// MistralAI.CodeStral.AsyncCreateStream(
+    ///   procedure(Params: TChatParams)
     ///   begin
-    ///     Params.Model('my_model');
-    ///     Params.Prompt('Generate a code snippet');
-    ///     Params.MaxTokens(1024);
+    ///     // Define codestral parameters
     ///     Params.Stream;
     ///   end,
     ///
-    ///   function: TAsynCodeStreamParams
+    ///   function: TAsynCodeStream
     ///   begin
-    ///     Result.Sender := Memo1;
-    ///
+    ///     Result.Sender := Memo1; // Instance passed to callback parameter
     ///     Result.OnProgress :=
-    ///       procedure (Sender: TObject; Codestral: TCodestral)
-    ///       begin
-    ///         // Handle progressive updates to the codestral response
-    ///       end;
-    ///
+    ///         procedure (Sender: TObject; Chat: TChat)
+    ///         begin
+    ///           // Handle progressive updates to the chat response
+    ///         end;
     ///     Result.OnSuccess :=
-    ///       procedure (Sender: TObject)
-    ///       begin
-    ///         // Handle success when the operation completes
-    ///       end;
-    ///
+    ///         procedure (Sender: TObject)
+    ///         begin
+    ///           // Handle success when the operation completes
+    ///         end;
     ///     Result.OnError :=
-    ///       procedure (Sender: TObject; Value: string)
-    ///       begin
-    ///         ShowMessage(Value); // Display error message
-    ///       end;
-    ///
+    ///         procedure (Sender: TObject; Value: string)
+    ///         begin
+    ///           // Handle error message
+    ///         end;
     ///     Result.OnDoCancel :=
-    ///       function: Boolean
-    ///       begin
-    ///         Result := CheckBox1.Checked; // Click on checkbox to cancel
-    ///       end;
-    ///
+    ///         function: Boolean
+    ///         begin
+    ///           Result := CheckBox1.Checked; // Click on checkbox to cancel
+    ///         end;
     ///     Result.OnCancellation :=
-    ///       procedure (Sender: TObject)
-    ///       begin
-    ///         // Processing when process has been canceled
-    ///       end;
+    ///         procedure (Sender: TObject)
+    ///         begin
+    ///           // Processing when process has been canceled
+    ///         end;
     ///   end);
     /// </code>
     /// </remarks>
     procedure AsyncCreateStream(ParamProc: TProc<TCodestralParams>;
-      CallBacks: TFunc<TAsynCodeStreamParams>);
+      CallBacks: TFunc<TAsynCodeStream>);
     /// <summary>
     /// Creates a completion for the codestral message using the provided parameters.
     /// </summary>
@@ -665,23 +656,17 @@ type
     /// The <c>Create</c> method sends a codestral completion request and waits for the full response. The returned <c>TCodestral</c> object contains the model's generated response, including multiple choices if available.
     /// Example usage:
     /// <code>
-    /// var
-    ///   Codestral: TCodestral;
-    /// begin
-    ///   Codestral := MistralAI.Codestral.Create(
+    ///   var Codestral := MistralAI.Codestral.Create(
     ///     procedure (Params: TCodestralParams)
     ///     begin
-    ///       Params.Model('my_model');
-    ///       Params.Prompt('Generate a code snippet');
-    ///       Params.MaxTokens(1024);
+    ///       // Define codestral parameters
     ///     end);
     ///   try
     ///     for var Choice in Codestral.Choices do
-    ///       Memo1.Lines.Add(Choice.Message.Content);
+    ///       WriteLn(Choice.Message.Content);
     ///   finally
     ///     Codestral.Free;
     ///   end;
-    /// end;
     /// </code>
     /// </remarks>
     function Create(ParamProc: TProc<TCodestralParams>): TCodestral;
@@ -704,29 +689,17 @@ type
     /// The streaming process can be interrupted by setting the <c>Cancel</c> flag to <c>True</c> within the event.
     /// Example usage:
     /// <code>
-    /// var
-    ///   Codestral: TCodestral;
-    /// begin
     ///   MistralAI.Codestral.CreateStream(
     ///     procedure (Params: TCodestralParams)
     ///     begin
-    ///       Params.Model('my_model');
-    ///       Params.Prompt('Generate a code snippet');
-    ///       Params.MaxTokens(1024);
-    ///       Params.Stream;
+    ///       // Define codestral parameters
     ///     end,
+    ///
     ///     procedure(var Codestral: TCodestral; IsDone: Boolean; var Cancel: Boolean)
     ///     begin
-    ///       if IsDone then
-    ///         Memo1.Lines.Add('Stream completed')
-    ///       else if Assigned(Codestral) then
-    ///         Memo1.Lines.Add(Codestral.Choices[0].Message.Content);
-    ///
-    ///       // Cancel streaming if needed
-    ///       Cancel := CheckBox1.Checked;
+    ///       // Handle displaying
     ///     end
     ///   );
-    /// end;
     /// </code>
     /// </remarks>
     function CreateStream(ParamProc: TProc<TCodestralParams>; Event: TCodestralEvent): Boolean;
@@ -878,9 +851,9 @@ end;
 { TCodestralRoute }
 
 procedure TCodestralRoute.AsyncCreate(ParamProc: TProc<TCodestralParams>;
-  CallBacks: TFunc<TAsynCodeParams>);
+  CallBacks: TFunc<TAsynCode>);
 begin
-  with TAsyncCallBackExec<TAsynCodeParams, TCodestral>.Create(CallBacks) do
+  with TAsyncCallBackExec<TAsynCode, TCodestral>.Create(CallBacks) do
   try
     Sender := Use.Param.Sender;
     OnStart := Use.Param.OnStart;
@@ -897,9 +870,9 @@ begin
 end;
 
 procedure TCodestralRoute.AsyncCreateStream(ParamProc: TProc<TCodestralParams>;
-  CallBacks: TFunc<TAsynCodeStreamParams>);
+  CallBacks: TFunc<TAsynCodeStream>);
 begin
-  var CallBackParams := TUseParamsFactory<TAsynCodeStreamParams>.CreateInstance(CallBacks);
+  var CallBackParams := TUseParamsFactory<TAsynCodeStream>.CreateInstance(CallBacks);
 
   var Sender := CallBackParams.Param.Sender;
   var OnStart := CallBackParams.Param.OnStart;

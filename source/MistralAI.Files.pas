@@ -361,7 +361,7 @@ type
   /// <remarks>
   /// Used when performing asynchronous operations that return a <c>TFiles</c> instance.
   /// </remarks>
-  TAsyncFilesParams = TAsyncCallBack<TFiles>;
+  TAsynFiles = TAsyncCallBack<TFiles>;
 
   /// <summary>
   /// Asynchronous callback parameters for operations returning a single <c>TFile</c>.
@@ -369,7 +369,7 @@ type
   /// <remarks>
   /// Used when performing asynchronous operations that return a <c>TFile</c> instance.
   /// </remarks>
-  TAsyncFileParams = TAsyncCallBack<TFile>;
+  TAsynFile = TAsyncCallBack<TFile>;
 
   /// <summary>
   /// Asynchronous callback parameters for file deletion operations.
@@ -377,7 +377,7 @@ type
   /// <remarks>
   /// Used when performing asynchronous operations that return a <c>TDeletedResult</c> instance.
   /// </remarks>
-  TAsyncFilesDeleteParams = TAsyncCallBack<TDeletedResult>;
+  TAsynFilesDelete = TAsyncCallBack<TDeletedResult>;
 
   /// <summary>
   /// Provides methods to interact with the Mistral AI Files API.
@@ -414,14 +414,16 @@ type
     /// <remarks>
     /// Example:
     /// <code>
-    /// FilesRoute.AsyncDelete('file_id',
-    ///   function: TAsyncFilesDeleteParams
+    /// MistralAI.File.AsyncDelete(
+    ///   'file_id',
+    ///   function: TAsynFilesDelete
     ///   begin
     ///     Result.OnSuccess :=
     ///       procedure(Sender: TObject; DeletedResult: TDeletedResult)
     ///       begin
     ///         // Handle successful deletion
     ///       end;
+    ///
     ///     Result.OnError :=
     ///       procedure(Sender: TObject; ErrorMsg: string)
     ///       begin
@@ -431,7 +433,7 @@ type
     /// </code>
     /// </remarks>
     procedure AsyncDelete(const FileId: string;
-      const CallBacks: TFunc<TAsyncFilesDeleteParams>);
+      const CallBacks: TFunc<TAsynFilesDelete>);
     /// <summary>
     /// Asynchronously retrieves the list of files belonging to the user's organization.
     /// </summary>
@@ -441,14 +443,15 @@ type
     /// <remarks>
     /// Example:
     /// <code>
-    /// FilesRoute.AsyncList(
-    ///   function: TAsyncFilesParams
+    /// MistralAI.File.AsyncList(
+    ///   function: TAsynFiles
     ///   begin
     ///     Result.OnSuccess :=
     ///       procedure(Sender: TObject; Files: TFiles)
     ///       begin
     ///         // Process files
     ///       end;
+    ///
     ///     Result.OnError :=
     ///       procedure(Sender: TObject; ErrorMsg: string)
     ///       begin
@@ -457,7 +460,7 @@ type
     ///   end);
     /// </code>
     /// </remarks>
-    procedure AsynchList(const CallBacks: TFunc<TAsyncFilesParams>);
+    procedure AsynchList(const CallBacks: TFunc<TAsynFiles>);
     /// <summary>
     /// Asynchronously retrieves information about a specific file.
     /// </summary>
@@ -470,14 +473,16 @@ type
     /// <remarks>
     /// Example:
     /// <code>
-    /// FilesRoute.AsyncRetrieve('file_id',
-    ///   function: TAsyncFileParams
+    /// MistralAI.File.AsyncRetrieve(
+    ///   'file_id',
+    ///   function: TAsynFile
     ///   begin
     ///     Result.OnSuccess :=
     ///       procedure(Sender: TObject; FileInfo: TFile)
     ///       begin
     ///         // Process FileInfo
     ///       end;
+    ///
     ///     Result.OnError :=
     ///       procedure(Sender: TObject; ErrorMsg: string)
     ///       begin
@@ -487,7 +492,7 @@ type
     /// </code>
     /// </remarks>
     procedure AsyncRetrieve(const FileId: string;
-      const CallBacks: TFunc<TAsyncFileParams>);
+      const CallBacks: TFunc<TAsynFile>);
     /// <summary>
     /// Asynchronously uploads a file that can be used across various endpoints.
     /// </summary>
@@ -501,19 +506,20 @@ type
     /// The size of individual files can be a maximum of 512 MB. The Fine-tuning API only supports .jsonl files. Please contact support if you need to increase these storage limits.
     /// Example:
     /// <code>
-    /// FilesRoute.AsyncUpload(
+    /// MistralAI.File.AsyncUpload(
     ///   procedure(Params: TUploadParams)
     ///   begin
     ///     Params.File('path/to/file.jsonl');
     ///     Params.Purpose(TFilePurpose.finetune);
     ///   end,
-    ///   function: TAsyncFileParams
+    ///   function: TAsynFile
     ///   begin
     ///     Result.OnSuccess :=
     ///       procedure(Sender: TObject; UploadedFile: TFile)
     ///       begin
     ///         // Process UploadedFile
     ///       end;
+    ///
     ///     Result.OnError :=
     ///       procedure(Sender: TObject; ErrorMsg: string)
     ///       begin
@@ -523,7 +529,7 @@ type
     /// </code>
     /// </remarks>
     procedure ASyncUpload(ParamProc: TProc<TUploadParams>;
-      const CallBacks: TFunc<TAsyncFileParams>);
+      const CallBacks: TFunc<TAsynFile>);
     /// <summary>
     /// Deletes a file.
     /// </summary>
@@ -536,15 +542,13 @@ type
     /// <remarks>
     /// Example:
     /// <code>
-    /// begin
-    ///   var DeletedResult := FilesRoute.Delete('file_id');
+    ///   with MistralAI.File.Delete('file_id');
     ///   try
-    ///     if DeletedResult.Deleted then
-    ///       ShowMessage('File deleted successfully');
+    ///     if Deleted then
+    ///       ShowMessage('file deleted');
     ///   finally
-    ///     DeletedResult.Free;
+    ///     Free;
     ///   end;
-    /// end;
     /// </code>
     /// </remarks>
     function Delete(const FileId: string): TDeletedResult;
@@ -557,13 +561,11 @@ type
     /// <remarks>
     /// Example:
     /// <code>
-    /// begin
-    ///   var Files := FilesRoute.List;
+    ///   var Files := MistralAI.File.List;
     ///   try
     ///     // Process files
     ///   finally
     ///     Files.Free;
-    ///   end;
     /// end;
     /// </code>
     /// </remarks>
@@ -580,14 +582,12 @@ type
     /// <remarks>
     /// Example:
     /// <code>
-    /// begin
-    ///   var FileInfo := FilesRoute.Retrieve('file_id');
+    ///   var FileInfo := MistralAI.File.Retrieve('file_id');
     ///   try
     ///     // Process FileInfo
     ///   finally
     ///     FileInfo.Free;
     ///   end;
-    /// end;
     /// </code>
     /// </remarks>
     function Retrieve(const FileId: string): TFile;
@@ -604,8 +604,7 @@ type
     /// The size of individual files can be a maximum of 512 MB. The Fine-tuning API only supports .jsonl files. Please contact support if you need to increase these storage limits.
     /// Example:
     /// <code>
-    /// begin
-    ///   var UploadedFile := FilesRoute.Upload(
+    ///   var UploadedFile := MistralAI.File.Upload(
     ///     procedure(Params: TUploadParams)
     ///     begin
     ///       Params.File('path/to/file.jsonl');
@@ -616,7 +615,6 @@ type
     ///   finally
     ///     UploadedFile.Free;
     ///   end;
-    /// end;
     /// </code>
     /// </remarks>
     function Upload(ParamProc: TProc<TUploadParams>): TFile;
@@ -687,9 +685,9 @@ end;
 { TFilesRoute }
 
 procedure TFilesRoute.AsyncDelete(const FileId: string;
-  const CallBacks: TFunc<TAsyncFilesDeleteParams>);
+  const CallBacks: TFunc<TAsynFilesDelete>);
 begin
-  with TAsyncCallBackExec<TAsyncFilesDeleteParams, TDeletedResult>.Create(CallBacks) do
+  with TAsyncCallBackExec<TAsynFilesDelete, TDeletedResult>.Create(CallBacks) do
   try
     Sender := Use.Param.Sender;
     OnStart := Use.Param.OnStart;
@@ -706,9 +704,9 @@ begin
 end;
 
 procedure TFilesRoute.AsynchList(
-  const CallBacks: TFunc<TAsyncFilesParams>);
+  const CallBacks: TFunc<TAsynFiles>);
 begin
-  with TAsyncCallBackExec<TAsyncFilesParams, TFiles>.Create(CallBacks) do
+  with TAsyncCallBackExec<TAsynFiles, TFiles>.Create(CallBacks) do
   try
     Sender := Use.Param.Sender;
     OnStart := Use.Param.OnStart;
@@ -725,9 +723,9 @@ begin
 end;
 
 procedure TFilesRoute.AsyncRetrieve(const FileId: string;
-  const CallBacks: TFunc<TAsyncFileParams>);
+  const CallBacks: TFunc<TAsynFile>);
 begin
-  with TAsyncCallBackExec<TAsyncFileParams, TFile>.Create(CallBacks) do
+  with TAsyncCallBackExec<TAsynFile, TFile>.Create(CallBacks) do
   try
     Sender := Use.Param.Sender;
     OnStart := Use.Param.OnStart;
@@ -744,9 +742,9 @@ begin
 end;
 
 procedure TFilesRoute.ASyncUpload(ParamProc: TProc<TUploadParams>;
-  const CallBacks: TFunc<TAsyncFileParams>);
+  const CallBacks: TFunc<TAsynFile>);
 begin
-  with TAsyncCallBackExec<TAsyncFileParams, TFile>.Create(CallBacks) do
+  with TAsyncCallBackExec<TAsynFile, TFile>.Create(CallBacks) do
   try
     Sender := Use.Param.Sender;
     OnStart := Use.Param.OnStart;

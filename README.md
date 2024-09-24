@@ -3,7 +3,7 @@
 ___
 ![GitHub](https://img.shields.io/badge/IDE%20Version-Delphi%2010.3/11/12-yellow)
 ![GitHub](https://img.shields.io/badge/platform-all%20platforms-green)
-![GitHub](https://img.shields.io/badge/Updated%20the%2009/23/2024-blue)
+![GitHub](https://img.shields.io/badge/Updated%20the%2009/24/2024-blue)
 
 <br/>
 <br/>
@@ -145,7 +145,7 @@ Asynchronously, we proceed as follows:
 >//uses MistralAI, MistralAI.Models;
 >
 >MistralAI.Models.AsyncList(
->    function : TAsyncModelsParams
+>    function : TAsynModels
 >    begin
 >      Result.Sender := Memo1;  //Uses a TMemo for displaying
 >
@@ -231,7 +231,7 @@ Asynchronously, we proceed as follows:
 >      Params.Input(['Text to vectorize']);
 >    end,
 >
->    function : TAsyncEmbeddingsParams
+>    function : TAsynEmbeddings
 >    begin
 >      Result.Sender := Memo1;
 >
@@ -339,7 +339,7 @@ as follows :
 >        Params.MaxTokens(1024);
 >      end,
 >
->      function : TAsynChatParams
+>      function : TAsynChat
 >      begin
 >        Result.Sender := Memo1; //Uses TMemo for displaying 
 >
@@ -379,7 +379,7 @@ as follows :
 >         Params.Stream;
 >       end,
 >    
->       function: TAsynChatStreamParams
+>       function: TAsynChatStream
 >       begin
 >         Result.Sender := Memo1;  //Events will return this instance
 >    
@@ -605,9 +605,9 @@ Go to this address to create a key for using **Codestral** [Key creation](https:
 > [!TIP]
 > In the above examples we use synchronous methods. Here is the asynchronous equivalent :
 >
->  - `procedure AsyncCreate(ParamProc: TProc<TCodestralParams>; CallBacks: TFunc<TAsynCodeParams>);`
+>  - `procedure AsyncCreate(ParamProc: TProc<TCodestralParams>; CallBacks: TFunc<TAsynCode>);`
 >
->  - `procedure AsyncCreateStream(ParamProc: TProc<TCodestralParams>; CallBacks: TFunc<TAsynCodeStreamParams>);`
+>  - `procedure AsyncCreateStream(ParamProc: TProc<TCodestralParams>; CallBacks: TFunc<TAsynCodeStream>);`
 >
 
 <br/>

@@ -1016,22 +1016,22 @@ type
   /// <summary>
   /// Asynchronous callback parameters for listing fine-tuning jobs.
   /// </summary>
-  TAsyncListFineTuningJobsParams = TAsyncCallBack<TListFineTuningJobs>;
+  TAsynListFineTuningJobs = TAsyncCallBack<TListFineTuningJobs>;
 
   /// <summary>
   /// Asynchronous callback parameters for fine-tuning job output.
   /// </summary>
-  TAsyncTJobOutParams = TAsyncCallBack<TJobOut>;
+  TAsynJobOut = TAsyncCallBack<TJobOut>;
 
   /// <summary>
   /// Asynchronous callback parameters for job metadata.
   /// </summary>
-  TAsyncJobMetadataParams = TAsyncCallBack<TJobMetadata>;
+  TAsynJobMetadata = TAsyncCallBack<TJobMetadata>;
 
   /// <summary>
   /// Asynchronous callback parameters for fine-tuning job progress.
   /// </summary>
-  TAsyncTJobOutProgressParams = TAsyncCallBack<TJobOutProgress>;
+  TAsynJobOutProgress = TAsyncCallBack<TJobOutProgress>;
 
   /// <summary>
   /// Provides methods to interact with fine-tuning jobs in the MistralAI API.
@@ -1050,7 +1050,7 @@ type
     /// A function that returns the asynchronous callback parameters.
     /// </param>
     procedure AsyncList(ParamProc: TProc<TFineTuningJobListParams>;
-      const CallBacks: TFunc<TAsyncListFineTuningJobsParams>);
+      const CallBacks: TFunc<TAsynListFineTuningJobs>);
     /// <summary>
     /// Asynchronously creates and runs a new fine-tuning job.
     /// </summary>
@@ -1061,7 +1061,7 @@ type
     /// A function that returns the asynchronous callback parameters.
     /// </param>
     procedure AsyncCreateAndRun(ParamProc: TProc<TFineTuningJobParams>;
-      const CallBacks: TFunc<TAsyncTJobOutParams>);
+      const CallBacks: TFunc<TAsynJobOut>);
     /// <summary>
     /// Asynchronously creates a new fine-tuning job and performs a sanity check without starting the job.
     /// </summary>
@@ -1072,7 +1072,7 @@ type
     /// A function that returns the asynchronous callback parameters.
     /// </param>
     procedure AsyncCreateAndPerformSanityCheck(ParamProc: TProc<TFineTuningJobParams>;
-      const CallBacks: TFunc<TAsyncJobMetadataParams>);
+      const CallBacks: TFunc<TAsynJobMetadata>);
     /// <summary>
     /// Asynchronously retrieves detailed information about a specific fine-tuning job.
     /// </summary>
@@ -1083,7 +1083,7 @@ type
     /// A function that returns the asynchronous callback parameters.
     /// </param>
     procedure ASyncRetrieve(const Value: string;
-      const CallBacks: TFunc<TAsyncTJobOutProgressParams>);
+      const CallBacks: TFunc<TAsynJobOutProgress>);
     /// <summary>
     /// Asynchronously requests the cancellation of a fine-tuning job.
     /// </summary>
@@ -1094,7 +1094,7 @@ type
     /// A function that returns the asynchronous callback parameters.
     /// </param>
     procedure AsyncCancel(const Value: string;
-      const CallBacks: TFunc<TAsyncTJobOutProgressParams>);
+      const CallBacks: TFunc<TAsynJobOutProgress>);
     /// <summary>
     /// Retrieves a list of fine-tuning jobs based on the specified parameters.
     /// </summary>
@@ -1400,9 +1400,9 @@ end;
 { TFineTuningRoute }
 
 procedure TFineTuningRoute.AsyncCancel(const Value: string;
-  const CallBacks: TFunc<TAsyncTJobOutProgressParams>);
+  const CallBacks: TFunc<TAsynJobOutProgress>);
 begin
-  with TAsyncCallBackExec<TAsyncTJobOutProgressParams, TJobOutProgress>.Create(CallBacks) do
+  with TAsyncCallBackExec<TAsynJobOutProgress, TJobOutProgress>.Create(CallBacks) do
   try
     Sender := Use.Param.Sender;
     OnStart := Use.Param.OnStart;
@@ -1420,9 +1420,9 @@ end;
 
 procedure TFineTuningRoute.AsyncCreateAndPerformSanityCheck(
   ParamProc: TProc<TFineTuningJobParams>;
-  const CallBacks: TFunc<TAsyncJobMetadataParams>);
+  const CallBacks: TFunc<TAsynJobMetadata>);
 begin
-  with TAsyncCallBackExec<TAsyncJobMetadataParams, TJobMetadata>.Create(CallBacks) do
+  with TAsyncCallBackExec<TAsynJobMetadata, TJobMetadata>.Create(CallBacks) do
   try
     Sender := Use.Param.Sender;
     OnStart := Use.Param.OnStart;
@@ -1440,9 +1440,9 @@ end;
 
 procedure TFineTuningRoute.AsyncCreateAndRun(
   ParamProc: TProc<TFineTuningJobParams>;
-  const CallBacks: TFunc<TAsyncTJobOutParams>);
+  const CallBacks: TFunc<TAsynJobOut>);
 begin
-  with TAsyncCallBackExec<TAsyncTJobOutParams, TJobOut>.Create(CallBacks) do
+  with TAsyncCallBackExec<TAsynJobOut, TJobOut>.Create(CallBacks) do
   try
     Sender := Use.Param.Sender;
     OnStart := Use.Param.OnStart;
@@ -1459,9 +1459,9 @@ begin
 end;
 
 procedure TFineTuningRoute.AsyncList(ParamProc: TProc<TFineTuningJobListParams>;
-  const CallBacks: TFunc<TAsyncListFineTuningJobsParams>);
+  const CallBacks: TFunc<TAsynListFineTuningJobs>);
 begin
-  with TAsyncCallBackExec<TAsyncListFineTuningJobsParams, TListFineTuningJobs>.Create(CallBacks) do
+  with TAsyncCallBackExec<TAsynListFineTuningJobs, TListFineTuningJobs>.Create(CallBacks) do
   try
     Sender := Use.Param.Sender;
     OnStart := Use.Param.OnStart;
@@ -1478,9 +1478,9 @@ begin
 end;
 
 procedure TFineTuningRoute.ASyncRetrieve(const Value: string;
-  const CallBacks: TFunc<TAsyncTJobOutProgressParams>);
+  const CallBacks: TFunc<TAsynJobOutProgress>);
 begin
-  with TAsyncCallBackExec<TAsyncTJobOutProgressParams, TJobOutProgress>.Create(CallBacks) do
+  with TAsyncCallBackExec<TAsynJobOutProgress, TJobOutProgress>.Create(CallBacks) do
   try
     Sender := Use.Param.Sender;
     OnStart := Use.Param.OnStart;

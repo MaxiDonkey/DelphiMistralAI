@@ -679,21 +679,21 @@ type
   /// Manages asynchronous chat callBacks for a chat request using <c>TChat</c> as the response type.
   /// </summary>
   /// <remarks>
-  /// The <c>TAsynChatParams</c> type extends the <c>TAsynParams&lt;TChat&gt;</c> record to handle the lifecycle of an asynchronous chat operation.
+  /// The <c>TAsynChat</c> type extends the <c>TAsynParams&lt;TChat&gt;</c> record to handle the lifecycle of an asynchronous chat operation.
   /// It provides event handlers that trigger at various stages, such as when the operation starts, completes successfully, or encounters an error.
   /// This structure facilitates non-blocking chat operations and is specifically tailored for scenarios where multiple choices from a chat model are required.
   /// </remarks>
-  TAsynChatParams = TAsyncCallBack<TChat>;
+  TAsynChat = TAsyncCallBack<TChat>;
 
   /// <summary>
   /// Manages asynchronous streaming chat callBacks for a chat request using <c>TChat</c> as the response type.
   /// </summary>
   /// <remarks>
-  /// The <c>TAsynChatStreamParams</c> type extends the <c>TAsynStreamParams&lt;TChat&gt;</c> record to support the lifecycle of an asynchronous streaming chat operation.
+  /// The <c>TAsynChatStream</c> type extends the <c>TAsynStreamParams&lt;TChat&gt;</c> record to support the lifecycle of an asynchronous streaming chat operation.
   /// It provides callbacks for different stages, including when the operation starts, progresses with new data chunks, completes successfully, or encounters an error.
   /// This structure is ideal for handling scenarios where the chat response is streamed incrementally, providing real-time updates to the user interface.
   /// </remarks>
-  TAsynChatStreamParams = TAsyncStreamCallBack<TChat>;
+  TAsynChatStream = TAsyncStreamCallBack<TChat>;
 
   /// <summary>
   /// Represents a callback procedure used during the reception of responses from a chat request in streaming mode.
@@ -763,31 +763,28 @@ type
     /// MistralAI.Chat.AsyncCreate(
     ///   procedure (Params: TChatParams)
     ///   begin
-    ///     Params.Model('my_model');
-    ///     Params.Messages([TChatMessagePayload.User('request')]);
-    ///     Params.MaxTokens(1024);
+    ///     // Define chat parameters
     ///   end,
-    ///   function: TAsynChatParams
+    ///   function: TAsynChat
     ///   begin
-    ///     Result.Sender := Memo1;  // callBacks will return this instance
+    ///     Result.Sender := Memo1;  // Instance passed to callback parameter
     ///
-    ///     Result.OnStart := nil;   // if nil then; Can be omitted
+    ///     Result.OnStart := nil;   // If nil then; Can be omitted
     ///
     ///     Result.OnSuccess := procedure (Sender: TObject; Chat: TChat)
     ///     begin
-    ///       var M := Sender as TMemo;
-    ///       for var Choice in Chat.Choices do
-    ///         M.Lines.Add(Choice.Message.Content + sLineBreak);
+    ///       var M := Sender as TMemo; // Because Result.Sender = Memo1
+    ///       // Handle success operation
     ///     end;
     ///
     ///     Result.OnError := procedure (Sender: TObject; Value: string)
     ///     begin
-    ///       ShowMessage(Value);
+    ///       // Handle error message
     ///     end;
     ///   end);
     /// </code>
     /// </remarks>
-    procedure AsyncCreate(ParamProc: TProc<TChatParams>; CallBacks: TFunc<TAsynChatParams>);
+    procedure AsyncCreate(ParamProc: TProc<TChatParams>; CallBacks: TFunc<TAsynChat>);
     /// <summary>
     /// Creates an asynchronous streaming chat completion request.
     /// </summary>
@@ -795,7 +792,7 @@ type
     /// A procedure used to configure the parameters for the chat request, including the model, messages, and additional options such as max tokens and streaming mode.
     /// </param>
     /// <param name="CallBacks">
-    /// A function that returns a <c>TAsynChatStreamParams</c> record which contains event handlers for managing different stages of the streaming process: progress updates, success, errors, and cancellation.
+    /// A function that returns a <c>TAsynChatStream</c> record which contains event handlers for managing different stages of the streaming process: progress updates, success, errors, and cancellation.
     /// </param>
     /// <remarks>
     /// This procedure initiates an asynchronous chat operation in streaming mode, where tokens are progressively received and processed.
@@ -804,50 +801,43 @@ type
     /// MistralAI.Chat.AsyncCreateStream(
     ///   procedure(Params: TChatParams)
     ///   begin
-    ///     Params.Model('my_model');
-    ///     Params.Messages([TChatMessagePayload.User('request')]);
-    ///     Params.MaxTokens(1024);
+    ///     // Define chat parameters
     ///     Params.Stream;
     ///   end,
     ///
-    ///   function: TAsynChatStreamParams
+    ///   function: TAsynChatStream
     ///   begin
-    ///     Result.Sender := Memo1;
-    ///
+    ///     Result.Sender := Memo1; // Instance passed to callback parameter
     ///     Result.OnProgress :=
-    ///       procedure (Sender: TObject; Chat: TChat)
-    ///       begin
-    ///         // Handle progressive updates to the chat response
-    ///       end;
-    ///
+    ///         procedure (Sender: TObject; Chat: TChat)
+    ///         begin
+    ///           // Handle progressive updates to the chat response
+    ///         end;
     ///     Result.OnSuccess :=
-    ///       procedure (Sender: TObject)
-    ///       begin
-    ///         // Handle success when the operation completes
-    ///       end;
-    ///
+    ///         procedure (Sender: TObject)
+    ///         begin
+    ///           // Handle success when the operation completes
+    ///         end;
     ///     Result.OnError :=
-    ///       procedure (Sender: TObject; Value: string)
-    ///       begin
-    ///         ShowMessage(Value); // Display error message
-    ///       end;
-    ///
+    ///         procedure (Sender: TObject; Value: string)
+    ///         begin
+    ///           // Handle error message
+    ///         end;
     ///     Result.OnDoCancel :=
-    ///       function: Boolean
-    ///       begin
-    ///         Result := CheckBox1.Checked; // Click on checkbox to cancel
-    ///       end;
-    ///
+    ///         function: Boolean
+    ///         begin
+    ///           Result := CheckBox1.Checked; // Click on checkbox to cancel
+    ///         end;
     ///     Result.OnCancellation :=
-    ///       procedure (Sender: TObject)
-    ///       begin
-    ///         // Processing when process has been canceled
-    ///       end;
+    ///         procedure (Sender: TObject)
+    ///         begin
+    ///           // Processing when process has been canceled
+    ///         end;
     ///   end);
     /// </code>
     /// </remarks>
     procedure AsyncCreateStream(ParamProc: TProc<TChatParams>;
-      CallBacks: TFunc<TAsynChatStreamParams>);
+      CallBacks: TFunc<TAsynChatStream>);
     /// <summary>
     /// Creates a completion for the chat message using the provided parameters.
     /// </summary>
@@ -865,25 +855,20 @@ type
     /// </exception>
     /// <remarks>
     /// The <c>Create</c> method sends a chat completion request and waits for the full response. The returned <c>TChat</c> object contains the model's generated response, including multiple choices if available.
+    ///
     /// Example usage:
     /// <code>
-    /// var
-    ///   Chat: TChat;
-    /// begin
-    ///   Chat := MistralAI.Chat.Create(
+    ///   var Chat := MistralAI.Chat.Create(
     ///     procedure (Params: TChatParams)
     ///     begin
-    ///       Params.Model('my_model');
-    ///       Params.Messages([TChatMessagePayload.User('Hello !')]);
-    ///       Params.MaxTokens(1024);
+    ///       // Define chat parameters
     ///     end);
     ///   try
     ///     for var Choice in Chat.Choices do
-    ///       Memo1.Lines.Add(Choice.Message.Content);
+    ///       WriteLn(Choice.Message.Content);
     ///   finally
     ///     Chat.Free;
     ///   end;
-    /// end;
     /// </code>
     /// </remarks>
     function Create(ParamProc: TProc<TChatParams>): TChat;
@@ -904,31 +889,20 @@ type
     /// The <c>Event</c> callback will be invoked multiple times as tokens are received.
     /// When the response is complete, the <c>IsDone</c> flag will be set to <c>True</c>, and the <c>Chat</c> object will be <c>nil</c>.
     /// The streaming process can be interrupted by setting the <c>Cancel</c> flag to <c>True</c> within the event.
+    ///
     /// Example usage:
     /// <code>
-    /// var
-    ///   Chat: TChat;
-    /// begin
     ///   MistralAI.Chat.CreateStream(
     ///     procedure (Params: TChatParams)
     ///     begin
-    ///       Params.Model('my_model');
-    ///       Params.Messages([TChatMessagePayload.User('Hello')]);
-    ///       Params.MaxTokens(1024);
-    ///       Params.Stream;
+    ///       // Define chat parameters
     ///     end,
+    ///
     ///     procedure(var Chat: TChat; IsDone: Boolean; var Cancel: Boolean)
     ///     begin
-    ///       if IsDone then
-    ///         Memo1.Lines.Add('Stream completed')
-    ///       else if Assigned(Chat) then
-    ///         Memo1.Lines.Add(Chat.Choices[0].Message.Content);
-    ///
-    ///       // Cancel streaming if needed
-    ///       Cancel := CheckBox1.Checked;
+    ///       // Handle displaying
     ///     end
     ///   );
-    /// end;
     /// </code>
     /// </remarks>
     function CreateStream(ParamProc: TProc<TChatParams>; Event: TChatEvent): Boolean;
@@ -1200,9 +1174,9 @@ end;
 { TChatRoute }
 
 procedure TChatRoute.AsyncCreate(ParamProc: TProc<TChatParams>;
-  CallBacks: TFunc<TAsynChatParams>);
+  CallBacks: TFunc<TAsynChat>);
 begin
-  with TAsyncCallBackExec<TAsynChatParams, TChat>.Create(CallBacks) do
+  with TAsyncCallBackExec<TAsynChat, TChat>.Create(CallBacks) do
   try
     Sender := Use.Param.Sender;
     OnStart := Use.Param.OnStart;
@@ -1219,9 +1193,9 @@ begin
 end;
 
 procedure TChatRoute.AsyncCreateStream(ParamProc: TProc<TChatParams>;
-  CallBacks: TFunc<TAsynChatStreamParams>);
+  CallBacks: TFunc<TAsynChatStream>);
 begin
-  var CallBackParams := TUseParamsFactory<TAsynChatStreamParams>.CreateInstance(CallBacks);
+  var CallBackParams := TUseParamsFactory<TAsynChatStream>.CreateInstance(CallBacks);
 
   var Sender := CallBackParams.Param.Sender;
   var OnStart := CallBackParams.Param.OnStart;

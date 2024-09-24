@@ -175,7 +175,7 @@ type
   /// <remarks>
   /// Used to handle asynchronous responses for embedding operations.
   /// </remarks>
-  TAsyncEmbeddingsParams = TAsyncCallBack<TEmbeddings>;
+  TAsyncEmbeddings = TAsyncCallBack<TEmbeddings>;
 
   /// <summary>
   /// Provides methods for creating embedding requests.
@@ -212,34 +212,31 @@ type
     /// <remarks>
     /// Use this method to perform an embedding request without blocking the main thread.
     /// <code>
-    /// // Example usage:
-    /// var
-    ///   EmbeddingsRoute: TEmbeddingsRoute;
-    /// begin
-    ///   EmbeddingsRoute := TEmbeddingsRoute.Create;
-    ///   EmbeddingsRoute.AsyncCreate(
+    ///   // Example usage:
+    ///   MistralAI.Embeddings.AsyncCreate(
     ///     procedure(Params: TEmbeddingParams)
     ///     begin
     ///       Params.Input('Your input text here');
     ///     end,
-    ///     function: TAsyncEmbeddingsParams
+    ///
+    ///     function: TAsyncEmbeddings
     ///     begin
     ///       Result.OnSuccess :=
     ///         procedure(Sender: TObject; Embeddings: TEmbeddings)
     ///         begin
     ///           // Handle successful embedding result
     ///         end;
+    ///
     ///       Result.OnError :=
     ///         procedure(Sender: TObject; E: Exception)
     ///         begin
     ///           // Handle error
     ///         end;
     ///     end);
-    /// end;
     /// </code>
     /// </remarks>
     procedure AsyncCreate(ParamProc: TProc<TEmbeddingParams>;
-      const CallBacks: TFunc<TAsyncEmbeddingsParams>);
+      const CallBacks: TFunc<TAsyncEmbeddings>);
     /// <summary>
     /// Performs a synchronous embedding request and returns the result.
     /// </summary>
@@ -252,19 +249,17 @@ type
     /// <remarks>
     /// Use this method to perform an embedding request that blocks until the response is received.
     /// <code>
-    /// // Example usage:
-    /// var
-    ///   EmbeddingsRoute: TEmbeddingsRoute;
-    ///   EmbeddingsResult: TEmbeddings;
-    /// begin
-    ///   EmbeddingsRoute := TEmbeddingsRoute.Create;
-    ///   EmbeddingsResult := EmbeddingsRoute.Create(
+    ///   // Example usage:
+    ///   var Embeddings := MistralAI.Embeddings.Create(
     ///     procedure(Params: TEmbeddingParams)
     ///     begin
-    ///       Params.Input('Your input text here');
+    ///       Params.Input(['Your input text here']);
     ///     end);
-    ///   // Use EmbeddingsResult as needed
-    /// end;
+    ///    try
+    ///      // Use Embeddings as needed
+    ///    finally
+    ///      Embeddings.Free;
+    ///    end;
     /// </code>
     /// </remarks>
     function Create(ParamProc: TProc<TEmbeddingParams>): TEmbeddings;
@@ -315,9 +310,9 @@ end;
 { TEmbeddingsRoute }
 
 procedure TEmbeddingsRoute.AsyncCreate(ParamProc: TProc<TEmbeddingParams>;
-  const CallBacks: TFunc<TAsyncEmbeddingsParams>);
+  const CallBacks: TFunc<TAsyncEmbeddings>);
 begin
-  with TAsyncCallBackExec<TAsyncEmbeddingsParams, TEmbeddings>.Create(CallBacks) do
+  with TAsyncCallBackExec<TAsyncEmbeddings, TEmbeddings>.Create(CallBacks) do
   try
     Sender := Use.Param.Sender;
     OnStart := Use.Param.OnStart;
