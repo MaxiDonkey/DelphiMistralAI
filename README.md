@@ -181,11 +181,11 @@ The `TModelRoute` class exposes the following methods:
 
 > [!TIP]
 >As well as their asynchronous equivalent 
->  - `procedure AsyncDelete(const ModelId: string; const CallBacks: TFunc<TAsyncModelDeletion>);` 
->  - `procedure AsyncRetrieve(const ModelId: string; const CallBacks: TFunc<TAsyncModelParams>)` 
->  - `procedure AsyncUpdate(const ModelId: string; ParamProc: TProc<TModelParams>; const CallBacks: TFunc<TAsyncFineTuneModelParams>)` 
->  - `procedure AsyncArchive(const ModelId: string; const CallBacks: TFunc<TAsynArchivingModelParams>)` 
->  - `procedure AsyncUnarchive(const ModelId: string; const CallBacks: TFunc<TAsynArchivingModelParams>)`
+>  - `procedure AsyncDelete(const ModelId: string; const CallBacks: TFunc<TAsynModelDeletion>);` 
+>  - `procedure AsyncRetrieve(const ModelId: string; const CallBacks: TFunc<TAsynModel>)` 
+>  - `procedure AsyncUpdate(const ModelId: string; ParamProc: TProc<TModelParams>; const CallBacks: TFunc<TAsynFineTuneModel>)` 
+>  - `procedure AsyncArchive(const ModelId: string; const CallBacks: TFunc<TAsynArchivingModel>)` 
+>  - `procedure AsyncUnarchive(const ModelId: string; const CallBacks: TFunc<TAsynArchivingModel>)`
 
 <br/>
 
