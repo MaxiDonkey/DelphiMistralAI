@@ -591,7 +591,6 @@ Go to this address to create a key for using **Codestral** [Key creation](https:
 >
 
 <br/>
-<br/>
 
 #### Codestral initialization
 
@@ -613,7 +612,6 @@ You can also go through the factory:
 > var CodingModel := TMistralAIFactory.CreateInstance(API_TOKEN, [CodestralSpec]);
 > ```
 
-<br/>
 <br/>
 
 #### Code completion
