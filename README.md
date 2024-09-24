@@ -46,10 +46,10 @@ ___
 Welcome to the unofficial Delphi **MistralAI** API library. This project aims to provide a `Delphi` interface for interacting with the **MistralAI** public API, making it easier to integrate advanced natural language processing features into your `Delphi` applications. Whether you want to generate text, create embeddings, use chat models, or generate code, this library offers a simple and effective solution.
 
 **MistralAI** is a powerful natural language processing API that enables developers to incorporate advanced AI functionalities into their applications. For more details, visit the [official MistralAI documentation](https://docs.mistral.ai/api/).
+
 <br/>
 <br/>
-<br/>
-<br/>
+
 ## Remarks 
 
 > [!IMPORTANT]
@@ -57,7 +57,14 @@ Welcome to the unofficial Delphi **MistralAI** API library. This project aims to
 > This is an unofficial library. **MistralAI** does not provide any official library for `Delphi`.
 > This repository contains `Delphi` implementation over [MistralAI](https://docs.mistral.ai/api/) public API.
 
+<br/>
+<br/>
+
 ## Usage
+
+<br/>
+<br/>
+
 
 ### Initialization
 
@@ -81,6 +88,9 @@ You can also go through the factory:
 >
 >var MistralAI := TMistralAIFactory.CreateInstance(API_TOKEN);
 >```
+
+<br/>
+<br/>
 
 ### Models
 
@@ -140,6 +150,8 @@ The `TModelRoute` class exposes the following methods:
   - `function Archive(const ModelId: string): TArchivingModel` 
   - `function Unarchive(const ModelId: string): TArchivingModel` 
 
+<br/>
+
 > [!TIP]
 >As well as their asynchronous equivalent 
 >  - `procedure AsyncDelete(const ModelId: string; const CallBacks: TFunc<TAsyncModelDeletion>);` 
@@ -148,6 +160,8 @@ The `TModelRoute` class exposes the following methods:
 >  - `procedure AsyncArchive(const ModelId: string; const CallBacks: TFunc<TAsynArchivingModelParams>)` 
 >  - `procedure AsyncUnarchive(const ModelId: string; const CallBacks: TFunc<TAsynArchivingModelParams>)`
 
+<br/>
+<br/>
 
 ### Embeddings
 
@@ -176,6 +190,9 @@ See also [tokenization](https://docs.mistral.ai/guides/tokenization/) at the Mis
     Embeddings.Free;
   end;
 ```
+
+<br/>
+<br/>
 
 Asynchronously, we proceed as follows:
 
@@ -213,11 +230,17 @@ Asynchronously, we proceed as follows:
 >    end);
 >```
 
+<br/>
+<br/>
+
 ### Chats
 
 Using the API to create and maintain conversations. You have the option to either wait for a complete response or receive the response sequentially (Streaming mode).
 
 See also [Prompting Capabilities](https://docs.mistral.ai/guides/prompting_capabilities/) at the MistralAI web site.
+
+<br/>
+<br/>
 
 #### Synchronous
 
@@ -238,6 +261,9 @@ See also [Prompting Capabilities](https://docs.mistral.ai/guides/prompting_capab
     Chat.Free;
   end;
 ```
+
+<br/>
+<br/>
 
 ### Stream mode
 
@@ -264,6 +290,9 @@ See also [Prompting Capabilities](https://docs.mistral.ai/guides/prompting_capab
       Sleep(30);
     end);
 ```
+
+<br/>
+<br/>
 
 #### Asynchronous
 
@@ -311,6 +340,9 @@ as follows :
 >      end);
 >```
 >
+
+<br/>
+<br/>
 
  2. Asynchronous stream mode : See `TAsynChatStreamParams = record`
 
@@ -378,6 +410,9 @@ as follows :
 >```
 >
 
+<br/>
+<br/>
+
 ### Vision
 
 The latest Pixtral 12B adds vision capabilities, allowing to analyze both images and text, expanding its potential for applications requiring multimodal understanding.
@@ -385,6 +420,8 @@ See also [official documentation](https://docs.mistral.ai/capabilities/vision/).
 
 To support both synchronous and asynchronous completion methods, we focused on generating the appropriate payload for message parameters. An overloaded version of the `TChatMessagePayload.User` class function was added, allowing users to include a dynamic array of text elements—either URLs or file paths—alongside the user's text content. Internally, this data is processed to ensure the correct operation of the vision system in both synchronous and asynchronous contexts.
 
+<br/>
+<br/>
 
 #### Passing an Image URL
 
@@ -413,6 +450,9 @@ To support both synchronous and asynchronous completion methods, we focused on g
   
 ```
 
+<br/>
+<br/>
+
 #### Passing a Base64 Encoded Image
 
 
@@ -439,7 +479,8 @@ To support both synchronous and asynchronous completion methods, we focused on g
   
 ```
 
-
+<br/>
+<br/>
 
 ### Function calling
 
@@ -504,6 +545,9 @@ begin
 end;
 ```
 
+<br/>
+<br/>
+
 ### JSON mode
 
 Users have the option to set response_format to {"type": "json_object"} to enable JSON mode. It's important to explicitly ask the model to generate JSON output in your message. Currently, JSON mode is available for all of the models through API.
@@ -529,10 +573,16 @@ See also [documentation](https://docs.mistral.ai/capabilities/json_mode/) at the
   end;
 ```
 
+<br/>
+<br/>
+
 ### Code generation
 
 **Codestral** is an advanced generative model optimized for code generation, including **fill-in-the-middle** and code completion. Trained on over 80 programming languages, it performs well on both common and rare languages.
 See also [Code generation](https://docs.mistral.ai/capabilities/code_generation/) at the MistralAI web site.
+
+<br/>
+<br/>
 
 #### Before using
 
@@ -546,6 +596,9 @@ Go to this address to create a key for using **Codestral** [Key creation](https:
 >
 >  - `procedure AsyncCreateStream(ParamProc: TProc<TCodestralParams>; CallBacks: TFunc<TAsynCodeStreamParams>);`
 >
+
+<br/>
+<br/>
 
 #### Codestral initialization
 
@@ -567,6 +620,9 @@ You can also go through the factory:
 > var CodingModel := TMistralAIFactory.CreateInstance(API_TOKEN, [CodestralSpec]);
 > ```
 
+<br/>
+<br/>
+
 #### Code completion
 
 ```Pascal
@@ -586,6 +642,9 @@ You can also go through the factory:
     Codestral.Free;
   end;
 ```
+
+<br/>
+<br/>
 
 #### Streamed Code completion
 
@@ -611,6 +670,9 @@ You can also go through the factory:
       Sleep(30);
     end);
 ```
+
+<br/>
+<br/>
 
 #### Fill in the middle
 
@@ -644,6 +706,8 @@ This feature allows users to set the beginning of their code with a `prompt` and
 
 The model will create the intermediate code completing the codes provided to the `prompt` and `suffix` parameters.
 
+<br/>
+<br/>
 
 #### Stop tokens
 
@@ -669,6 +733,9 @@ It is advisable to include stop tokens when integrating with IDE autocomplete to
   end;
 ```
 
+<br/>
+<br/>
+
 #### End points
 
 **Codestral** can be used directly to generate code using the endpoint: `https://codestral.mistral.ai/v1/fim/completions`, and for chat interactions with the endpoint: `https://codestral.mistral.ai/v1/chat/completions`.
@@ -693,6 +760,9 @@ However, it is crucial to understand that chat usage requires using only the **"
   end;
 ```
 
+<br/>
+<br/>
+
 ### Fine-tuning
 
 When choosing between prompt engineering and fine-tuning for an AI model, it's advisable to start with prompt engineering due to its speed and lower resource requirements. Fine-tuning, however, offers better performance and alignment with specific tasks, making it ideal for specialized applications and cost reduction.
@@ -701,6 +771,9 @@ See also [Fine-tuning description](https://docs.mistral.ai/capabilities/finetuni
 
 > [!TIP]
 > Synchronous and asynchronous methods also exist for fine-tuning as well as file handling. See the TFilesRoute class in the MistralAI.Files unit and the TFineTuningRoute class in the MistralAI.FineTunings unit
+
+<br/>
+<br/>
 
 #### Files
 
@@ -776,6 +849,8 @@ Returns 404 error if the Id does not exists.
 ```
 Refer to the `TFile` class in the MistralAI.Files.pas unit to understand the information returned by the "Retrieve" method.
 
+<br/>
+<br/>
 
 #### Create a fine-tuning job
 
@@ -820,6 +895,9 @@ As of July 2024, the only fine-tunable models at Mistral are
   end;
 ```
 
+<br/>
+<br/>
+
 #### Delete a fine-tuned model
 
 `Note`: The method in charge of deleting a fine tuned model is found in the `MistralAI.Models.pas` unit.
@@ -835,6 +913,9 @@ As of July 2024, the only fine-tunable models at Mistral are
   end;
 ```
 
+<br/>
+<br/>
+
 ### Agents
 
 The official documentation provided by Mistral regarding agents is available [here](https://docs.mistral.ai/capabilities/agents/).
@@ -849,9 +930,15 @@ The official documentation provided by Mistral regarding agents is available [he
 > [!TIP]
 > The execution of an agent can be done both synchronously and asynchronously. See the class `TAgentRoute` in the **MistralAI.Agents** unit.
 
+<br/>
+<br/>
+
 ## Contributing
 
 Pull requests are welcome. If you're planning to make a major change, please open an issue first to discuss your proposed changes.
+
+<br/>
+<br/>
 
 ## License
 
