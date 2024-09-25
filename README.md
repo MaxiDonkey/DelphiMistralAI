@@ -325,7 +325,7 @@ You can use asynchronous methods for text completion or chat tasks. For this, yo
 
 as follows :
 
- 1 . Asynchronous mode : See `TAsynChatParams = record`
+ 1 . Asynchronous mode : See `TAsynChat = record`
 
 > [!TIP]
 >```Pascal
@@ -364,7 +364,7 @@ as follows :
 
 <br/>
 
- 2. Asynchronous stream mode : See `TAsynChatStreamParams = record`
+ 2. Asynchronous stream mode : See `TAsynChatStream = record`
 
 > [!TIP]
 >```Pascal
