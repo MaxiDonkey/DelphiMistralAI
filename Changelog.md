@@ -1,4 +1,4 @@
-[Back to README](https://github.com/MaxiDonkey/Test/blob/main/README.md)
+[Back to README](https://github.com/MaxiDonkey/DelphiMistralAI/blob/main/README.md)
 
 **2025, january 2** version 1.2
 - Integrating Moderation Service APIs
