@@ -106,12 +106,9 @@ type
   /// </remarks>
   TEmbeddingData = class
   private
-    [JsonNameAttribute('index')]
     FIndex: Int64;
-    [JsonNameAttribute('object')]
     FObject: string;
-    [JsonNameAttribute('embedding')]
-    FEmbedding: TArray<Extended>;
+    FEmbedding: TArray<Double>;
   public
     /// <summary>
     /// The index of the embedding in the list of embeddings.
@@ -124,7 +121,7 @@ type
     /// <summary>
     /// The embedding vector, which is a list of floats. The length of the vector depends on the model as listed in the embedding guide.
     /// </summary>
-    property Embedding: TArray<Extended> read FEmbedding write FEmbedding;
+    property Embedding: TArray<Double> read FEmbedding write FEmbedding;
   end;
 
   /// <summary>
@@ -135,15 +132,10 @@ type
   /// </remarks>
   TEmbeddings = class
   private
-    [JsonNameAttribute('id')]
     FId: string;
-    [JsonNameAttribute('object')]
     FObject: string;
-    [JsonNameAttribute('data')]
     FData: TArray<TEmbeddingData>;
-    [JsonNameAttribute('model')]
     FModel: string;
-    [JsonNameAttribute('usage')]
     FUsage: TEmbeddingUsage;
   public
     /// <summary>

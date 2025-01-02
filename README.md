@@ -3,25 +3,37 @@
 ___
 ![GitHub](https://img.shields.io/badge/IDE%20Version-Delphi%2010.3/11/12-yellow)
 ![GitHub](https://img.shields.io/badge/platform-all%20platforms-green)
-![GitHub](https://img.shields.io/badge/Updated%20the%2009/24/2024-blue)
+![GitHub](https://img.shields.io/badge/Updated%20on%20january%202,%202025-blue)
 
 <br/>
 <br/>
 
 - [Introduction](#Introduction)
+- [Changelog](https://github.com/MaxiDonkey/Test/blob/main/Changelog.md)
 - [Remarks](#remarks)
+- [Wrapper Tools Info](#Wrapper-Tools-Info)
+    - [Tools for simplifying this tutorial](#Tools-for-simplifying-this-tutorial)
+    - [Asynchronous callback mode management](#Asynchronous-callback-mode-management)
+    - [Simplified Unit Declaration](#Simplified-Unit-Declaration) 
 - [Usage](#usage)
     - [Initialization](#initialization)
-    - [Callbacks (asynchronous mode)](#Callbacks-asynchronous-mode)
     - [Models](#models)
+        - [Retrieve the list of models](#Retrieve-the-list-of-models)
+        - [Retrieve Model](#Retrieve-Model)
+        - [Fine tuned Models](#Fine-tuned-Models)
     - [Embeddings](#embeddings)
     - [Chats](#chats)
         - [Synchronous](#Synchronous)
+            - [Not Streamed](#Not-Streamed)
+            - [Streamed](#Streamed)
         - [Asynchronous](#Asynchronous)
+            - [Asynchronous Not Streamed](#Asynchronous-Not-Streamed)
+            - [Asynchronous Streamed](#Asynchronous-Streamed)
     - [Vision](#vision)
         - [Passing an Image URL](#Passing-an-image-url)
         - [Passing a Base64 Encoded Image](#Passing-a-base64-encoded-image)	
     - [Function calling](#function-calling)
+        - [The weather in Paris](#The-weather-in-Paris)
     - [JSON mode](#JSON-mode)
     - [Code generation](#Code-generation)
         - [Before using](#Before-using)
@@ -31,10 +43,28 @@ ___
         - [Fill in the middle](#Fill-in-the-middle)
         - [Stop tokens](#Stop-tokens)
         - [End points](#End-points)
+    - [Files](#Files)
+        - [List of files](#[List-of-files)
+        - [File Retrieve](#File-Retrieve)
+        - [File Upload](#File-Upload)
+        - [File Delete](#File-Delete)
+        - [File Download](#File-Download)
     - [Fine-tuning](#Fine-tuning)
-        - [Files](#Files)
-        - [Create a fine-tuning job](#Create-a-fine-tuning-job)
-        - [Delete a fine-tuned model](#Delete-a-fine-tuned-model)
+        - [Create a Fine-tuning Job](#Create-a-Fine-tuning-Job)
+        - [Delete a Fine-tuned Model](#Delete-a-Fine-tuned-Model)
+        - [List of Fine-tune Job](#List-of-Fine-tune-Job)
+        - [Retrieve a Fine-tune Job](#Retrieve-a-Fine-tune-Job)
+        - [Start a Fine-tune Job](#Start-a-Fine-tune-Job)
+        - [Cancel a Fine-tune Job](#Cancel-a-Fine-tune-Job)
+    - [Moderation](#Moderation)
+        - [Raw-text endpoint](#Raw-text-endpoint)
+        - [Conversational endpoint](#Conversational-endpoint)
+    - [Batch Inference](#Batch-Inference)
+        - [Batch List](#Batch-List)
+        - [Batch Job Create](#Batch-Job-Create)
+        - [Batch Job Cancel](#Batch-Job-Cancel)
+        - [Batch Job Retrieve](#Batch-Job-Retrieve)
+        - [Batch Job Result File](#Fatch-Job-Result-File)
     - [Agents](#Agents)
 - [Contributing](#contributing)
 - [License](#license)
@@ -43,15 +73,16 @@ ___
 <br/>
 
 
-## Introduction
+# Introduction
 
-Welcome to the unofficial Delphi **MistralAI** API library. This project aims to provide a `Delphi` interface for interacting with the **MistralAI** public API, making it easier to integrate advanced natural language processing features into your `Delphi` applications. Whether you want to generate text, create embeddings, use chat models, or generate code, this library offers a simple and effective solution.
+Welcome to the Unofficial **Delphi MistralAI API Library**
+This library is designed to provide a seamless `Delphi` interface for interacting with the `MistralAI public API`. It simplifies the integration of advanced natural language processing capabilities into your `Delphi` applications. Whether your goal is text generation, creating embeddings, leveraging chat models, managing batch jobs, performing text evaluation with classifiers for moderation, or generating code, this library offers a streamlined and efficient solution to meet your needs.
 
 **MistralAI** is a powerful natural language processing API that enables developers to incorporate advanced AI functionalities into their applications. For more details, visit the [official MistralAI documentation](https://docs.mistral.ai/api/).
 
 <br/>
 
-## Remarks 
+# Remarks 
 
 > [!IMPORTANT]
 >
@@ -60,34 +91,38 @@ Welcome to the unofficial Delphi **MistralAI** API library. This project aims to
 
 <br/>
 
-## Usage
+# Wrapper Tools Info
 
-### Initialization
+This section provides brief notifications and explanations about the tools available to simplify the presentation and understanding of the wrapper's functions in the tutorial.
 
-To initialize the API instance, you need to [obtain an API token from MistralAI](https://console.mistral.ai/api-keys/).
+<br>
 
-Once you have a token, you can initialize `IMistralAI` interface, which is an entry point to the API.
+## Tools for simplifying this tutorial
 
-Due to the fact that there can be many parameters and not all of them are required, they are configured using an anonymous function.
+To streamline the code examples provided in this tutorial and facilitate quick implementation, two units have been included in the source code: `MistralAI.Tutorial.VCL` and `MistralAI.Tutorial.FMX`. Depending on the platform you choose to test the provided source code, you will need to instantiate either the `TVCLTutorialHub` or `TFMXTutorialHub` class in the application's OnCreate event, as demonstrated below:
 
-```Pascal
-uses MistralAI;
-
-var MistralAI: IMistralAI := TMistralAI.Create(API_TOKEN);
-```
-
-You can also use the factory:
-
-> [!NOTE]
+>[!TIP]
 >```Pascal
->uses MistralAI;
->
->var MistralAI := TMistralAIFactory.CreateInstance(API_TOKEN);
+> //uses MistralAI.Tutorial.VCL;
+> TutorialHub := TVCLTutorialHub.Create(Memo1, Memo2, Button1);
 >```
+
+
+or
+
+>[!TIP]
+>```Pascal
+> //uses MistralAI.Tutorial.FMX;
+> TutorialHub := TFMXTutorialHub.Create(Memo1, Memo2, Button1);
+>```
+
+Make sure to add two `TMemo` and a `TButton` component to your form beforehand.
+
+The `TButton` will allow the interruption of any streamed reception.
 
 <br/>
 
-### Callbacks (asynchronous mode)
+## Asynchronous callback mode management
 
 In the context of asynchronous methods, for a method that does not involve streaming, callbacks use the following generic record: `TAsyncCallBack<T> = record` defined in the `MistralAI.Async.Support.pas` unit. This record exposes the following properties:
 
@@ -117,101 +152,176 @@ For methods requiring streaming, callbacks use the generic record `TAsyncStreamC
 
 The name of each property is self-explanatory; if needed, refer to the internal documentation for more details.
 
-<br>
+>[!NOTE]
+> All methods managed by the wrapper are designed to support both synchronous and asynchronous execution modes. This dual-mode functionality ensures greater flexibility for users, allowing them to choose the approach that best suits their application's requirements and workflow.
 
-### Models
+<br/>
 
-List the various models available in the API. You can refer to the Models documentation to understand what models are available.
-See [Models Documentation](https://docs.mistral.ai/models/)
+## Simplified Unit Declaration
+
+To streamline the use of the API wrapper, the process for declaring units has been simplified. Regardless of the methods being utilized, you only need to reference the following two core units:
 
 ```Pascal
-//uses MistralAI, MistralAI.Models;
+  uses
+    MistralAI, MistralAI.Types;
+```
 
-var Models := MistralAI.Models.List; 
+If required, you may also include the `MistralAI.Schema` unit or any plugin units developed for specific function calls (e.g., `MistralAI.Functions.Example`). This simplification ensures a more intuitive and efficient integration process for developers.
+
+<br/>
+
+# Usage
+
+## Initialization
+
+To initialize the API instance, you need to [obtain an API token from MistralAI](https://console.mistral.ai/api-keys/).
+
+Once you have a token, you can initialize `IMistralAI` interface, which is an entry point to the API.
+
+```Pascal
+uses MistralAI;
+
+var MistralAI := TMistralAIFactory.CreateInstance(API_TOKEN);
+```
+
+<br/>
+
+When instantiating the interface managing the TMistralAI type class, the CodestralSpec specification can be specified in the create constructor.
+
+The resulting interface will handle both `CodeStral` functionality as well as chat-type interactions.
+
+```Pascal
+uses MistralAI;
+
+var CodingModel := TMistralAIFactory.CreateInstance(API_TOKEN, [CodestralSpec]);
+```
+
+>[!Warning]
+> To use the examples provided in this tutorial, especially to work with asynchronous methods, I recommend defining the `MistralAI` and `CodingModel`  interfaces with the widest possible scope.
+> <br/>
+> So, set 
+> - `MistralAI := TMistralAIFactory.CreateInstance(API_TOKEN);`  and 
+> - `CodingModel := TMistralAIFactory.CreateInstance(API_TOKEN, [CodestralSpec]);`  
+> in the `OnCreate` event of your application.
+> <br/>
+> Having previously declared  MistralAI: IMistralAI; and CodingModel: IMistralAI;
+>
+
+<br/>
+
+## Models
+
+The `Model` unit manages not only the models provided by `MistralAI` but also those that have been fine-tuned for specific use cases. This flexibility ensures seamless integration and utilization of both pre-trained and customized models.
+
+For more details on the available models, please refer to the [Models Documentation](https://docs.mistral.ai/models/)
+
+### Retrieve the list of models
+
+**Synchronously code example :**
+
+```Pascal
+//uses MistralAI, MistralAI.Types, MistralAI.Tutorial.FMX;
+
+  var Models := MistralAI.Models.List;
+    try
+      Display(TutorialHub, Models);
+    finally
+      Models.Free;
+    end;
+```
+
+**Asynchronously code example :**
+
+```Pascal
+//uses MistralAI, MistralAI.Types, MistralAI.Tutorial.FMX;
+
+  MistralAI.Models.AsyncList(
+    function : TAsynModels
+    begin
+      Result.Sender := TutorialHub;
+      Result.OnStart := Start;
+      Result.OnSuccess := Display;
+      Result.OnError := Display;
+    end);
+```
+<br/>
+
+### Retrieve Model
+
+**Synchronously code example :**
+
+```Pascal
+//uses MistralAI, MistralAI.Types, MistralAI.Tutorial.FMX;
+
+  var Model := MistralAI.Models.Retrieve('mistral-large-2407');
   try
-    for var Model in Models.Data do
-      if Model.Capabilities.FineTuning then
-        Memo1.Lines.Add(Model.id + '  (Can be fine-tuned)') else
-        Memo1.Lines.Add(Model.id)
+    Display(TutorialHub, Model);
   finally
-    Models.Free;
+    Model.Free;
   end;
 ```
 
-Asynchronously, we proceed as follows:
+**Asynchronously code example :**
 
-> [!TIP]
->```Pascal
->//uses MistralAI, MistralAI.Models;
->
->MistralAI.Models.AsyncList(
->    function : TAsynModels
->    begin
->      Result.Sender := Memo1;  //Uses a TMemo for displaying
->
->      Result.OnStart := nil;
->        
->      Result.OnSuccess :=
->        procedure (Sender: TObject; List: TModels)
->        begin
->          var M := Sender as TMemo;
->
->          M.Lines.BeginUpdate;
->          try
->            for var Model in List.Data do
->              if Model.Capabilities.FineTuning then
->                M.Lines.Add(Model.id + '  (Can fine-tuned)') else
->                M.Lines.Add(Model.id)
->              end
->          finally
->            M.Perform(WM_VSCROLL, SB_BOTTOM, 0);
->            M.Lines.EndUpdate;	
->          end;
->    end);
->```
+```Pascal
+//uses MistralAI, MistralAI.Types, MistralAI.Tutorial.FMX;
 
-The `TModelRoute` class exposes the following methods: 
-  - `function Delete(const ModelId: string): TModelDeletion` 
-  - `function Retrieve(const ModelId: string): TModel` 
-  - `function Update(const ModelId: string; ParamProc: TProc< TModelParams>): TFineTunedModel` 
-  - `function Archive(const ModelId: string): TArchivingModel` 
-  - `function Unarchive(const ModelId: string): TArchivingModel` 
+  MistralAI.Models.AsyncRetrieve('mistral-large-2407',
+    function : TAsynModel
+    begin
+      Result.Sender := TutorialHub;
+      Result.OnStart := Start;
+      Result.OnSuccess := Display;
+      Result.OnError := Display;
+    end);
+```
 
 <br/>
 
-> [!TIP]
->As well as their asynchronous equivalent 
->  - `procedure AsyncDelete(const ModelId: string; const CallBacks: TFunc<TAsynModelDeletion>);` 
->  - `procedure AsyncRetrieve(const ModelId: string; const CallBacks: TFunc<TAsynModel>)` 
->  - `procedure AsyncUpdate(const ModelId: string; ParamProc: TProc<TModelParams>; const CallBacks: TFunc<TAsynFineTuneModel>)` 
->  - `procedure AsyncArchive(const ModelId: string; const CallBacks: TFunc<TAsynArchivingModel>)` 
->  - `procedure AsyncUnarchive(const ModelId: string; const CallBacks: TFunc<TAsynArchivingModel>)`
+### Fine tuned Models
 
-<br/>
+Fine-tuned models can be managed through various operations, including deletion, renaming, archiving, and unarchiving. To perform these actions, the following functions are available in both synchronous and asynchronous modes:
 
-### Embeddings
+**Synchronous Mode:** 
+```Pascal
+- function Delete(const ModelId: string): TModelDeletion;
+- function Update(const ModelId: string; ParamProc: TProc<TModelParams>): TFineTunedModel;
+- function Archive(const ModelId: string): TArchivingModel;
+- function Unarchive(const ModelId: string): TArchivingModel;
+```
+
+**Asynchronous Mode:** 
+```Pascal
+- procedure AsyncDelete(const ModelId: string; const CallBacks: TFunc<TAsynModelDeletion>);
+- procedure AsyncUpdate(const ModelId: string; ParamProc: TProc<TModelParams>;
+      const CallBacks: TFunc<TAsynFineTuneModel>);
+- procedure AsyncArchive(const ModelId: string; const CallBacks: TFunc<TAsynArchivingModel>);
+- procedure AsyncUnarchive(const ModelId: string; const CallBacks: TFunc<TAsynArchivingModel>);
+```
+
+These functions provide a flexible and comprehensive approach to maintaining and organizing fine-tuned models.
+
+<br>
+
+## Embeddings
 
 Embeddings make it possible to vectorize one or more texts in order, for example, to calculate the similarity between sentences. Each vector resulted will be of dimension 1024. This vector representation captures deep semantic aspects of texts, allowing for more nuanced comparisons.
 Distance measures such as cosine, Euclidean distance or other custom measures can be applied to these embeddings. 
 
 See also [tokenization](https://docs.mistral.ai/guides/tokenization/) at the MistralAI web site.
 
+**Synchronously code example :**
+
 ```Pascal
-//uses MistralAI, MistralAI.Embeddings;
+//uses MistralAI, MistralAI.Types, MistralAI.Tutorial.FMX;
 
   var Embeddings := MistralAI.Embeddings.Create(
     procedure (Params: TEmbeddingParams)
     begin
-      Params.Model('mistral-embed'); //By default this is the model used so this line can be omitted
       Params.Input(['aba', 'bbb']);
     end);
   try
-    for var Value in Embeddings.Data do
-      begin
-        Memo1.Lines.Add('-----------------------------' + Value.index.ToString);
-        for var Item in Value.Embedding do
-          Memo1.Lines.Add(Item.ToString);
-      end;
+    Display(TutorialHub, Embeddings);
   finally
     Embeddings.Free;
   end;
@@ -219,45 +329,28 @@ See also [tokenization](https://docs.mistral.ai/guides/tokenization/) at the Mis
 
 <br/>
 
-Asynchronously, we proceed as follows:
+**Asynchronously**, we proceed as follows:
 
-> [!TIP]
->```Pascal
->//uses MistralAI, MistralAI.Embeddings;
->
->  MistralAI.Embeddings.AsyncCreate(
->    procedure (Params: TEmbeddingParams)
->    begin
->      Params.Input(['Text to vectorize']);
->    end,
->
->    function : TAsynEmbeddings
->    begin
->      Result.Sender := Memo1;
->
->      Result.OnSuccess :=
->        procedure (Sender: TObject; Result: TEmbeddings)
->        begin
->          var M := Sender as TMemo;
->          M.Lines.BeginUpdate;
->          try
->            for var Value in Result.Data do
->              begin
->                M.Lines.Add('-----------------------------' + Value.index.ToString);
->                for var Item in Value.Embedding do
->                  M.Lines.Add(Item.ToString);
->              end;
->          finally
->            M.Perform(WM_VSCROLL, SB_BOTTOM, 0);
->            M.Lines.EndUpdate;
->          end;
->        end
->    end);
->```
+```Pascal
+//uses MistralAI, MistralAI.Types, MistralAI.Tutorial.FMX;
+
+  MistralAI.Embeddings.AsyncCreate(
+    procedure (Params: TEmbeddingParams)
+    begin
+      Params.Input([ 'Text to vectorize' ]);
+    end,
+    function : TAsyncEmbeddings
+    begin
+      Result.Sender := TutorialHub;
+      Result.OnStart := Start;
+      Result.OnSuccess := Display;
+      Result.OnError := Display;
+    end);  
+```
 
 <br/>
 
-### Chats
+## Chats
 
 Using the API to create and maintain conversations. You have the option to either wait for a complete response or receive the response sequentially (Streaming mode).
 
@@ -265,21 +358,22 @@ See also [Prompting Capabilities](https://docs.mistral.ai/guides/prompting_capab
 
 <br/>
 
-#### Synchronous
+### Synchronous
+
+#### Not Streamed
 
 ```Pascal
-//uses MistralAI, MistralAI.Functions.Tools, MistralAI.Chat;  
+//uses MistralAI, MistralAI.Types, MistralAI.Tutorial.FMX;
 
   var Chat := MistralAI.Chat.Create(
     procedure (Params: TChatParams)
     begin
       Params.Model('mistral-tiny');
-      Params.Messages([TChatMessagePayload.User(Memo2.Text)]);
+      Params.Messages([Payload.User('Explain to me what joual is for Quebecers.')]);
       Params.MaxTokens(1024);
     end);
   try
-    for var Choice in Chat.Choices do
-      Memo1.Lines.Add(Choice.Message.Content);
+    Display(Memo1, Chat);
   finally
     Chat.Free;
   end;
@@ -287,16 +381,18 @@ See also [Prompting Capabilities](https://docs.mistral.ai/guides/prompting_capab
 
 <br/>
 
-### Stream mode
+#### Streamed
 
 ```Pascal
-//uses MistralAI, MistralAI.Functions.Tools, MistralAI.Chat;
+//uses MistralAI, MistralAI.Types, MistralAI.Tutorial.FMX;
 
   MistralAI.Chat.CreateStream(
     procedure(Params: TChatParams)
     begin
-      Params.Model('mistral-medium');
-      Params.Messages([TChatMessagePayload.User(Memo2.Text)]);
+      Params.Model('mistral-large-latest');
+      Params.Messages([
+          Payload.System('You are a teacher for 8 year old children, you have to adapt your language to your students.'),
+          Payload.User('Explain to me what joual is for Quebecers.')]);
       Params.MaxTokens(1024);
       Params.Stream;
     end,
@@ -304,18 +400,14 @@ See also [Prompting Capabilities](https://docs.mistral.ai/guides/prompting_capab
     begin
       if (not IsDone) and Assigned(Chat) then
         begin
-          Memo1.Text := Memo1.Text + Chat.Choices[0].Delta.Content;
-          Application.ProcessMessages;
-        end
-      else if IsDone then 
-        Memo1.Text := Memo1.Text + '--- Done';
-      Sleep(30);
+          DisplayStream(Memo1, Chat);
+        end;
     end);
 ```
 
 <br/>
 
-#### Asynchronous
+### Asynchronous
 
 You can use asynchronous methods for text completion or chat tasks. For this, you need to use the two methods
 
@@ -325,114 +417,59 @@ You can use asynchronous methods for text completion or chat tasks. For this, yo
 
 as follows :
 
- 1 . Asynchronous mode : See `TAsynChat = record`
+#### Asynchronous Not Streamed
 
-> [!TIP]
->```Pascal
->//uses MistralAI, MistralAI.Functions.Tools, MistralAI.Chat;
->
->  MistralAI.Chat.AsyncCreate(
->      procedure (Params: TChatParams)
->      begin
->        Params.Model('my_model');
->        Params.Messages([TChatMessagePayload.User('Hello')]);
->        Params.MaxTokens(1024);
->      end,
->
->      function : TAsynChat
->      begin
->        Result.Sender := Memo1; //Uses TMemo for displaying 
->
->        Result.OnStart := nil;
->
->        Result.OnSuccess :=
->          procedure (Sender: TObject; Chat: TChat)
->          begin
->            var M := Sender as TMemo;
->            for var Choice in Chat.Choices do
->              M.Lines.Add(Choice.Message.Content + sLineBreak);
->          end;
->
->        Result.OnError :=
->          procedure (Sender: TObject; value: string)
->          begin
->            ShowMessage(Value);
->          end;
->      end);
->```
->
+```Pascal
+//uses MistralAI, MistralAI.Types, MistralAI.Tutorial.FMX;
+
+  MistralAI.Chat.ASyncCreate(
+    procedure (Params: TChatParams)
+    begin
+      Params.Model('mistral-tiny');
+      Params.Messages([Payload.User('Explain to me what joual is for Quebecers.')]);
+      Params.MaxTokens(1024);
+    end,
+    function : TAsynChat
+    begin
+      Result.Sender := TutorialHub;
+      Result.OnStart := Start;
+      Result.OnSuccess := Display;
+      Result.OnError := Display;
+    end);  
+```
+<br/>
+
+#### Asynchronous Streamed
+
+
+```Pascal
+//uses MistralAI, MistralAI.Types, MistralAI.Tutorial.FMX;
+
+  MistralAI.Chat.ASyncCreateStream(
+    procedure(Params: TChatParams)
+    begin
+      Params.Model('mistral-large-latest');
+      Params.Messages([
+          Payload.System('You are a literature professor for graduate students and you often mention Jack Kerouac.'),
+          Payload.User('Explain to me what joual is for Quebecers.')]);
+      Params.MaxTokens(1024);
+      Params.Stream;
+    end,
+    function : TAsynChatStream
+    begin
+      Result.Sender := TutorialHub;
+      Result.OnStart := Start;
+      Result.OnProgress := DisplayStream;
+      Result.OnSuccess := Display;
+      Result.OnDoCancel := DoCancellation;
+      Result.OnCancellation := Cancellation;
+      Result.OnError := Display;
+    end);
+```
 
 <br/>
 
- 2. Asynchronous stream mode : See `TAsynChatStream = record`
-
-> [!TIP]
->```Pascal
->//uses MistralAI, MistralAI.Functions.Tools, MistralAI.Chat;
->
->  MistralAI.Chat.AsyncCreateStream(
->       procedure(Params: TChatParams)
->       begin
->         Params.Model('my_model');
->         Params.Messages([TChatMessagePayload.User('request')]);
->         Params.MaxTokens(1024);
->         Params.Stream;
->       end,
->    
->       function: TAsynChatStream
->       begin
->         Result.Sender := Memo1;  //Events will return this instance
->    
->         Result.OnStart := nil;   // if nil then; Can be omitted
->
->         Result.OnProgress :=
->           procedure (Sender: TObject; Chat: TChat)
->           begin
->             // Handle progressive updates to the chat response
->             var S := Chat.Choices[0].Delta.Content;
->             var M := Sender as TMemo;
->             M.Lines.BeginUpdate;
->             try
->               for var i := 1 to S.Length do
->                 if (S[i] <> #10) and (S[i] <> #13) then
->                   M.Text := M.Text + S[i] else
->                   M.Text := M.Text + sLineBreak;
->               M.Perform(WM_VSCROLL, SB_BOTTOM, 0);
->             finally
->               M.Lines.EndUpdate;
->             end;		
->           end;
->    
->         Result.OnSuccess :=
->           procedure (Sender: TObject)
->           begin
->             // Handle success when the operation completes
->           end;
->    
->         Result.OnError :=
->           procedure (Sender: TObject; Value: string)
->           begin
->             ShowMessage(Value); // Display error message
->           end;
->    
->         Result.OnDoCancel :=
->           function: Boolean
->           begin
->             Result := CheckBox1.Checked; // Click on checkbox to cancel
->           end;
->
->         Result.OnCancellation :=
->           procedure (Sender: TObject)
->           begin
->             // Processing when process has been canceled
->           end;
->       end);
->```
->
-
-<br/>
-
-### Vision
+## Vision
 
 The latest Pixtral 12B adds vision capabilities, allowing to analyze both images and text, expanding its potential for applications requiring multimodal understanding.
 See also [official documentation](https://docs.mistral.ai/capabilities/vision/).
@@ -441,64 +478,109 @@ To support both synchronous and asynchronous completion methods, we focused on g
 
 <br/>
 
-#### Passing an Image URL
+### Passing an Image URL
+
+**Synchronously code example :**
 
 ```Pascal
-//uses MistralAI, MistralAI.Functions.Tools, MistralAI.Chat;
+//uses MistralAI, MistralAI.Types, MistralAI.Tutorial.FMX;
 
-  var Chat := MistralAI.Chat.Create(
+  // png, jpeg, gif and webp formats are supported
+  var Ref1 := 'https://tripfixers.com/wp-content/uploads/2019/11/eiffel-tower-with-snow.jpeg';
+  var Ref2 := 'https://assets.visitorscoverage.com/production/wp-content/uploads/2024/04/AdobeStock_626542468-min-1024x683.jpeg';
+
+  var Vision := MistralAI.Chat.Create(
     procedure (Params: TChatParams)
     begin
       Params.Model('pixtral-12b-2409');
-      
-      // png, jpeg, gif and webp formats are supported
-      var Ref1 := 'https://tripfixers.com/wp-content/uploads/2019/11/eiffel-tower-with-snow.jpeg';
-      var Ref2 := 'https://assets.visitorscoverage.com/production/wp-content/uploads/2024/04/AdobeStock_626542468-min-1024x683.jpeg';
-      
-      Params.Messages([TChatMessagePayload.User('what are the differences between two images?', [Ref1, Ref2])]);
-
+      Params.Messages([Payload.User('what are the differences between two images?', [Ref1, Ref2])]);
       Params.MaxTokens(1024);
     end);
   try
-    for var Choice in Chat.Choices do
-      Memo1.Lines.Add(Choice.Message.Content);
+    Display(TutorialHub, Vision);
   finally
-    Chat.Free;
+    Vision.Free;
   end;
-  
+```
+
+**Asynchronously code example :**
+
+```Pascal
+//uses MistralAI, MistralAI.Types, MistralAI.Tutorial.FMX;
+
+  // png, jpeg, gif and webp formats are supported
+  var Ref1 := 'https://tripfixers.com/wp-content/uploads/2019/11/eiffel-tower-with-snow.jpeg';
+  var Ref2 := 'https://assets.visitorscoverage.com/production/wp-content/uploads/2024/04/AdobeStock_626542468-min-1024x683.jpeg';
+
+  MistralAI.Chat.ASyncCreate(
+    procedure (Params: TChatParams)
+    begin
+      Params.Model('pixtral-12b-2409');
+      Params.Messages([Payload.User('what are the differences between two images?', [Ref1, Ref2])]);
+      Params.MaxTokens(1024);
+    end,
+    function : TAsynChat
+    begin
+      Result.Sender := TutorialHub;
+      Result.OnStart := Start;
+      Result.OnSuccess := Display;
+      Result.OnError := Display;
+    end);
 ```
 
 <br/>
 
-#### Passing a Base64 Encoded Image
+### Passing a Base64 Encoded Image
 
+**Synchronously code example :**
 
 ```Pascal
-//uses MistralAI, MistralAI.Functions.Tools, MistralAI.Chat;
+//uses MistralAI, MistralAI.Types, MistralAI.Tutorial.FMX;
 
-  var Chat := MistralAI.Chat.Create(
+  // png, jpeg, gif and webp formats are supported
+  var Ref := 'D:\My_folder\Images\my_image.png';  
+
+  var Vision := MistralAI.Chat.Create(
     procedure (Params: TChatParams)
     begin
       Params.Model('pixtral-12b-2409');
-      
-      var Ref := 'D:\My_folder\Images\my_image.png';  // png, jpeg, gif and webp formats are supported
-          
-      Params.Messages([TChatMessagePayload.User('my query ', [Ref])]);
-
+      Params.Messages([Payload.User('Describe the image', [Ref])]);
       Params.MaxTokens(1024);
     end);
   try
-    for var Choice in Chat.Choices do
-      Memo1.Lines.Add(Choice.Message.Content);
+    Display(TutorialHub, Vision);  
   finally
-    Chat.Free;
-  end;
-  
+    Vision.Free;
+  end;  
 ```
+
+**Asynchronously code example :**
+
+```Pascal
+//uses MistralAI, MistralAI.Types, MistralAI.Tutorial.FMX;
+
+  MistralAI.Chat.ASyncCreate(
+    procedure (Params: TChatParams)
+    begin
+      Params.Model('pixtral-12b-2409');
+      Params.Messages([PayLoad.User('Describe the image', [Ref])]);
+      Params.MaxTokens(1024);
+    end,
+    function : TAsynChat
+    begin
+      Result.Sender := TutorialHub;
+      Result.OnStart := Start;
+      Result.OnSuccess := Display;
+      Result.OnError := Display;
+    end);
+```
+
+>[!NOTE]
+> Since the goal is to use the chat API, you can adapt these examples for scenarios involving streamed responses.
 
 <br/>
 
-### Function calling
+## Function calling
 
 Function calling allows Mistral models to connect to external tools. By integrating Mistral models with external tools such as user defined functions or APIs, users can easily build applications catering to specific use cases and practical problems. 
 
@@ -506,83 +588,165 @@ See also [documentation](https://docs.mistral.ai/capabilities/function_calling/)
 
 Warning : While this technology is powerful, it also carries potential risks. We strongly advise incorporating user confirmation processes before executing real-world actions on behalf of users, such as sending emails, posting online, making purchases, etc.
 
+In the following section, we will explore the use of the tools through a practical example: *What’s the weather like in Paris?*
 
-```Pascal
-//uses 
-//  MistralAI, MistralAI.Chat,  
-//  MistralAI.Functions.Core, MistralAI.Functions.Tools, MistralAI.Functions.Example;
-  
-  var WeatherFunc: IFunctionCore := TWeatherReportFunction.Create; //plugin in charge of the external API that can be invoked by the model  
-  var Chat := MistralAI.Chat.Create(
-    procedure (Params: TChatParams)
-    begin
-      Params.Model('mistral-small-latest');
-      Params.Messages([TChatMessagePayload.User(Memo2.Text)]);
-      Params.SafePrompt(False);
-      Params.Stream(False);
-      Params.Temperature(0.7);
-      Params.TopP(1);
-      Params.Tools([TChatMessageTool.Add(WeatherFunc)]);
-      Params.ToolChoice(auto);
-      Params.MaxTokens(64);
-      Params.RandomSeed(1337);
-    end);
-  try
-    for var Choice in Chat.Choices do
-      begin
-        if Choice.FinishReason = TFinishReason.tool_calls then
-          CallFunction(Choice.Message.ToolsCalls[0], WeatherFunc)
-        else
-          Memo1.Lines.Add(Choice.Message.Content); //Display message content if function is not called
-      end;
-  finally
-    Chat.Free;
-  end;
+### The weather in Paris
 
-procedure CallFunction(const Value: TCalledFunction; Func: IFunctionCore);
-begin
-  var ArgResult := Func.Execute(Value.&Function.Arguments);
-  var Chat := MistralAI.Chat.Create(
-    procedure (Params: TChatParams)
-    begin
-      Params.Model('open-mixtral-8x22b-2404');
-      Params.Messages([
-        TChatMessagePayload.User(Memo2.Text),
-        TChatMessagePayload.User(ArgResult)
-      ]);
-      Params.MaxTokens(1024);
-    end);
-  try
-    for var Choice in Chat.Choices do
-      Memo1.Lines.Add(Choice.Message.Content); //Display message content
-  finally
-    Chat.Free;
-  end;
-end;
+The tool schema used :
+```Json
+  {
+    "type": "object",
+    "properties": {
+         "location": {
+             "type": "string",
+             "description": "The city and department, e.g. Marseille, 13"
+         },
+         "unit": {
+             "type": "string",
+             "enum": ["celsius", "fahrenheit"]
+         }
+     },
+     "required": ["location"]
+  }
 ```
 
 <br/>
 
-### JSON mode
+1. We will use the `TWeatherReportFunction` plugin defined in the `MistralAI.Functions.Example` unit.
+
+```Delphi
+// uses MistralAI.Functions.Example;
+
+  var WeatherFunc: IFunctionCore := TWeatherReportFunction.Create;
+```
+<br/>
+
+2. We then define a method to display the result of the query using the `Weather` tool.
+
+```Delphi
+procedure TMyForm.CalledFunction(const Value: TCalledFunction; Func: IFunctionCore);
+begin
+  var ArgResult := Func.Execute(Value.&Function.Arguments);
+
+  MistralAI.Chat.AsyncCreateStream(
+    procedure (Params: TChatParams)
+    begin
+      Params.Model('open-mixtral-8x22b-2404');
+      Params.Messages([
+        PayLoad.System('Respond like a star weather presenter on a prime-time TV channel.'),
+        Payload.User(ArgResult)
+      ]);
+      Params.Stream(True);
+      Params.MaxTokens(1024);
+    end,
+    function : TAsynChatStream
+    begin
+      Result.Sender := TutorialHub;
+      Result.OnProgress := DisplayStream;
+      Result.OnSuccess := Display;
+      Result.OnDoCancel := DoCancellation;
+      Result.OnCancellation := Cancellation;
+      Result.OnError := Display;
+    end);
+end;
+```
+<br/>
+
+3. Building the query using the `Weather` tool
+
+**Synchronously code example**
+
+```Pascal
+// MistralAI, MistralAI.Types, MistralAI.Functions.Example, MistralAI.Tutorial.FMX, MistralAI.Functions.Example;
+
+  var WeatherFunc: IFunctionCore := TWeatherReportFunction.Create;
+
+  TutorialHub.Tool := WeatherFunc; //For tutorial tool use only
+  TutorialHub.ToolCall := CalledFunction; // For tutorial tool use only
+
+  var Chat := MistralAI.Chat.Create(
+    procedure (Params: TChatParams)
+    begin
+      Params.Model('mistral-large-latest');
+      Params.Messages([TChatMessagePayload.User('What''s the weather like in Paris?')]);
+      Params.Tools([TChatMessageTool.Add(WeatherFunc)]);
+      Params.ToolChoice(auto);
+      Params.MaxTokens(1024);
+    end);
+  try
+    Display(TutorialHub, Chat);
+  finally
+    Chat.Free;
+  end;
+```
+
+**Asynchronously code example**
+
+```Pascal
+// MistralAI, MistralAI.Types, MistralAI.Functions.Example, MistralAI.Tutorial.FMX, MistralAI.Functions.Example;
+
+  var WeatherFunc: IFunctionCore := TWeatherReportFunction.Create;
+
+  TutorialHub.Tool := WeatherFunc; //For tutorial tool use only
+  TutorialHub.ToolCall := CalledFunction; // For tutorial tool use only
+
+  MistralAI.Chat.ASyncCreate(
+    procedure (Params: TChatParams)
+    begin
+      Params.Model('mistral-large-latest');
+      Params.Messages([TChatMessagePayload.User('What''s the weather like in Paris?')]);
+      Params.Tools([TChatMessageTool.Add(WeatherFunc)]);
+      Params.ToolChoice(auto);
+      Params.MaxTokens(1024);
+    end,
+    function : TAsynChat
+    begin
+      Result.Sender := TutorialHub;
+      Result.OnStart := Start;
+      Result.OnSuccess := Display;
+      Result.OnError := Display;
+    end);
+```
+<br/>
+
+>[!NOTE]
+>If we examine the `display` method in detail in this case, we notice that it takes into account the `FinishReason` flag and checks whether it is assigned the value `TFinishReason.tool_calls`. If so, the function is evaluated using the arguments obtained from the prompt.
+>
+>```Pascal
+> procedure Display(Sender: TObject; Value: TChat);
+> begin
+>   for var Item in Value.Choices do
+>    if Item.FinishReason = TFinishReason.tool_calls then
+>      begin
+>         if Assigned(TutorialHub.ToolCall) then
+>           TutorialHub.ToolCall(Item.Message.ToolsCalls[0], TutorialHub.Tool);
+>       end
+>     else
+>       begin
+>         Display(Sender, Item.Message.Content);
+>       end;
+> end;
+>```
+
+## JSON mode
 
 Users have the option to set response_format to {"type": "json_object"} to enable JSON mode. It's important to explicitly ask the model to generate JSON output in your message. Currently, JSON mode is available for all of the models through API.
 
-See also [documentation](https://docs.mistral.ai/capabilities/json_mode/) at the MistralAI web site.
+Refer to the [official documentation](https://docs.mistral.ai/capabilities/json_mode/)
 
 ```Pascal
-//uses MistralAI, MistralAI.Chat;  
+// MistralAI, MistralAI.Types, MistralAI.Functions.Example, MistralAI.Tutorial.FMX;
 
   var Chat := MistralAI.Chat.Create(
     procedure (Params: TChatParams)
     begin
       Params.Model('mistral-tiny');
-      Params.Messages([TChatMessagePayload.User(Memo2.Text)]);
+      Params.Messages([Payload.User('--- my request ---')]);
       Params.ResponseFormat(); //Enable JSON mode 
       Params.MaxTokens(1024);
     end);
   try
-    for var Choice in Chat.Choices do
-      Memo1.Lines.Add(Choice.Message.Content);
+    Display(TutorialHub, Chat);
   finally
     Chat.Free;
   end;
@@ -590,14 +754,14 @@ See also [documentation](https://docs.mistral.ai/capabilities/json_mode/) at the
 
 <br/>
 
-### Code generation
+## Code generation
 
 **Codestral** is an advanced generative model optimized for code generation, including **fill-in-the-middle** and code completion. Trained on over 80 programming languages, it performs well on both common and rare languages.
 See also [Code generation](https://docs.mistral.ai/capabilities/code_generation/) at the MistralAI web site.
 
 <br/>
 
-#### Before using
+### Before using
 
 To utilize the Delphi classes managing the **Codestral** function, you are required to create a new KEY on the ***Mistral.ai website***. Please note that obtaining this key necessitates providing a valid phone number. 
 Go to this address to create a key for using **Codestral** [Key creation](https://console.mistral.ai/codestral)
@@ -612,7 +776,7 @@ Go to this address to create a key for using **Codestral** [Key creation](https:
 
 <br/>
 
-#### Codestral initialization
+### Codestral initialization
 
 When instantiating the interface managing the ***TMistralAI*** type class, the `CodestralSpec` specification must be specified in the `create` constructor.
 
@@ -634,38 +798,68 @@ You can also use the factory:
 
 <br/>
 
-#### Code completion
+### Code completion
+
+**Synchronously code example**
 
 ```Pascal
-//uses MistralAI, MistralAI.Codestral;
+// MistralAI, MistralAI.Types, MistralAI.Tutorial.FMX;
+
+  TutorialHub.Memo2.Text := CodeBefore; // For tutorial tool use only
 
   var Codestral := CodingModel.Codestral.Create(
     procedure (Params: TCodestralParams)
     begin
       Params.Model('codestral-latest');
-      Params.Prompt(Memo2.Text);  
+      Params.Prompt(CodeBefore);
       Params.MaxTokens(1024);
     end);
   try
-    for var Choice in Codestral.Choices do
-      Memo1.Lines.Add(Choice.Message.Content);
+    Display(TutorialHub, CodeStral);
   finally
     Codestral.Free;
   end;
 ```
 
-<br/>
-
-#### Streamed Code completion
+**Asynchronously code example**
 
 ```Pascal
-//uses MistralAI, MistralAI.Codestral;
+// MistralAI, MistralAI.Types, MistralAI.Tutorial.FMX;
+
+  TutorialHub.Memo2.Text := CodeBefore; // For tutorial tool use only
+
+  CodingModel.Codestral.AsyncCreate(
+    procedure (Params: TCodestralParams)
+    begin
+      Params.Model('codestral-latest');
+      Params.Prompt(CodeBefore);
+      Params.MaxTokens(1024);
+    end,
+    function : TAsynCode
+    begin
+      Result.Sender := TutorialHub;
+      Result.OnStart := Start;
+      Result.OnSuccess := Display;
+      Result.OnError := Display;
+    end);  
+```
+
+<br/>
+
+### Streamed Code completion
+
+**Synchronously code example**
+
+```Pascal
+// MistralAI, MistralAI.Types, MistralAI.Tutorial.FMX;
+
+  TutorialHub.Memo2.Text := CodeBefore; // For tutorial tool use only
 
   CodingModel.Codestral.CreateStream(
     procedure(Params: TCodestralParams)
     begin
       Params.Model('codestral-latest');
-      Params.Prompt(Memo2.Text);
+      Params.Prompt(CodeBefore);
       Params.MaxTokens(1024);
       Params.Stream;
     end,
@@ -673,103 +867,281 @@ You can also use the factory:
     begin
       if (not IsDone) and Assigned(Code) then
         begin
-          Memo1.Text := Memo1.Text + Code.Choices[0].Delta.Content;
-          Application.ProcessMessages;
+          DisplayStream(TutorialHub, Code);
         end
-      else if IsDone then ;
-      Sleep(30);
+    end);
+```
+
+**Asynchronously code example**
+
+```Pascal
+// MistralAI, MistralAI.Types, MistralAI.Tutorial.FMX;
+
+  TutorialHub.Memo2.Text := CodeBefore; // For tutorial tool use only
+
+  CodingModel.Codestral.ASyncCreateStream(
+    procedure(Params: TCodestralParams)
+    begin
+      Params.Model('codestral-latest');
+      Params.Prompt(CodeBefore);
+      Params.MaxTokens(1024);
+      Params.Stream;
+    end,
+    function : TAsynCodeStream
+    begin
+      Result.Sender := TutorialHub;
+      Result.OnStart := Start;
+      Result.OnProgress := DisplayStream;
+      Result.OnDoCancel := DoCancellation;
+      Result.OnCancellation := Cancellation;
+      Result.OnError := Display;
     end);
 ```
 
 <br/>
 
-#### Fill in the middle
+### Fill in the middle
 
 This feature allows users to set the beginning of their code with a `prompt` and to specify the end of the code using an optional `suffix` and an optional `stop` condition. The Codestral model will then produce the code that seamlessly fits between these markers, making it perfect for tasks that need a particular segment of code to be created.
 
 ```Pascal
-//uses MistralAI, MistralAI.Codestral;
+// MistralAI, MistralAI.Types, MistralAI.Tutorial.FMX;
 
-  CodingModel.Codestral.CreateStream(
+  TutorialHub.Memo2.Text := string.Join(sLineBreak, [CodeBefore, '//Insert code here'+sLineBreak, CodeAfter]); // For tutorial tool use only
+
+  CodingModel.Codestral.ASyncCreateStream(
     procedure(Params: TCodestralParams)
     begin
       Params.Model('codestral-latest');
-
-      Params.Prompt(Memo2.Text); // Beginning text
-      Params.Suffix(Memo3.Text); // Text ending
-
+      Params.Prompt(CodeBefore);
+      Params.Suffix(CodeAfter);
       Params.MaxTokens(1024);
       Params.Stream;
     end,
-    procedure(var Code: TCodestral; IsDone: Boolean; var Cancel: Boolean)
+    function : TAsynCodeStream
     begin
-      if (not IsDone) and Assigned(Code) then
-        begin
-          Memo1.Text := Memo1.Text + Code.Choices[0].Delta.Content;
-          Application.ProcessMessages;
-        end
-      else if IsDone then ;
-      Sleep(30);
-    end);
+      Result.Sender := TutorialHub;
+      Result.OnStart := Start;
+      Result.OnProgress := DisplayStream;
+      Result.OnDoCancel := DoCancellation;
+      Result.OnCancellation := Cancellation;
+      Result.OnError := Display;
+    end); 
 ```
 
 The model will create the intermediate code completing the codes provided to the `prompt` and `suffix` parameters.
 
 <br/>
 
-#### Stop tokens
+### Stop tokens
 
 It is advisable to include stop tokens when integrating with IDE autocomplete to ensure the model doesn't provide overly verbose output.
 
 ```Pascal
-//uses MistralAI, MistralAI.Codestral;
+// MistralAI, MistralAI.Types, MistralAI.Tutorial.FMX;
 
-  var Codestral := CodingModel.Codestral.Create(
-    procedure (Params: TCodestralParams)
+  TutorialHub.Memo2.Text := string.Join(sLineBreak, [CodeBefore, '//Insert code here'+sLineBreak, CodeAfter]); // For tutorial tool use only
+
+  CodingModel.Codestral.ASyncCreateStream(
+    procedure(Params: TCodestralParams)
     begin
       Params.Model('codestral-latest');
-      Params.Prompt(Memo2.Text);
-      Params.Suffix(Memo3.Text);
+      Params.Prompt(CodeBefore);
+      Params.Suffix(CodeAfter);
       Params.MaxTokens(1024);
-      Params.Stop(['\n\n']);
-    end);
-  try
-    for var Choice in Codestral.Choices do
-      Memo1.Lines.Add(Choice.Message.Content);
-  finally
-    Codestral.Free;
-  end;
+      Params.Stream;
+      Params.Stop(['\n\n']); // <-- Include here the strings responsible for stopping processing
+    end,
+    function : TAsynCodeStream
+    begin
+      Result.Sender := TutorialHub;
+      Result.OnStart := Start;
+      Result.OnProgress := DisplayStream;
+      Result.OnDoCancel := DoCancellation;
+      Result.OnCancellation := Cancellation;
+      Result.OnError := Display;
+    end); 
 ```
 
 <br/>
 
-#### End points
+### End points
 
 **Codestral** can be used directly to generate code using the endpoint: `https://codestral.mistral.ai/v1/fim/completions`, and for chat interactions with the endpoint: `https://codestral.mistral.ai/v1/chat/completions`.
 
 However, it is crucial to understand that chat usage requires using only the **"codestral-latest"** model or similar. In other words, with the endpoint `https://codestral.mistral.ai/v1/chat/completions`, a model such as **"open-mixtral-8x22b-2404"** or similar cannot be used; instead, **"codestral-latest" should be preferred**.
 
 ```Pascal
-//uses MistralAI, MistralAI.Codestral;
+// MistralAI, MistralAI.Types, MistralAI.Tutorial.FMX;
 
-  var Chat := CodingModel.Chat.Create(
+  CodingModel.Chat.ASyncCreate(
     procedure (Params: TChatParams)
     begin
       Params.Model('codestral-latest');
-      Params.Messages([TChatMessagePayload.User(Memo2.Text)]);
+      Params.Messages([Payload.User('Define the term "decorum"')]);
       Params.MaxTokens(1024);
+    end,
+    function : TAsynChat
+    begin
+      Result.Sender := TutorialHub;
+      Result.OnStart := Start;
+      Result.OnSuccess := Display;
+      Result.OnError := Display;
     end);
-  try
-    for var Choice in Chat.Choices do
-      Memo1.Lines.Add(Choice.Message.Content);
-  finally
-    Chat.Free;
-  end;
 ```
 
 <br/>
 
-### Fine-tuning
+## Files
+
+File management APIs are especially useful for `fine-tuning` and `batch` processing operations.
+- For fine-tuning, they allow uploading the data files required for training and testing a model to be fine-tuned. These dataset files can also be listed for review.
+- For batch processing, files can be uploaded, retrieved, or deleted. Once the processing is complete, a result file is generated, which can then be downloaded via the APIs.
+
+>[!NOTE]
+> In the following section on file management, all code examples will be presented in asynchronous mode to enhance readability and simplify comprehension.
+>
+
+### List of files
+
+To retrieve the list of files, proceed as follows.
+
+1. The list can be paginated, and you can also specify the number of items to return as a parameter. Below is an example of code to display the first page:
+
+```Pascal
+// MistralAI, MistralAI.Types, MistralAI.Tutorial.FMX;
+
+  TutorialHub.Page := 0; // For tutorial tool use only
+
+  MistralAI.&File.ASyncList(
+    procedure (Params: TListParams)
+    begin
+      Params.PageSize(4);
+    end,
+    function : TAsynFiles
+    begin
+      Result.Sender := TutorialHub;
+      Result.OnStart := Start;
+      Result.OnSuccess := Display;
+      Result.OnError := Display;
+    end);
+```
+
+2. To navigate to the next page, use the following code:
+
+```Pascal
+// MistralAI, MistralAI.Types, MistralAI.Tutorial.FMX;
+
+  TutorialHub.NextPage; // For tutorial tool use only
+
+  MistralAI.&File.ASyncList(
+    procedure (Params: TListParams)
+    begin
+      Params.Page(TutorialHub.Page);
+      Params.PageSize(4);
+    end,
+    function : TAsynFiles
+    begin
+      Result.Sender := TutorialHub;
+      Result.OnSuccess := Display;
+      Result.OnError := Display;
+    end);
+```
+
+<br/>
+
+### File Retrieve
+
+To locate a file, you need to know its ID, which can be retrieved by displaying the list of files.
+
+```Pascal
+// MistralAI, MistralAI.Types, MistralAI.Tutorial.FMX;
+
+  TutorialHub.FileId := Id; //e.g. 982d2bbc-adbb-4c6e-b072-5aec973b4c86
+
+  MistralAI.&File.ASyncRetrieve(TutorialHub.FileId,
+    function : TAsynFile
+    begin
+      Result.Sender := TutorialHub;
+      Result.OnStart := Start;
+      Result.OnSuccess := Display;
+      Result.OnError := Display;
+    end);  
+```
+
+<br/>
+
+### File Upload
+
+It is essential to populate the Purpose field to specify the category to which the file to be uploaded belongs. This can be, for instance, fine-tune or batch.
+
+```Pascal
+// MistralAI, MistralAI.Types, MistralAI.Tutorial.FMX;
+
+  TutorialHub.FileName := 'Z:\my_folder\my_file.jsonl'; // For tutorial tool use only
+
+  MistralAI.&File.AsyncUpload(
+    procedure (Params: TUploadParams)
+    begin
+      //Params.Purpose(TFilePurpose.finetune);
+      //                              or
+      //Params.Purpose(TFilePurpose.batch);
+      Params.&File(TutorialHub.FileName);
+    end,
+    function : TAsynFile
+    begin
+      Result.Sender := TutorialHub;
+      Result.OnStart := Start;
+      Result.OnSuccess := Display;
+      Result.OnError := Display;
+    end);
+```
+
+<br/>
+
+### File Delete
+
+```Pascal
+// MistralAI, MistralAI.Types, MistralAI.Tutorial.FMX;
+
+  TutorialHub.FileId := Id; //e.g. 982d2bbc-adbb-4c6e-b072-5aec973b4c86
+
+  MistralAI.&File.ASyncDelete(TutorialHub.FileId,
+    function : TAsynFilesDelete
+    begin
+      Result.Sender := TutorialHub;
+      Result.OnStart := Start;
+      Result.OnSuccess := Display;
+      Result.OnError := Display;
+    end);
+```
+
+<br/>
+
+### File Download
+
+Used to download a file generated following batch processing. To obtain the file ID, you need to view the list of available files. Alternatively, the ID can also be retrieved directly from the platform.
+
+```Pascal
+// MistralAI, MistralAI.Types, MistralAI.Tutorial.FMX;
+
+  TutorialHub.FileId := Id; //e.g. 982d2bbc-adbb-4c6e-b072-5aec973b4c86
+  TutorialHub.FileOverride := True;
+  TutorialHub.FileName := 'ResultFile.jsonl';
+
+  MistralAI.&File.ASyncDownload(TutorialHub.FileId,
+    function : TAsynDownLoadFile
+    begin
+      Result.Sender := TutorialHub;
+      Result.OnStart := Start;
+      Result.OnSuccess := Display;
+      Result.OnError := Display;
+    end);  
+```
+
+<br/>
+
+## Fine-tuning
 
 When choosing between prompt engineering and fine-tuning for an AI model, it's advisable to start with prompt engineering due to its speed and lower resource requirements. Fine-tuning, however, offers better performance and alignment with specific tasks, making it ideal for specialized applications and cost reduction.
 
@@ -780,8 +1152,6 @@ See also [Fine-tuning description](https://docs.mistral.ai/capabilities/finetuni
 
 <br/>
 
-#### Files
-
 Data should be stored in **JSON** Lines files `(.jsonl)`, where each line corresponds to a separate **JSON object**. This format enables efficient storage of multiple **JSON objects**.
 
 The datasets must adhere to an instruction-following format that simulates a conversation between a user and an assistant. Each JSON record should either contain only messages exchanged between the user and the assistant (referred to as ***"Default Instruct"***), or include additional logic for function calls (referred to as ***"Function-calling Instruct"***). 
@@ -791,72 +1161,7 @@ See also [Default Instruct](https://docs.mistral.ai/capabilities/finetuning/#1-d
 **`Warning:`**
 Please remember to remove any line breaks if you copy and paste the examples provided by Mistral AI for the "Dataset Format."
 
-**File Upload example**
-
-```Pascal
-//uses MistralAI.Files;
-
-  with MistralAI.&File.Upload(
-    procedure (Params: TUploadParams)
-    begin
-      Params.&File('training_file.jsonl'); //File name to upload
-      Params.Purpose(finetune);
-    end)
-  do
-    try
-      ShowMessage(Id); //Display the uploaded file Id
-    finally
-      Free;
-    end;  
-```
-
-**Returns uploaded files list**
-
-```Pascal
-//uses MistralAI.Files;
-
-  with MistralAI.&File.List do
-  try
-    for var Item in Data do
-      ShowMessage(Item.Id);
-  finally
-    Free;
-  end;
-```
-
-**Delete an uploaded file by his Id**
-
-```Pascal
-//uses MistralAI.Files;
-
-  with MistralAI.&File.Delete(Id) do //Id : Id of the file to delete
-  try
-    if Deleted then
-      ShowMessageFmt('File with Id=%s was deleted', [MyId]); 
-  finally
-    Free;
-  end;
-```
-Returns 404 error if the Id does not exists.
-
-**Returns information about a specific file**
-
-```Pascal
-//uses MistralAI.Files;
-
-  var MyId := 'XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX'; //Replace by the Id of file to retrieve
-  with MistralAI.&File.Retrieve(MyId) do
-  try
-    ShowMessageFmt('%s'#13'%s'#13'%d bytes', [Id, FileName, Bytes]);
-  finally
-    Free;
-  end;
-```
-Refer to the `TFile` class in the MistralAI.Files.pas unit to understand the information returned by the "Retrieve" method.
-
-<br/>
-
-#### Create a fine-tuning job
+### Create a Fine-tuning Job
 
 The next step involves creating a fine-tuning job.
 
@@ -879,34 +1184,41 @@ As of July 2024, the only fine-tunable models at Mistral are
 
 **Example**
 
-```Pascal
-//uses MistralAI.Files, MistralAI.FineTunings;
+**Synchronously code example**
 
-  var MyJob := MistralAI.FineTuning.CreateAndRun(
+```Pascal
+// MistralAI, MistralAI.Types, MistralAI.Tutorial.FMX;
+
+  var FineTuneJob := MistralAI.FineTuning.CreateJob(
     procedure (Params: TFineTuningJobParams)
     begin
       Params.Model('open-mistral-7b'); //Fine Tuneable Models : Enum "open-mistral-7b", "mistral-small-latest
       Params.TrainingFiles([Id_TrainingFile1, Id_TrainingFile2, ... ]);
       Params.ValidationFiles([Id_ValidationFile1, Id_ValidationFile2, ... ]);
-      Params.Suffix('my-great-model');  //less than 18 characters
+      Params.Suffix('ft-model-01');  //less than 18 characters
+      Params.Hyperparameters(
+        procedure (var Params: THyperparametersParams)
+        begin
+          Params.TrainingSteps(10);
+          Params.LearningRate(0.0005);
+        end);
     end
   );
-  with MyJob do
   try
-    ShowMessageFmt('%s'#13'%s'#13'%s', [Id, Model, FineTuningModel]);
+    Display(TutorialHub, FineTuneJob);  
   finally
-    Free;
+    FineTuneJob.Free;
   end;
 ```
 
 <br/>
 
-#### Delete a fine-tuned model
+### Delete a Fine-tuned Model
 
 `Note`: The method in charge of deleting a fine tuned model is found in the `MistralAI.Models.pas` unit.
 
 ```Pascal
-//uses MistralAI.Models;
+// MistralAI, MistralAI.Types, MistralAI.Tutorial.FMX;
 
   with MistralAI.Models.Delete('Id_Model_to_delete') do
   try
@@ -918,9 +1230,375 @@ As of July 2024, the only fine-tunable models at Mistral are
 
 <br/>
 
-### Agents
+### List of Fine-tune Job
+
+```Pascal
+// MistralAI, MistralAI.Types, MistralAI.Tutorial.FMX;
+
+  MistralAI.FineTuning.ASyncList(
+    procedure (Params: TFineTuningJobListParams)
+    begin
+      Params.Page(100);
+    end,
+    function : TAsynListFineTuningJobs
+    begin
+      Result.Sender := TutorialHub;
+      Result.OnStart := Start;
+      Result.OnSuccess := Display;
+      Result.OnError := Display;
+    end);
+```
+
+>[!NOTE]
+> You can use the pagination method described in the [`File List` section](#List-of-files).
+>
+
+<br/>
+
+### Retrieve a Fine-tune Job
+
+```Pascal
+// MistralAI, MistralAI.Types, MistralAI.Tutorial.FMX;
+
+  TutorialHub.JobId := Id; //e.g. 982d2bbc-adbb-4c6e-b072-5aec973b4c86
+
+  MistralAI.FineTuning.ASyncRetrieve(TutorialHub.JobId,
+    function : TAsynJobOutProgress
+    begin
+      Result.Sender := TutorialHub;
+      Result.OnStart := Start;
+      Result.OnSuccess := Display;
+      Result.OnError := Display;
+    end);
+```
+
+<br/>
+
+### Start a Fine-tune Job
+
+```Pascal
+// MistralAI, MistralAI.Types, MistralAI.Tutorial.FMX;
+
+  TutorialHub.JobId := Id; //e.g. 982d2bbc-adbb-4c6e-b072-5aec973b4c86
+
+  MistralAI.FineTuning.ASyncStart(TutorialHub.JobId,
+    function : TAsynJobOutProgress
+    begin
+      Result.Sender := TutorialHub;
+      Result.OnStart := Start;
+      Result.OnSuccess := Display;
+      Result.OnError := Display;
+    end);
+```
+
+<br/>
+
+### Cancel a Fine-tune Job
+
+```Pascal
+// MistralAI, MistralAI.Types, MistralAI.Tutorial.FMX;
+
+  TutorialHub.JobId := Id; //e.g. 982d2bbc-adbb-4c6e-b072-5aec973b4c86
+
+  MistralAI.FineTuning.ASyncCancel(TutorialHub.JobId,
+    function : TAsynJobOutProgress
+    begin
+      Result.Sender := TutorialHub;
+      Result.OnStart := Start;
+      Result.OnSuccess := Display;
+      Result.OnError := Display;
+    end);
+```
+
+>[!WARNING]
+> The APIs do not provide the ability to delete a fine-tuning job, and this limitation also applies to the platform. Consequently, creating a large number of jobs could become problematic over time.
+>
+
+<br/>
+
+## Moderation
+
+The moderation service, leveraging the advanced Mistral Moderation model—a classifier built on the Ministral 8B 24.10 framework—empowers users to identify harmful text content across multiple policy dimensions.
+
+The service offers two distinct endpoints: one designed for the classification of raw text and another specifically tailored for conversational content. Further details are provided below.
+- **Raw-text endpoint:** `https://api.mistral.ai/v1/moderations`
+- **Conversational endpoint:** `https://api.mistral.ai/v1/chat/moderations`
+
+>[!NOTE]
+> This note is sourced from the official MistralAI documentation.
+>
+> The policy threshold is determined based on the optimal performance of our internal test set. You can use the raw score or adjust the threshold according to your specific use cases.
+>
+> We intend to continually improve the underlying model of the moderation endpoint. Custom policies that depend on category_scores can require recalibration.
+>
+
+Refer to the [official documentation](https://docs.mistral.ai/capabilities/guardrailing/) about moderation.
+
+<br/>
+
+### Raw-text endpoint
+
+In this example, only the categories requiring moderation consideration are displayed.
+
+```Pascal
+// MistralAI, MistralAI.Types, MistralAI.Tutorial.FMX;
+
+  var Str := '...text to classify...';
+  Display(TutorialHub, Str);
+
+  MistralAI.Classifiers.ASyncModeration(
+    procedure (Params: TModerationParams)
+    begin
+      Params.Model('mistral-moderation-latest');
+      Params.Input(Str);
+    end,
+    function : TAsynModeration
+    begin
+      Result.Sender := TutorialHub;
+      Result.OnSuccess := DisplayEx;
+      Result.OnError := Display;
+    end);
+```
+
+<br/>
+
+### Conversational endpoint
+
+In this example, all moderation categories are displayed.
+
+```Pascal
+// MistralAI, MistralAI.Types, MistralAI.Tutorial.FMX;
+
+  var Str := '...text to classify...';
+  Display(TutorialHub, Str);
+
+  MistralAI.Classifiers.ASyncModerationChat(
+    procedure (Params: TModerationChatParams)
+    begin
+      Params.Model('mistral-moderation-latest');
+      Params.Input([Payload.User(Str)]);
+    end,
+    function : TAsynModeration
+    begin
+      Result.Sender := TutorialHub;
+      Result.OnSuccess := Display;
+      Result.OnError := Display;
+    end);
+```
+
+<br/>
+
+## Batch Inference
+
+The batch processing feature allows sending a large number of requests simultaneously to various endpoints (chat, embeddings, moderations, etc.). Each batch contains uniquely identified requests and is processed asynchronously. This enables tracking the progress of the processing, accessing results once completed, and handling potential timeouts.
+
+Requests can be customized using metadata, and it is possible to view or cancel ongoing processes. Final results are available as downloadable files and remain accessible afterward.
+
+This approach provides more efficient management of high volumes of requests without imposing a strict limit on the number of batches, while adhering to an overall limit on pending requests. It is particularly useful for automating and consolidating processing, especially in cases of large-scale or repetitive requests.
+
+Refer to the [official documentation](https://docs.mistral.ai/capabilities/batch/).
+
+<br/>
+
+### Batch List
+
+The list of batch processes can be retrieved using the following API. The pagination mechanism described for the [file list](#List-of-files) can also be used.
+
+```Pascal
+// MistralAI, MistralAI.Types, MistralAI.Tutorial.FMX;
+
+  MistralAI.Batch.ASyncList(
+    procedure (Params: TBatchJobListParams)
+    begin
+      Params.PageSize(100);
+    end,
+    function : TAsynBatchJobList
+    begin
+      Result.Sender := TutorialHub;
+      Result.OnStart := Start;
+      Result.OnSuccess := Display;
+      Result.OnError := Display;
+    end);
+
+// Synchronously code
+//  var List := MistralAI.Batch.List(
+//    procedure (Params: TBatchJobListParams)
+//    begin
+//      Params.PageSize(100);
+//    end);
+//  try
+//    Display(TutorialHub, List);
+//  finally
+//    List.Free;
+//  end;
+```
+
+<br/>
+
+### Batch Job Create
+
+We take the batch given in the example on the official site
+
+Here's an example of how to structure a batch request:
+
+```Json
+{"custom_id": "0", "body": {"max_tokens": 100, "messages": [{"role": "user", "content": "What is the best French cheese?"}]}}
+{"custom_id": "1", "body": {"max_tokens": 100, "messages": [{"role": "user", "content": "What is the best French wine?"}]}}
+```
+
+<br/>
+
+1. Save this text in a file and name it as you prefer.
+2. Next, upload the file using the code provided in the [File Upload section](#File-Upload).
+3. Be sure to set the value of Purpose to batch.
+4. Note the file ID after it has been uploaded, as this `ID` will be required when creating the batch processing job.
+
+<br/>
+
+```Pascal
+// MistralAI, MistralAI.Types, MistralAI.Tutorial.FMX;
+
+  MistralAI.Batch.ASyncCreateJob(
+    procedure (Params: TBatchJobParams)
+    begin
+      Params.InputFiles([ID]);
+      Params.Model('mistral-large-latest');
+      Params.Endpoint(TEndPointType.epChatCompletion);
+      Params.Metadata(TJSONObject.Create.AddPair('job_type', 'texting'));
+    end,
+    function : TAsynBatchJob
+    begin
+      Result.Sender := TutorialHub;
+      Result.OnStart := Start;
+      Result.OnSuccess := Display;
+      Result.OnError := Display;
+    end);
+
+// Synchronously code
+//  var Value := MistralAI.Batch.CreateJob(
+//    procedure (Params: TBatchJobParams)
+//    begin
+//      Params.InputFiles([ID]);
+//      Params.Model('mistral-large-latest');
+//      Params.Endpoint(TEndPointType.epChatCompletion);
+//      Params.Metadata(TJSONObject.Create.AddPair('job_type', 'texting'));
+//    end);
+```
+
+>[!NOTE]
+> Note: The following metadata was specified during creation as a label: 
+>```Json
+> {"job_type": "texting"}
+>```
+
+<br/>
+
+### Batch Job Cancel
+
+A job can be interrupted as long as it is still being processed. To perform this action, ensure that you have obtained the job ID beforehand, then use the following code:
+
+```Pascal
+// MistralAI, MistralAI.Types, MistralAI.Tutorial.FMX;
+
+  TutorialHub.BatchId := ID; //e.g. 982d2bbc-adbb-4c6e-b072-5aec973b4c86
+
+  MistralAI.Batch.ASyncCancel(TutorialHub.BatchId,
+    function : TAsynBatchJob
+    begin
+      Result.Sender := TutorialHub;
+      Result.OnStart := Start;
+      Result.OnSuccess := Display;
+      Result.OnError := Display;
+    end);
+
+// Synchronously code
+//  var Value := MistralAI.Batch.Cancel(TutorialHub.BatchId);
+//  try
+//    Display(TutorialHub, Value);
+//  finally
+//    Value.Free;
+//  end;
+```
+
+<br/>
+
+### Batch Job Retrieve
+
+A batch can be retrieved using its ID, allowing you to check its status to track progress or obtain the ID of the file generated at the end of the process containing the expected results. To do so, use the following code:
+
+```Pascal
+// MistralAI, MistralAI.Types, MistralAI.Tutorial.FMX;
+
+  TutorialHub.BatchId := ID; //e.g. 982d2bbc-adbb-4c6e-b072-5aec973b4c86
+
+  MistralAI.Batch.ASyncRetrieve(TutorialHub.BatchId,
+    function : TAsynBatchJob
+    begin
+      Result.Sender := TutorialHub;
+      Result.OnStart := Start;
+      Result.OnSuccess := Display;
+      Result.OnError := Display;
+    end);
+
+// Synchronously code
+//  var Value := MistralAI.Batch.Retrieve(TutorialHub.BatchId);
+//  try
+//    Display(TutorialHub, Value);
+//  finally
+//    Value.Free;
+//  end;
+```
+
+<br/>
+
+### Batch Job Result File
+
+If the batch processing completes successfully, an ID pointing to a file containing the results is provided. This ID can be accessed through the OutputFile field of the TBatchJob class.
+In this case, you can use the [File Download API](#File-Download), demonstrated in this code example, to retrieve the file.
+Alternatively, you can download the file directly from the platform.
+
+<br/>
+
+>[!WARNING]
+> The APIs do not support the deletion of batch jobs, and this limitation extends to the platform itself. As a result, creating a large number of batch jobs over time may lead to management challenges.
+>
+
+<br/>
+
+## Agents
 
 The official documentation provided by Mistral regarding agents is available [here](https://docs.mistral.ai/capabilities/agents/).
+
+> [!TIP]
+> The execution of an agent can be done both synchronously and asynchronously. See the class `TAgentRoute` in the **MistralAI.Agents** unit.
+
+<br/>
+
+Before using this asynchronous code and after adapting it to your specific needs, you must create an agent on the platform and retrieve its `ID`.
+
+```Pascal
+// MistralAI, MistralAI.Types, MistralAI.Tutorial.FMX;
+
+  MistralAI.Agent.AsyncCreateStream(
+    procedure (Params: TAgentParams)
+    begin
+      Params.MaxTokens(1024);
+      Params.Messages([
+        Payload.User('Content_1')
+        ]);
+      Params.AgentId('Agent_Id');
+      Params.Stream;
+    end,
+    function : TAsynChatStream
+    begin
+      Result.Sender := TutorialHub;
+      Result.OnStart := Start;
+      Result.OnProgress := DisplayStream;
+      Result.OnError := Display;
+    end);
+```
+
+<br/>
 
 > [!WARNING]
 > As of 08/13/2024, only the API for executing an agent is available; however, no API for creating an agent has been made available.  
@@ -929,17 +1607,15 @@ The official documentation provided by Mistral regarding agents is available [he
 >
 > To create an agent you must go through the [platform](https://console.mistral.ai/build/agents/new)
 
-> [!TIP]
-> The execution of an agent can be done both synchronously and asynchronously. See the class `TAgentRoute` in the **MistralAI.Agents** unit.
-
 <br/>
 
-## Contributing
+# Contributing
 
 Pull requests are welcome. If you're planning to make a major change, please open an issue first to discuss your proposed changes.
 
 <br/>
 
-## License
+# License
 
 This project is licensed under the [MIT](https://choosealicense.com/licenses/mit/) License.
+

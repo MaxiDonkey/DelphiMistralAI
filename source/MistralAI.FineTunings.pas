@@ -19,324 +19,16 @@ interface
 
 uses
   System.Classes, System.SysUtils, REST.JsonReflect, System.JSON, REST.Json.Types,
-  MistralAI.API.Params, MistralAI.API, MistralAI.Async.Support;
+  MistralAI.API.Params, MistralAI.API, MistralAI.Types, MistralAI.Async.Support;
 
 type
-  /// <summary>
-  /// Enum of the different statuses for a fine-tuning job.
-  /// </summary>
-  /// <remarks>
-  /// Represents the various statuses that a fine-tuning job can have during its lifecycle.
-  /// </remarks>
-  TFineTuningJobStatus = (
-    /// <summary>
-    /// The job is queued and waiting to start.
-    /// </summary>
-    Queued,
-    /// <summary>
-    /// The job has started
-    /// </summary>
-    Started,
-    /// <summary>
-    /// The job is currently running.
-    /// </summary>
-    Running,
-    /// <summary>
-    /// The job has failed.
-    /// </summary>
-    Failed,
-    /// <summary>
-    /// The job ended successfully.
-    /// </summary>
-    Success,
-    /// <summary>
-    /// The job has been cancelled.
-    /// </summary>
-    Cancelled,
-    /// <summary>
-    /// A cancellation request has been made; the job is awaiting cancellation.
-    /// </summary>
-    CancellationRequested);
-
-  /// <summary>
-  /// Provides helper methods for the TFineTuningJobStatus enum.
-  /// </summary>
-  /// <remarks>
-  /// Includes methods to convert enum values to strings and create enum values from strings.
-  /// </remarks>
-  TFineTuningJobStatusHelper = record helper for TFineTuningJobStatus
-    /// <summary>
-    /// Converts the TFineTuningJobStatus value to its string representation.
-    /// </summary>
-    /// <returns>
-    /// The string representation of the TFineTuningJobStatus value.
-    /// </returns>
-    function ToString: string;
-    /// <summary>
-    /// Creates a TFineTuningJobStatus enum value from a string.
-    /// </summary>
-    /// <param name="Value">
-    /// The string representation of the TFineTuningJobStatus.
-    /// </param>
-    /// <returns>
-    /// The corresponding TFineTuningJobStatus enum value.
-    /// </returns>
-    class function Create(const Value: string): TFineTuningJobStatus; static;
-  end;
-
-  /// <summary>
-  /// JSON interceptor for converting TFineTuningJobStatus enum values to strings and vice versa during JSON serialization and deserialization.
-  /// </summary>
-  TFineTuningJobStatusInterceptor = class(TJSONInterceptorStringToString)
-  public
-    /// <summary>
-    /// Converts a TFineTuningJobStatus enum value to its string representation for JSON serialization.
-    /// </summary>
-    /// <param name="Data">
-    /// The object containing the field to convert.
-    /// </param>
-    /// <param name="Field">
-    /// The name of the field to convert.
-    /// </param>
-    /// <returns>
-    /// The string representation of the TFineTuningJobStatus enum value.
-    /// </returns>
-    function StringConverter(Data: TObject; Field: string): string; override;
-    /// <summary>
-    /// Converts a string from JSON deserialization back to a TFineTuningJobStatus enum value.
-    /// </summary>
-    /// <param name="Data">
-    /// The object containing the field to revert.
-    /// </param>
-    /// <param name="Field">
-    /// The name of the field to revert.
-    /// </param>
-    /// <param name="Arg">
-    /// The string value to convert back to the enum.
-    /// </param>
-    procedure StringReverter(Data: TObject; Field: string; Arg: string); override;
-  end;
-
-  /// <summary>
-  /// Represents the kind of data object in fine-tuning operations.
-  /// </summary>
-  /// <remarks>
-  /// Currently only 'Job' is defined.
-  /// </remarks>
-  TFineTuningDataObjectKind = (
-    /// <summary>
-    /// Indicates a fine-tuning job object.
-    /// </summary>
-    Job
-  );
-
-  /// <summary>
-  /// Provides helper methods for the TFineTuningDataObjectKind enum.
-  /// </summary>
-  /// <remarks>
-  /// Includes methods to convert enum values to strings and create enum values from strings.
-  /// </remarks>
-  TFineTuningDataObjectKindHelper = record helper for TFineTuningDataObjectKind
-    /// <summary>
-    /// Converts the TFineTuningDataObjectKind value to its string representation.
-    /// </summary>
-    /// <returns>
-    /// The string representation of the TFineTuningDataObjectKind value.
-    /// </returns>
-    function ToString: string;
-    /// <summary>
-    /// Creates a TFineTuningDataObjectKind enum value from a string.
-    /// </summary>
-    /// <param name="Value">
-    /// The string representation of the TFineTuningDataObjectKind.
-    /// </param>
-    /// <returns>
-    /// The corresponding TFineTuningDataObjectKind enum value.
-    /// </returns>
-    class function Create(const Value: string): TFineTuningDataObjectKind; static;
-  end;
-
-  /// <summary>
-  /// JSON interceptor for converting TFineTuningDataObjectKind enum values to strings and vice versa during JSON serialization and deserialization.
-  /// </summary>
-  TFineTuningDataObjectKindInterceptor = class(TJSONInterceptorStringToString)
-  public
-    /// <summary>
-    /// Converts a TFineTuningDataObjectKind enum value to its string representation for JSON serialization.
-    /// </summary>
-    /// <param name="Data">
-    /// The object containing the field to convert.
-    /// </param>
-    /// <param name="Field">
-    /// The name of the field to convert.
-    /// </param>
-    /// <returns>
-    /// The string representation of the TFineTuningDataObjectKind enum value.
-    /// </returns>
-    function StringConverter(Data: TObject; Field: string): string; override;
-    /// <summary>
-    /// Converts a string from JSON deserialization back to a TFineTuningDataObjectKind enum value.
-    /// </summary>
-    /// <param name="Data">
-    /// The object containing the field to revert.
-    /// </param>
-    /// <param name="Field">
-    /// The name of the field to revert.
-    /// </param>
-    /// <param name="Arg">
-    /// The string value to convert back to the enum.
-    /// </param>
-    procedure StringReverter(Data: TObject; Field: string; Arg: string); override;
-  end;
-
-  /// <summary>
-  /// Type of platform with which to integrate monitoring information for fine-tuning operations.
-  /// </summary>
-  TFineTuningIntegrationType = (
-    // <summary>
-    /// See "Weights and Biases" solutions at the website "https://wandb.ai/site".
-    /// </summary>
-    Wandb
-  );
-
-  /// <summary>
-  /// Provides helper methods for the TFineTuningIntegrationType enum.
-  /// </summary>
-  /// <remarks>
-  /// Includes methods to convert enum values to strings and create enum values from strings.
-  /// </remarks>
-  TFineTuningIntegrationTypeHelper = record helper for TFineTuningIntegrationType
-    /// <summary>
-    /// Converts the TFineTuningIntegrationType value to its string representation.
-    /// </summary>
-    /// <returns>
-    /// The string representation of the TFineTuningIntegrationType value.
-    /// </returns>
-    function ToString: string;
-    /// <summary>
-    /// Creates a TFineTuningIntegrationType enum value from a string.
-    /// </summary>
-    /// <param name="Value">
-    /// The string representation of the TFineTuningIntegrationType.
-    /// </param>
-    /// <returns>
-    /// The corresponding TFineTuningIntegrationType enum value.
-    /// </returns>
-    class function Create(const Value: string): TFineTuningIntegrationType; static;
-  end;
-
-  /// <summary>
-  /// JSON interceptor for converting TFineTuningIntegrationType enum values to strings and vice versa during JSON serialization and deserialization.
-  /// </summary>
-  TFineTuningIntegrationTypeInterceptor = class(TJSONInterceptorStringToString)
-  public
-    /// <summary>
-    /// Converts a TFineTuningIntegrationType enum value to its string representation for JSON serialization.
-    /// </summary>
-    /// <param name="Data">
-    /// The object containing the field to convert.
-    /// </param>
-    /// <param name="Field">
-    /// The name of the field to convert.
-    /// </param>
-    /// <returns>
-    /// The string representation of the TFineTuningIntegrationType enum value.
-    /// </returns>
-    function StringConverter(Data: TObject; Field: string): string; override;
-    /// <summary>
-    /// Converts a string from JSON deserialization back to a TFineTuningIntegrationType enum value.
-    /// </summary>
-    /// <param name="Data">
-    /// The object containing the field to revert.
-    /// </param>
-    /// <param name="Field">
-    /// The name of the field to revert.
-    /// </param>
-    /// <param name="Arg">
-    /// The string value to convert back to the enum.
-    /// </param>
-    procedure StringReverter(Data: TObject; Field: string; Arg: string); override;
-  end;
-
-  /// <summary>
-  /// Represents the kind of object returned by fine-tuning operations.
-  /// </summary>
-  /// <remarks>
-  /// Currently only 'List' is defined.
-  /// </remarks>
-  TFineTuningObjectKind = (
-    /// <summary>
-    /// Indicates a list of fine-tuning jobs.
-    /// </summary>
-    List
-  );
-
-  /// <summary>
-  /// Provides helper methods for the TFineTuningObjectKind enum.
-  /// </summary>
-  /// <remarks>
-  /// Includes methods to convert enum values to strings and create enum values from strings.
-  /// </remarks>
-  TFineTuningObjectKindHelper = record helper for TFineTuningObjectKind
-    /// <summary>
-    /// Converts the TFineTuningObjectKind value to its string representation.
-    /// </summary>
-    /// <returns>
-    /// The string representation of the TFineTuningObjectKind value.
-    /// </returns>
-    function ToString: string;
-    /// <summary>
-    /// Creates a TFineTuningObjectKind enum value from a string.
-    /// </summary>
-    /// <param name="Value">
-    /// The string representation of the TFineTuningObjectKind.
-    /// </param>
-    /// <returns>
-    /// The corresponding TFineTuningObjectKind enum value.
-    /// </returns>
-    class function Create(const Value: string): TFineTuningObjectKind; static;
-  end;
-
-  /// <summary>
-  /// JSON interceptor for converting TFineTuningObjectKind enum values to strings and vice versa during JSON serialization and deserialization.
-  /// </summary>
-  TFineTuningObjectKindInterceptor = class(TJSONInterceptorStringToString)
-  public
-    /// <summary>
-    /// Converts a TFineTuningObjectKind enum value to its string representation for JSON serialization.
-    /// </summary>
-    /// <param name="Data">
-    /// The object containing the field to convert.
-    /// </param>
-    /// <param name="Field">
-    /// The name of the field to convert.
-    /// </param>
-    /// <returns>
-    /// The string representation of the TFineTuningObjectKind enum value.
-    /// </returns>
-    function StringConverter(Data: TObject; Field: string): string; override;
-    /// <summary>
-    /// Converts a string from JSON deserialization back to a TFineTuningObjectKind enum value.
-    /// </summary>
-    /// <param name="Data">
-    /// The object containing the field to revert.
-    /// </param>
-    /// <param name="Field">
-    /// The name of the field to revert.
-    /// </param>
-    /// <param name="Arg">
-    /// The string value to convert back to the enum.
-    /// </param>
-    procedure StringReverter(Data: TObject; Field: string; Arg: string); override;
-  end;
-
   /// <summary>
   /// Represents the parameters for listing fine-tuning jobs.
   /// </summary>
   /// <remarks>
   /// Allows filtering and pagination of fine-tuning jobs when retrieving them via the API.
   /// </remarks>
-  TFineTuningJobListParams = class(TJSONParam)
+  TFineTuningJobListParams = class(TURLParam)
     /// <summary>
     /// Sets the page number of the results to be returned.
     /// </summary>
@@ -438,14 +130,7 @@ type
   /// <remarks>
   /// Includes settings such as the number of training steps and the learning rate.
   /// </remarks>
-  THyperparametersParam = record
-  const
-    LearningRateDefault = 0.0001;
-  private
-     FTrainingSteps: Int64;
-     FLearningRate: Extended;
-    procedure SetTrainingSteps(const Value: Int64);
-    procedure SetLearningRate(const Value: Extended);
+  THyperparametersParams = class(TJSONParam)
   public
     /// <summary>
     /// The number of training steps to perform. A training step refers to a single update of the model
@@ -455,7 +140,7 @@ type
     /// <remarks>
     /// Must be greater than or equal to 1. This property is required.
     /// </remarks>
-    property TrainingSteps: Int64 read FTrainingSteps write SetTrainingSteps;
+    function TrainingSteps(const Value: Integer): THyperparametersParams;
     /// <summary>
     /// The learning rate for the fine-tuning process. It describes how much to adjust the pre-trained model's weights in response to
     /// the estimated error each time the weights are updated during the fine-tuning process.
@@ -463,23 +148,33 @@ type
     /// <remarks>
     /// Must be in the range [1e-8..1]. Default value: 0.0001.
     /// </remarks>
-    property LearningRate: Extended read FLearningRate write SetLearningRate;
+    function LearningRate(const Value: Double): THyperparametersParams;
     /// <summary>
-    /// Creates a <see cref="THyperparametersParam"/> instance with the specified training steps and learning rate.
+    /// (Advanced Usage) Weight decay adds a term to the loss function that is proportional to the sum
+    /// of the squared weights. This term reduces the magnitude of the weights and prevents them from
+    /// growing too large.
     /// </summary>
-    /// <param name="ATrainingSteps">
-    /// The number of training steps to perform.
-    /// </param>
-    /// <param name="ALearningRate">
-    /// The learning rate for the fine-tuning process.
-    /// </param>
-    /// <returns>
-    /// A <see cref="THyperparametersParam"/> instance initialized with the provided values.
-    /// </returns>
-    /// <remarks>
-    /// Defaults to 1 training step and a learning rate of 0.0001 if not specified.
-    /// </remarks>
-    class function Create(const ATrainingSteps: Int64 = 1; const ALearningRate: Extended = LearningRateDefault): THyperparametersParam; static;
+    function WeightDecay(const Value: Double): THyperparametersParams;
+    /// <summary>
+    /// (Advanced Usage) A parameter that specifies the percentage of the total training steps at which
+    /// the learning rate warm-up phase ends. During this phase, the learning rate gradually increases
+    /// from a small value to the initial learning rate, helping to stabilize the training process and
+    /// improve convergence. Similar to pct_start in mistral-finetune.
+    /// </summary>
+    function WarmupFraction(const Value: Double): THyperparametersParams;
+    /// <summary>
+    /// Set epochs value
+    /// </summary>
+    function Epochs(const Value: Double): THyperparametersParams;
+    /// <summary>
+    /// Set fim_ration value
+    /// </summary>
+    function FimRatio(const Value: Double): THyperparametersParams;
+    /// <summary>
+    /// Set seq_len value
+    /// </summary>
+    function SeqLen(const Value: Integer): THyperparametersParams;
+    class function New(const ParamProc: TProcRef<THyperparametersParams>): THyperparametersParams;
   end;
 
   /// <summary>
@@ -488,12 +183,7 @@ type
   /// <remarks>
   /// Specifies details for integrating with external platforms for monitoring fine-tuning jobs, such as Weights and Biases.
   /// </remarks>
-  TJobIntegrationsParam = record
-  private
-    FType: TFineTuningIntegrationType;
-    FProject: string;
-    FName: string;
-    FApiKey: string;
+  TJobIntegrationsParams = class(TJSONParam)
   public
     /// <summary>
     /// The type of integration.
@@ -501,56 +191,107 @@ type
     /// <remarks>
     /// Default: "wandb". Currently, only "wandb" (Weights and Biases) is supported. This property is required.
     /// </remarks>
-    property &Type: TFineTuningIntegrationType read FType write FType;
+    function &Type(const Value: TFineTuningIntegrationType): TJobIntegrationsParams;
     /// <summary>
     /// The name of the project under which the new run will be created.
     /// </summary>
     /// <remarks> This property is required. </remarks>
-    property Project: string read FProject write FProject;
+    function Project(const Value: string): TJobIntegrationsParams;
     /// <summary>
     /// A display name to set for the run. If not set, will use the job ID as the name.
     /// </summary>
-    property Name: string read FName write FName;
+    function Name(const Value: string): TJobIntegrationsParams;
     /// <summary>
     /// The WandB API key to use for authentication.
     /// </summary>
     /// <remarks> This property is required. </remarks>
-    property ApiKey: string read FApiKey write FApiKey;
+    function ApiKey(const Value: string): TJobIntegrationsParams;
     /// <summary>
-    /// Creates a <see cref="TJobIntegrationsParam"/> instance with the specified integration type, project name, run name, and API key.
+    /// A display run name to set for this run.
     /// </summary>
-    /// <param name="AType">
-    /// The type of integration (e.g., Wandb).
-    /// </param>
-    /// <param name="Project">
-    /// The name of the project under which the run will be created.
-    /// </param>
-    /// <param name="Name">
-    /// A display name for the run.
-    /// </param>
-    /// <param name="ApiKey">
-    /// The API key for authentication with the integration platform.
+    function RunName(const Value: string): TJobIntegrationsParams;
+    class function New(const ParamProc: TProcRef<TJobIntegrationsParams>): TJobIntegrationsParams;
+  end;
+
+  /// <summary>
+  /// Represents the parameters required for configuring a repository in fine-tuning jobs.
+  /// </summary>
+  /// <remarks>
+  /// This class is used to specify details about a repository, including its type, name, owner, reference,
+  /// weight, and token. These parameters are typically used when setting up repositories for fine-tuning jobs.
+  /// </remarks>
+  TRepositoryParams = class(TJSONParam)
+  public
+    /// <summary>
+    /// Sets the type of the repository.
+    /// </summary>
+    /// <param name="Value">
+    /// The type of the repository as an enum value of <see cref="TRepositoryType"/>.
     /// </param>
     /// <returns>
-    /// A <see cref="TJobIntegrationsParam"/> instance initialized with the provided values.
+    /// The <see cref="TRepositoryParams"/> instance with the updated repository type.
     /// </returns>
-    class function Create(const AType: TFineTuningIntegrationType; const Project, Name, ApiKey: string): TJobIntegrationsParam; static;
+    function &Type(const Value: TRepositoryType): TRepositoryParams;
     /// <summary>
-    /// Creates a <see cref="TJobIntegrationsParam"/> instance for a Weights and Biases integration.
+    /// Sets the name of the repository.
     /// </summary>
-    /// <param name="Project">
-    /// The name of the WandB project under which the run will be created.
-    /// </param>
-    /// <param name="Name">
-    /// A display name for the run.
-    /// </param>
-    /// <param name="ApiKey">
-    /// The WandB API key for authentication.
+    /// <param name="Value">
+    /// The name of the repository as a string.
     /// </param>
     /// <returns>
-    /// A <see cref="TJobIntegrationsParam"/> instance initialized for WandB integration.
+    /// The <see cref="TRepositoryParams"/> instance with the updated repository name.
     /// </returns>
-    class function Wandb(const Project, Name, ApiKey: string): TJobIntegrationsParam; static;
+    function Name(const Value: string): TRepositoryParams;
+    /// <summary>
+    /// Sets the owner of the repository.
+    /// </summary>
+    /// <param name="Value">
+    /// The owner of the repository as a string.
+    /// </param>
+    /// <returns>
+    /// The <see cref="TRepositoryParams"/> instance with the updated owner.
+    /// </returns>
+    function Owner(const Value: string): TRepositoryParams;
+    /// <summary>
+    /// Sets the reference for the repository.
+    /// </summary>
+    /// <param name="Value">
+    /// The reference for the repository, such as a branch or commit hash, as a string.
+    /// </param>
+    /// <returns>
+    /// The <see cref="TRepositoryParams"/> instance with the updated reference.
+    /// </returns>
+    function Ref(const Value: string): TRepositoryParams;
+    /// <summary>
+    /// Sets the weight for the repository.
+    /// </summary>
+    /// <param name="Value">
+    /// The weight assigned to the repository as a double.
+    /// </param>
+    /// <returns>
+    /// The <see cref="TRepositoryParams"/> instance with the updated weight.
+    /// </returns>
+    function Weight(const Value: Double): TRepositoryParams;
+    /// <summary>
+    /// Sets the token for accessing the repository.
+    /// </summary>
+    /// <param name="Value">
+    /// The token for authentication as a string.
+    /// </param>
+    /// <returns>
+    /// The <see cref="TRepositoryParams"/> instance with the updated token.
+    /// </returns>
+    function Token(const Value: string): TRepositoryParams;
+    /// <summary>
+    /// Creates a new instance of <see cref="TRepositoryParams"/> with configured parameters.
+    /// </summary>
+    /// <param name="ParamProc">
+    /// A procedure to configure the parameters for the repository.
+    /// </param>
+    /// <returns>
+    /// A new instance of <see cref="TRepositoryParams"/> with the specified parameters.
+    /// </returns>
+    class function New(const ParamProc: TProcRef<TRepositoryParams>): TRepositoryParams;
   end;
 
   /// <summary>
@@ -606,9 +347,24 @@ type
     /// The <see cref="TFineTuningJobParams"/> instance with the updated hyperparameters.
     /// </returns>
     /// <remarks> This property is required. </remarks>
-    function Hyperparameters(Value: THyperparametersParam): TFineTuningJobParams; overload;
+    function Hyperparameters(Value: THyperparametersParams): TFineTuningJobParams; overload;
+    /// <summary>
+    /// Sets the fine-tuning hyperparameter settings used in a fine-tune job.
+    /// </summary>
+    /// <param name="Value">
+    /// The hyperparameters to use for fine-tuning.
+    /// </param>
+    /// <returns>
+    /// The <see cref="TFineTuningJobParams"/> instance with the updated hyperparameters.
+    /// </returns>
+    /// <remarks> This property is required. </remarks>
+    function Hyperparameters(ParamProc: TProcRef<THyperparametersParams>): TFineTuningJobParams; overload;
     /// <summary>
     /// Sets a suffix to be added to the fine-tuned model name.
+    /// <para>
+    /// A string that will be added to your fine-tuning model name. For example, a suffix of
+    /// "my-great-model" would produce a model name like ft:open-mistral-7b:my-great-model:xxx...
+    /// </para>
     /// </summary>
     /// <param name="Value">
     /// A string less than 18 characters to be used as a suffix.
@@ -626,7 +382,27 @@ type
     /// <returns>
     /// The <see cref="TFineTuningJobParams"/> instance with the updated integrations.
     /// </returns>
-    function Integrations(const Value: TArray<TJobIntegrationsParam>): TFineTuningJobParams;
+    function Integrations(const Value: TArray<TJobIntegrationsParams>): TFineTuningJobParams; overload;
+    /// <summary>
+    /// Set the repositories reference .
+    /// </summary>
+    /// <param name="Value">
+    /// An array of repository.
+    /// </param>
+    /// <returns>
+    /// The <see cref="TFineTuningJobParams"/> instance with the updated integrations.
+    /// </returns>
+    function Repositories(const Value: TArray<TRepositoryParams>): TFineTuningJobParams;
+    /// <summary>
+    /// This field will be required in a future release.
+    /// </summary>
+    /// <param name="Value">
+    /// Boolean value to manage the auto start
+    /// </param>
+    /// <returns>
+    /// The <see cref="TFineTuningJobParams"/> instance with the updated integrations.
+    /// </returns>
+    function AutoStart(const Value: Boolean): TFineTuningJobParams;
   end;
 
   /// <summary>
@@ -668,9 +444,7 @@ type
   private
     [JsonReflectAttribute(ctString, rtString, TFineTuningIntegrationTypeInterceptor)]
     FType: TFineTuningIntegrationType;
-    [JsonNameAttribute('project')]
     FProject: string;
-    [JsonNameAttribute('name')]
     FName: string;
   public
     /// <summary>
@@ -692,6 +466,142 @@ type
   end;
 
   /// <summary>
+  /// Represents a repository used in the context of fine-tuning jobs.
+  /// </summary>
+  /// <remarks>
+  /// This class encapsulates information about a repository, including its type, name, owner, reference, weight, and commit ID.
+  /// It is used to provide detailed metadata about the repository in fine-tuning operations.
+  /// </remarks>
+  TRepository = class
+  private
+    [JsonReflectAttribute(ctString, rtString, TRepositoryTypeInterceptor)]
+    FType: TRepositoryType;
+    FName: string;
+    FOwner: string;
+    FRef: string;
+    FWeight: Double;
+    [JsonNameAttribute('commit_id')]
+    FCommitId: string;
+  public
+    /// <summary>
+    /// Gets or sets the type of the repository.
+    /// </summary>
+    /// <remarks>
+    /// This property is required and determines the type of repository being used, such as "git" or "svn."
+    /// </remarks>
+    property &Type: TRepositoryType read FType write FType;
+    /// <summary>
+    /// Gets or sets the name of the repository.
+    /// </summary>
+    /// <remarks>
+    /// This property represents the name of the repository as a string.
+    /// </remarks>
+    property Name: string read FName write FName;
+    /// <summary>
+    /// Gets or sets the owner of the repository.
+    /// </summary>
+    /// <remarks>
+    /// This property specifies the owner of the repository, such as the username or organization name.
+    /// </remarks>
+    property Owner: string read FOwner write FOwner;
+    /// <summary>
+    /// Gets or sets the reference of the repository.
+    /// </summary>
+    /// <remarks>
+    /// The reference can be a branch name, a tag, or a specific commit hash.
+    /// </remarks>
+    property Ref: string read FRef write FRef;
+    /// <summary>
+    /// Gets or sets the weight of the repository.
+    /// </summary>
+    /// <remarks>
+    /// The weight is used to indicate the repository's relative importance or contribution in fine-tuning operations.
+    /// </remarks>
+    property Weight: Double read FWeight write FWeight;
+    /// <summary>
+    /// Gets or sets the commit ID of the repository.
+    /// </summary>
+    /// <remarks>
+    /// This property specifies the exact commit used in the operation, ensuring reproducibility.
+    /// </remarks>
+    property CommitId: string read FCommitId write FCommitId;
+  end;
+
+  /// <summary>
+  /// Represents metadata associated with data used in fine-tuning jobs.
+  /// </summary>
+  /// <remarks>
+  /// This class provides detailed information about the cost, duration, and token usage
+  /// for fine-tuning operations, offering insights into resource consumption.
+  /// </remarks>
+  TDataMetadata = class
+  private
+    [JsonNameAttribute('expected_duration_seconds')]
+    FExpectedDurationSeconds: Int64;
+    FCost: Double;
+    [JsonNameAttribute('cost_currency')]
+    FCostCurrency: string;
+    [JsonNameAttribute('train_tokens_per_step')]
+    FTrainTokensPerStep: Int64;
+    [JsonNameAttribute('train_tokens')]
+    FTrainTokens: Int64;
+    [JsonNameAttribute('data_tokens')]
+    FDataTokens: Int64;
+    [JsonNameAttribute('estimated_start_time')]
+    FEstimatedStartTime: Int64;
+  public
+    /// <summary>
+    /// Gets or sets the expected duration of the fine-tuning job, in seconds.
+    /// </summary>
+    /// <remarks>
+    /// This property provides an estimate of how long the job will take to complete.
+    /// </remarks>
+    property ExpectedDurationSeconds: Int64 read FExpectedDurationSeconds write FExpectedDurationSeconds;
+    /// <summary>
+    /// Gets or sets the total cost of the fine-tuning job.
+    /// </summary>
+    /// <remarks>
+    /// This property reflects the overall monetary cost of the job.
+    /// </remarks>
+    property Cost: Double read FCost write FCost;
+    /// <summary>
+    /// Gets or sets the currency in which the cost is measured.
+    /// </summary>
+    /// <remarks>
+    /// Examples include "USD" or "EUR."
+    /// </remarks>
+    property CostCurrency: string read FCostCurrency write FCostCurrency;
+    /// <summary>
+    /// Gets or sets the number of training tokens processed per step during fine-tuning.
+    /// </summary>
+    /// <remarks>
+    /// This value helps analyze the efficiency of token processing in each training step.
+    /// </remarks>
+    property TrainTokensPerStep: Int64 read FTrainTokensPerStep write FTrainTokensPerStep;
+    /// <summary>
+    /// Gets or sets the total number of training tokens used in the fine-tuning process.
+    /// </summary>
+    /// <remarks>
+    /// This property provides the cumulative count of tokens used for training the model.
+    /// </remarks>
+    property TrainTokens: Int64 read FTrainTokens write FTrainTokens;
+    /// <summary>
+    /// Gets or sets the total number of data tokens processed in the fine-tuning job.
+    /// </summary>
+    /// <remarks>
+    /// This includes all tokens used in the training and validation datasets.
+    /// </remarks>
+    property DataTokens: Int64 read FDataTokens write FDataTokens;
+    /// <summary>
+    /// Gets or sets the estimated start time of the fine-tuning job, as a UNIX timestamp.
+    /// </summary>
+    /// <remarks>
+    /// This property provides the predicted start time of the job for scheduling purposes.
+    /// </remarks>
+    property EstimatedStartTime: Int64 read FEstimatedStartTime write FEstimatedStartTime;
+  end;
+
+  /// <summary>
   /// Represents the output of a fine-tuning job.
   /// </summary>
   /// <remarks>
@@ -699,11 +609,10 @@ type
   /// </remarks>
   TJobOut = class
   private
-    [JsonNameAttribute('id')]
     FId: string;
-    [JsonNameAttribute('hyperparameters')]
+    [JsonNameAttribute('auto_start')]
+    FAutoStart: Boolean;
     FHyperparameters: TJobOutHyperparameters;
-    [JsonNameAttribute('model')]
     FModel: string;
     [JsonReflectAttribute(ctString, rtString, TFineTuningJobStatusInterceptor)]
     FStatus: TFineTuningJobStatus;
@@ -721,14 +630,23 @@ type
     FObject: TFineTuningDataObjectKind;
     [JsonNameAttribute('fine_Tuning_model')]
     FFineTuningModel: string;
-    [JsonNameAttribute('integrations')]
+    FSuffix: string;
     FIntegrations: TArray<TJobOutIntegrations>;
+    [JsonNameAttribute('trained_tokens')]
+    FTrainedTokens: Int64;
+    FRepositories: TArray<TRepository>;
+    FMetadata: TDataMetadata;
   public
     /// <summary>
     /// The ID of the job.
     /// </summary>
     /// <remarks> This value is required. </remarks>
     property Id: string read FId write FId;
+    /// <summary>
+    /// The auto_start of the job.
+    /// </summary>
+    /// <remarks> This value is required. </remarks>
+    property AutoStart: Boolean read FAutoStart write FAutoStart;
     /// <summary>
     /// The hyperparameters used in the fine-tuning job.
     /// </summary>
@@ -780,9 +698,27 @@ type
     /// </summary>
     property FineTuningModel: string read FFineTuningModel write FFineTuningModel;
     /// <summary>
+    /// Optional text/code that adds more context for the model. When given a prompt and a suffix
+    /// the model will fill what is between them. When suffix is not provided, the model will simply
+    /// execute completion starting with prompt.
+    /// </summary>
+    property Suffix: string read FSuffix write FSuffix;
+    /// <summary>
     /// A list of integrations enabled for the fine-tuning job.
     /// </summary>
     property Integrations: TArray<TJobOutIntegrations> read FIntegrations write FIntegrations;
+    /// <summary>
+    /// Total number of tokens trained.
+    /// </summary>
+    property TrainedTokens: Int64 read FTrainedTokens write FTrainedTokens;
+    /// <summary>
+    /// Array of repositories (e.g. repository on GitHub) max <= 20 items
+    /// </summary>
+    property Repositories: TArray<TRepository> read FRepositories write FRepositories;
+    /// <summary>
+    /// JobMetadataOut
+    /// </summary>
+    property Metadata: TDataMetadata read FMetadata write FMetadata;
     /// <summary>
     /// Destructor for TJobOut.
     /// </summary>
@@ -800,10 +736,10 @@ type
   /// </remarks>
   TListFineTuningJobs = class
   private
-    [JsonNameAttribute('data')]
     FData: TArray<TJobOut>;
     [JsonReflectAttribute(ctString, rtString, TFineTuningObjectKindInterceptor)]
     FObject: TFineTuningObjectKind;
+    FTotal: Int64;
   public
     /// <summary>
     /// An array of fine-tuning job outputs.
@@ -817,6 +753,10 @@ type
     /// </remarks>
     property &Object: TFineTuningObjectKind read FObject write FObject;
     /// <summary>
+    /// Count of Data
+    /// </summary>
+    property Total: Int64 read FTotal write FTotal;
+    /// <summary>
     /// Destructor for TListFineTuningJobs.
     /// </summary>
     /// <remarks>
@@ -826,52 +766,22 @@ type
   end;
 
   /// <summary>
-  /// Represents metadata for a fine-tuning job.
+  /// Status and error dot a fine-tune job.
   /// </summary>
-  /// <remarks>
-  /// Contains calculated values useful for performing sanity checks before starting a job.
-  /// </remarks>
-  TJobMetadata = class
+  TJobOutEventData = class
   private
-    [JsonNameAttribute('training_steps')]
-    FTrainingSteps: Int64;
-    [JsonNameAttribute('train_tokens_per_step')]
-    FTrainTokensPerStep: Int64;
-    [JsonNameAttribute('data_tokens')]
-    FDataTokens: Int64;
-    [JsonNameAttribute('train_tokens')]
-    FTrainTokens: Int64;
-    [JsonNameAttribute('epochs')]
-    FEpochs: Extended;
-    [JsonNameAttribute('expected_duration_seconds')]
-    FExpectedDurationSeconds: Int64;
+    [JsonReflectAttribute(ctString, rtString, TFineTuningJobStatusInterceptor)]
+    FStatus: TFineTuningJobStatus;
+    FError: string;
   public
     /// <summary>
-    /// The number of training steps to perform. A training step refers to a single update of the model
-    /// weights during the fine-tuning process. This update is typically calculated using a batch of
-    /// samples from the training dataset
+    /// Status for a fine-tuning job
     /// </summary>
-    property TrainingSteps: Int64 read FTrainingSteps write FTrainingSteps;
+    property Status: TFineTuningJobStatus read FStatus write FStatus;
     /// <summary>
-    /// The number of tokens consumed by one training step
+    /// Error message
     /// </summary>
-    property TrainTokensPerStep: Int64 read FTrainTokensPerStep write FTrainTokensPerStep;
-    /// <summary>
-    /// The total number of tokens in the training dataset
-    /// </summary>
-    property DataTokens: Int64 read FDataTokens write FDataTokens;
-    /// <summary>
-    /// The total number of tokens used during the fine-tuning process
-    /// </summary>
-    property TrainTokens: Int64 read FTrainTokens write FTrainTokens;
-    /// <summary>
-    /// The number of complete passes through the entire training dataset
-    /// </summary>
-    property Epochs: Extended read FEpochs write FEpochs;
-    /// <summary>
-    /// The approximated time (in seconds) for the fine-tuning process to complete
-    /// </summary>
-    property ExpectedDurationSeconds: Int64 read FExpectedDurationSeconds write FExpectedDurationSeconds;
+    property Error: string read FError write FError;
   end;
 
   /// <summary>
@@ -882,10 +792,8 @@ type
   /// </remarks>
   TJobOutEvent = class
   private
-    [JsonNameAttribute('name')]
     FName: string;
-    [JsonReflectAttribute(ctString, rtString, TFineTuningJobStatusInterceptor)]
-    FData: TFineTuningJobStatus;
+    FData: TJobOutEventData;
     [JsonNameAttribute('created_at')]
     FCreatedAt: int64;
   public
@@ -902,7 +810,7 @@ type
     /// <remarks>
     /// Enum values: "QUEUED", "STARTED", "RUNNING", "FAILED", "SUCCESS", "CANCELLED", "CANCELLATION_REQUESTED".
     /// </remarks>
-    property Data: TFineTuningJobStatus read FData write FData;
+    property Data: TJobOutEventData read FData write FData;
     /// <summary>
     /// The UNIX timestamp (in seconds) of the event.
     /// </summary>
@@ -910,6 +818,7 @@ type
     /// This value is required.
     /// </remarks>
     property CreatedAt: int64 read FCreatedAt write FCreatedAt;
+    destructor Destroy; override;
   end;
 
   /// <summary>
@@ -949,7 +858,6 @@ type
   /// </remarks>
   TJobOutCheckpoints = class
   private
-    [JsonNameAttribute('metrics')]
     FMetrics: TJobOutMetrics;
     [JsonNameAttribute('step_number')]
     FStepNumber: Int64;
@@ -988,9 +896,7 @@ type
   /// </remarks>
   TJobOutProgress = class(TJobOut)
   private
-    [JsonNameAttribute('events')]
-    FEvents: TJobOutEvent;
-    [JsonNameAttribute('checkpoints')]
+    FEvents: TArray<TJobOutEvent>;
     FCheckpoints: TArray<TJobOutCheckpoints>;
   public
     /// <summary>
@@ -999,7 +905,7 @@ type
     /// <remarks>
     /// The timestamped list of all events is accessible here. Default value is an empty array.
     /// </remarks>
-    property Events: TJobOutEvent read FEvents write FEvents;
+    property Events: TArray<TJobOutEvent> read FEvents write FEvents;
     /// <summary>
     /// An array with details of all intermediate checkpoints, including monitoring metrics.
     /// </summary>
@@ -1022,11 +928,6 @@ type
   /// Asynchronous callback parameters for fine-tuning job output.
   /// </summary>
   TAsynJobOut = TAsyncCallBack<TJobOut>;
-
-  /// <summary>
-  /// Asynchronous callback parameters for job metadata.
-  /// </summary>
-  TAsynJobMetadata = TAsyncCallBack<TJobMetadata>;
 
   /// <summary>
   /// Asynchronous callback parameters for fine-tuning job progress.
@@ -1060,19 +961,8 @@ type
     /// <param name="CallBacks">
     /// A function that returns the asynchronous callback parameters.
     /// </param>
-    procedure AsyncCreateAndRun(ParamProc: TProc<TFineTuningJobParams>;
+    procedure AsyncCreateJob(ParamProc: TProc<TFineTuningJobParams>;
       const CallBacks: TFunc<TAsynJobOut>);
-    /// <summary>
-    /// Asynchronously creates a new fine-tuning job and performs a sanity check without starting the job.
-    /// </summary>
-    /// <param name="ParamProc">
-    /// A procedure that configures the parameters for the fine-tuning job.
-    /// </param>
-    /// <param name="CallBacks">
-    /// A function that returns the asynchronous callback parameters.
-    /// </param>
-    procedure AsyncCreateAndPerformSanityCheck(ParamProc: TProc<TFineTuningJobParams>;
-      const CallBacks: TFunc<TAsynJobMetadata>);
     /// <summary>
     /// Asynchronously retrieves detailed information about a specific fine-tuning job.
     /// </summary>
@@ -1082,7 +972,7 @@ type
     /// <param name="CallBacks">
     /// A function that returns the asynchronous callback parameters.
     /// </param>
-    procedure ASyncRetrieve(const Value: string;
+    procedure ASyncRetrieve(const JobId: string;
       const CallBacks: TFunc<TAsynJobOutProgress>);
     /// <summary>
     /// Asynchronously requests the cancellation of a fine-tuning job.
@@ -1093,7 +983,18 @@ type
     /// <param name="CallBacks">
     /// A function that returns the asynchronous callback parameters.
     /// </param>
-    procedure AsyncCancel(const Value: string;
+    procedure AsyncCancel(const JobId: string;
+      const CallBacks: TFunc<TAsynJobOutProgress>);
+    /// <summary>
+    /// Asynchronously start a fine-tuning job.
+    /// </summary>
+    /// <param name="Value">
+    /// The ID of the job to cancel.
+    /// </param>
+    /// <param name="CallBacks">
+    /// A function that returns the asynchronous callback parameters.
+    /// </param>
+    procedure AsyncStart(const JobId: string;
       const CallBacks: TFunc<TAsynJobOutProgress>);
     /// <summary>
     /// Retrieves a list of fine-tuning jobs based on the specified parameters.
@@ -1117,20 +1018,7 @@ type
     /// <remarks>
     /// The job is started immediately after creation.
     /// </remarks>
-    function CreateAndRun(ParamProc: TProc<TFineTuningJobParams>): TJobOut;
-    /// <summary>
-    /// Creates a new fine-tuning job and performs a sanity check without starting the job.
-    /// </summary>
-    /// <param name="ParamProc">
-    /// A procedure that configures the parameters for the fine-tuning job.
-    /// </param>
-    /// <returns>
-    /// A <see cref="TJobMetadata"/> instance containing metadata useful for sanity checks.
-    /// </returns>
-    /// <remarks>
-    /// The job is not started; instead, useful metadata is returned.
-    /// </remarks>
-    function CreateAndPerformSanityCheck(ParamProc: TProc<TFineTuningJobParams>): TJobMetadata;
+    function CreateJob(ParamProc: TProc<TFineTuningJobParams>): TJobOut;
     /// <summary>
     /// Retrieves detailed information about a specific fine-tuning job.
     /// </summary>
@@ -1140,7 +1028,7 @@ type
     /// <returns>
     /// A <see cref="TJobOutProgress"/> instance containing detailed progress information about the job.
     /// </returns>
-    function Retrieve(const Value: string): TJobOutProgress;
+    function Retrieve(const JobId: string): TJobOutProgress;
     /// <summary>
     /// Requests the cancellation of a fine-tuning job.
     /// </summary>
@@ -1150,58 +1038,23 @@ type
     /// <returns>
     /// A <see cref="TJobOutProgress"/> instance reflecting the updated status of the job.
     /// </returns>
-    function Cancel(const Value: string): TJobOutProgress;
+    function Cancel(const JobId: string): TJobOutProgress;
+    /// <summary>
+    /// Start a fine-tuning job.
+    /// </summary>
+    /// <param name="Value">
+    /// The ID of the job to cancel.
+    /// </param>
+    /// <returns>
+    /// A <see cref="TJobOutProgress"/> instance reflecting the updated status of the job.
+    /// </returns>
+    function Start(const JobId: string): TJobOutProgress;
   end;
 
 implementation
 
 uses
   System.StrUtils, Rest.Json, System.Rtti;
-
-{ TFineTuningJobStatusHelper }
-
-class function TFineTuningJobStatusHelper.Create(
-  const Value: string): TFineTuningJobStatus;
-begin
-  case IndexStr(AnsiUpperCase(Value), [
-    'QUEUED', 'STARTED', 'RUNNING', 'FAILED', 'SUCCESS', 'CANCELLED', 'CANCELLATION_REQUESTED']) of
-    0 :
-      Exit(Queued);
-    1 :
-      Exit(Started);
-    2 :
-      Exit(Running);
-    3 :
-      Exit(Failed);
-    4 :
-      Exit(Success);
-    5 :
-      Exit(Cancelled);
-    6 :
-      Exit(CancellationRequested);
-  end;
-  Result := Failed;
-end;
-
-function TFineTuningJobStatusHelper.ToString: string;
-begin
-  case Self of
-    Queued:
-      Exit('QUEUED');
-    Started:
-      Exit('STARTED');
-    Running:
-      Exit('RUNNING');
-    Failed:
-      Exit('FAILED');
-    Success:
-      Exit('SUCCESS');
-    Cancelled:
-      Exit('CANCELLED');
-    CancellationRequested:
-      Exit('CANCELLATION_REQUESTED');
-  end;
-end;
 
 { TFineTuningJobListParams }
 
@@ -1265,141 +1118,17 @@ begin
   if Assigned(FHyperparameters) then
     FHyperparameters.Free;
   for var Item in FIntegrations do
-    begin
-      if Assigned(Item) then
-        Item.Free;
-    end;
+    Item.Free;
+  for var Item in FRepositories do
+    Item.Free;
+  if Assigned(FMetadata) then
+    FMetadata.Free;
   inherited;
-end;
-
-{ TFineTuningJobStatusInterceptor }
-
-function TFineTuningJobStatusInterceptor.StringConverter(Data: TObject;
-  Field: string): string;
-begin
-  Result := RTTI.GetType(Data.ClassType).GetField(Field).GetValue(Data).AsType<TFineTuningJobStatus>.ToString;
-end;
-
-procedure TFineTuningJobStatusInterceptor.StringReverter(Data: TObject; Field,
-  Arg: string);
-begin
-  RTTI.GetType(Data.ClassType).GetField(Field).SetValue(Data, TValue.From(TFineTuningJobStatus.Create(Arg)));
-end;
-
-{ TFineTuningDataObjectKindHelper }
-
-class function TFineTuningDataObjectKindHelper.Create(
-  const Value: string): TFineTuningDataObjectKind;
-begin
-  case IndexStr(AnsiLowerCase(Value), ['job']) of
-    0 :
-      Exit(Job);
-    else
-      raise Exception.CreateFmt('(Fine tuning: TFineTuningDataObjectKind) %s is not an enum value', [Value]);
-  end;
-end;
-
-function TFineTuningDataObjectKindHelper.ToString: string;
-begin
-  case Self of
-    Job:
-      Exit('job');
-    else
-      raise Exception.Create('(Fine tuning) error converting object to string');
-  end;
-end;
-
-{ TFineTuningDataObjectKindInterceptor }
-
-function TFineTuningDataObjectKindInterceptor.StringConverter(Data: TObject;
-  Field: string): string;
-begin
-  Result := RTTI.GetType(Data.ClassType).GetField(Field).GetValue(Data).AsType<TFineTuningDataObjectKind>.ToString;
-end;
-
-procedure TFineTuningDataObjectKindInterceptor.StringReverter(Data: TObject; Field,
-  Arg: string);
-begin
-  RTTI.GetType(Data.ClassType).GetField(Field).SetValue(Data, TValue.From(TFineTuningDataObjectKind.Create(Arg)));
-end;
-
-{ TFineTuningIntegrationTypeHelper }
-
-class function TFineTuningIntegrationTypeHelper.Create(
-  const Value: string): TFineTuningIntegrationType;
-begin
-  case IndexStr(AnsiLowerCase(Value), ['wandb']) of
-    0 :
-      Exit(Wandb);
-    else
-      raise Exception.CreateFmt('(Fine tuning: TFineTuningIntegrationType) %s is not an enum value', [Value]);
-  end;
-end;
-
-function TFineTuningIntegrationTypeHelper.ToString: string;
-begin
-  case self of
-    Wandb:
-      Exit('wandb');
-    else
-      raise Exception.Create('(Fine tuning) error converting object to string');
-  end;
-end;
-
-{ TFineTuningIntegrationTypeInterceptor }
-
-function TFineTuningIntegrationTypeInterceptor.StringConverter(Data: TObject;
-  Field: string): string;
-begin
-  Result := RTTI.GetType(Data.ClassType).GetField(Field).GetValue(Data).AsType<TFineTuningIntegrationType>.ToString;
-end;
-
-procedure TFineTuningIntegrationTypeInterceptor.StringReverter(Data: TObject;
-  Field, Arg: string);
-begin
-  RTTI.GetType(Data.ClassType).GetField(Field).SetValue(Data, TValue.From(TFineTuningIntegrationType.Create(Arg)));
-end;
-
-{ TFineTuningObjectKindHelper }
-
-class function TFineTuningObjectKindHelper.Create(
-  const Value: string): TFineTuningObjectKind;
-begin
-  case IndexStr(AnsiLowerCase(Value), ['list']) of
-    0 :
-      Exit(List);
-    else
-      raise Exception.CreateFmt('(Fine tuning: FineTuningObjectKind) %s is not an enum value', [Value]);
-  end;
-end;
-
-function TFineTuningObjectKindHelper.ToString: string;
-begin
-  case self of
-    List:
-      Exit('list');
-    else
-      raise Exception.Create('(Fine tuning) error converting object to string');
-  end;
-end;
-
-{ TFineTuningObjectKindInterceptor }
-
-function TFineTuningObjectKindInterceptor.StringConverter(Data: TObject;
-  Field: string): string;
-begin
-  Result := RTTI.GetType(Data.ClassType).GetField(Field).GetValue(Data).AsType<TFineTuningObjectKind>.ToString;
-end;
-
-procedure TFineTuningObjectKindInterceptor.StringReverter(Data: TObject; Field,
-  Arg: string);
-begin
-  RTTI.GetType(Data.ClassType).GetField(Field).SetValue(Data, TValue.From(TFineTuningObjectKind.Create(Arg)));
 end;
 
 { TFineTuningRoute }
 
-procedure TFineTuningRoute.AsyncCancel(const Value: string;
+procedure TFineTuningRoute.AsyncCancel(const JobId: string;
   const CallBacks: TFunc<TAsynJobOutProgress>);
 begin
   with TAsyncCallBackExec<TAsynJobOutProgress, TJobOutProgress>.Create(CallBacks) do
@@ -1411,34 +1140,14 @@ begin
     Run(
       function: TJobOutProgress
       begin
-        Result := Cancel(Value);
+        Result := Cancel(JobId);
       end);
   finally
     Free;
   end;
 end;
 
-procedure TFineTuningRoute.AsyncCreateAndPerformSanityCheck(
-  ParamProc: TProc<TFineTuningJobParams>;
-  const CallBacks: TFunc<TAsynJobMetadata>);
-begin
-  with TAsyncCallBackExec<TAsynJobMetadata, TJobMetadata>.Create(CallBacks) do
-  try
-    Sender := Use.Param.Sender;
-    OnStart := Use.Param.OnStart;
-    OnSuccess := Use.Param.OnSuccess;
-    OnError := Use.Param.OnError;
-    Run(
-      function: TJobMetadata
-      begin
-        Result := CreateAndPerformSanityCheck(ParamProc);
-      end);
-  finally
-    Free;
-  end;
-end;
-
-procedure TFineTuningRoute.AsyncCreateAndRun(
+procedure TFineTuningRoute.AsyncCreateJob(
   ParamProc: TProc<TFineTuningJobParams>;
   const CallBacks: TFunc<TAsynJobOut>);
 begin
@@ -1451,7 +1160,7 @@ begin
     Run(
       function: TJobOut
       begin
-        Result := CreateAndRun(ParamProc);
+        Result := Self.CreateJob(ParamProc);
       end);
   finally
     Free;
@@ -1470,14 +1179,14 @@ begin
     Run(
       function: TListFineTuningJobs
       begin
-        Result := List(ParamProc);
+        Result := Self.List(ParamProc);
       end);
   finally
     Free;
   end;
 end;
 
-procedure TFineTuningRoute.ASyncRetrieve(const Value: string;
+procedure TFineTuningRoute.ASyncRetrieve(const JobId: string;
   const CallBacks: TFunc<TAsynJobOutProgress>);
 begin
   with TAsyncCallBackExec<TAsynJobOutProgress, TJobOutProgress>.Create(CallBacks) do
@@ -1489,41 +1198,57 @@ begin
     Run(
       function: TJobOutProgress
       begin
-        Result := Retrieve(Value);
+        Result := Self.Retrieve(JobId);
       end);
   finally
     Free;
   end;
 end;
 
-function TFineTuningRoute.Cancel(const Value: string): TJobOutProgress;
+procedure TFineTuningRoute.AsyncStart(const JobId: string;
+  const CallBacks: TFunc<TAsynJobOutProgress>);
 begin
-  var parameter := Format('fine_tuning/jobs/%s/cancel', [Value]);
-  Result := API.Post<TJobOutProgress>(parameter);
+  with TAsyncCallBackExec<TAsynJobOutProgress, TJobOutProgress>.Create(CallBacks) do
+  try
+    Sender := Use.Param.Sender;
+    OnStart := Use.Param.OnStart;
+    OnSuccess := Use.Param.OnSuccess;
+    OnError := Use.Param.OnError;
+    Run(
+      function: TJobOutProgress
+      begin
+        Result := Self.Start(JobId);
+      end);
+  finally
+    Free;
+  end;
 end;
 
-function TFineTuningRoute.CreateAndPerformSanityCheck(
-  ParamProc: TProc<TFineTuningJobParams>): TJobMetadata;
+function TFineTuningRoute.Cancel(const JobId: string): TJobOutProgress;
 begin
-  Result := API.Post<TJobMetadata, TFineTuningJobParams>('fine_tuning/jobs', ParamProc);
+  Result := API.Post<TJobOutProgress>(Format('fine_tuning/jobs/%s/cancel', [JobId]), True);
 end;
 
-function TFineTuningRoute.CreateAndRun(
+function TFineTuningRoute.CreateJob(
   ParamProc: TProc<TFineTuningJobParams>): TJobOut;
 begin
-  Result := API.Post<TJobOut, TFineTuningJobParams>('fine_tuning/jobs', ParamProc);
+  Result := API.Post<TJobOut, TFineTuningJobParams>('fine_tuning/jobs', ParamProc, True);
 end;
 
 function TFineTuningRoute.List(
   ParamProc: TProc<TFineTuningJobListParams>): TListFineTuningJobs;
 begin
-  Result := API.Post<TListFineTuningJobs, TFineTuningJobListParams>('fine_tuning/jobs', ParamProc);
+  Result := API.Get<TListFineTuningJobs, TFineTuningJobListParams>('fine_tuning/jobs', ParamProc, True);
 end;
 
-function TFineTuningRoute.Retrieve(const Value: string): TJobOutProgress;
+function TFineTuningRoute.Retrieve(const JobId: string): TJobOutProgress;
 begin
-  var parameter := Format('fine_tuning/jobs/%s', [Value]);
-  Result := API.Get<TJobOutProgress>(parameter);
+  Result := API.Get<TJobOutProgress>(Format('fine_tuning/jobs/%s', [JobId]), True);
+end;
+
+function TFineTuningRoute.Start(const JobId: string): TJobOutProgress;
+begin
+  Result := API.Post<TJobOutProgress>(Format('fine_tuning/jobs/%s/start', [JobId]), True);
 end;
 
 { TListFineTuningJobs }
@@ -1531,55 +1256,57 @@ end;
 destructor TListFineTuningJobs.Destroy;
 begin
   for var Item in Data do
-    if Assigned(Item) then
-      Item.Free;
+    Item.Free;
   inherited;
 end;
 
 { TFineTuningJobParams }
 
-function TFineTuningJobParams.Hyperparameters(
-  Value: THyperparametersParam): TFineTuningJobParams;
-var
-  JSon: TJSONObject;
+function TFineTuningJobParams.AutoStart(
+  const Value: Boolean): TFineTuningJobParams;
 begin
-  JSon := TJSONObject.Create;
+  Result := TFineTuningJobParams(Add('auto_start', Value));
+end;
 
-  {--- The TrainingSteps value must be greater or equal to 1 }
-  if Value.TrainingSteps < 1 then
-    Value.TrainingSteps := 1;
-  JSon.AddPair('training_steps', Value.TrainingSteps);
+function TFineTuningJobParams.Hyperparameters(
+  Value: THyperparametersParams): TFineTuningJobParams;
+begin
+  Result := TFineTuningJobParams(Add('hyperparameters', Value.Detach));
+end;
 
-  {--- The LearningRate value must be in the range [1e-8..1] }
-  if (Value.LearningRate < 1e-8) or (Value.LearningRate > 1) then
-    Value.LearningRate := THyperparametersParam.LearningRateDefault;
-  JSon.AddPair('learning_rate', Value.LearningRate);
-
-  Result := TFineTuningJobParams(Add('hyperparameters', JSon));
+function TFineTuningJobParams.Hyperparameters(
+  ParamProc: TProcRef<THyperparametersParams>): TFineTuningJobParams;
+begin
+  if Assigned(ParamProc) then
+    begin
+      var Value := THyperparametersParams.Create;
+      ParamProc(Value);
+      Result := Hyperparameters(Value);
+    end
+  else Result := Self;
 end;
 
 function TFineTuningJobParams.Integrations(
-  const Value: TArray<TJobIntegrationsParam>): TFineTuningJobParams;
-var
-  Items: TJSONArray;
-  JSon: TJSONObject;
+  const Value: TArray<TJobIntegrationsParams>): TFineTuningJobParams;
 begin
-  Items := TJSONArray.Create;
+  var JSONArray := TJSONArray.Create;
   for var Item in Value do
-    begin
-      JSon := TJSONObject.Create;
-      JSon.AddPair('type', Item.&Type.ToString);
-      JSon.AddPair('project', Item.Project);
-      JSon.AddPair('name', Item.Name);
-      JSon.AddPair('api_key', Item.ApiKey);
-      Items.Add(JSon);
-    end;
-  Result := TFineTuningJobParams(Add('integrations', Items));
+    JSONArray.Add(Item.Detach);
+  Result := TFineTuningJobParams(Add('integrations', JSONArray));
 end;
 
 function TFineTuningJobParams.Model(const Value: string): TFineTuningJobParams;
 begin
   Result := TFineTuningJobParams(Add('model', Value));
+end;
+
+function TFineTuningJobParams.Repositories(
+  const Value: TArray<TRepositoryParams>): TFineTuningJobParams;
+begin
+  var JSONArray := TJSONArray.Create;
+  for var Item in Value do
+    JSONArray.Add(Item.Detach);
+  Result := TFineTuningJobParams(Add('repositories', JSONArray));
 end;
 
 function TFineTuningJobParams.Suffix(const Value: string): TFineTuningJobParams;
@@ -1602,46 +1329,6 @@ begin
   Result := TFineTuningJobParams(Add('validation_files', Value));
 end;
 
-{ THyperparametersParam }
-
-class function THyperparametersParam.Create(const ATrainingSteps: Int64;
-  const ALearningRate: Extended): THyperparametersParam;
-begin
-  Result.TrainingSteps := ATrainingSteps;
-  Result.LearningRate := ALearningRate;
-end;
-
-procedure THyperparametersParam.SetLearningRate(const Value: Extended);
-begin
-  if (Value < 1e-8) or (Value > 1) then
-    FLearningRate := LearningRateDefault else
-    FLearningRate := Value;
-end;
-
-procedure THyperparametersParam.SetTrainingSteps(const Value: Int64);
-begin
-  if Value < 1 then
-    FTrainingSteps := 1 else
-    FTrainingSteps := Value;
-end;
-
-{ TJobIntegrationsParam }
-
-class function TJobIntegrationsParam.Create(const AType: TFineTuningIntegrationType;
-  const Project, Name, ApiKey: string): TJobIntegrationsParam;
-begin
-  Result.&Type := AType;
-  Result.Project := Project;
-  Result.Name := Name;
-  Result.ApiKey := ApiKey;
-end;
-
-class function TJobIntegrationsParam.Wandb(const Project, Name,
-  ApiKey: string): TJobIntegrationsParam;
-begin
-  Result := TJobIntegrationsParam.Create(TFineTuningIntegrationType.Wandb, Project, Name, ApiKey);
-end;
-
 { TJobOutCheckpoints }
 
 destructor TJobOutCheckpoints.Destroy;
@@ -1655,11 +1342,158 @@ end;
 
 destructor TJobOutProgress.Destroy;
 begin
-  if Assigned(FEvents) then
-    FEvents.Free;
+  for var Item in FEvents do
+    Item.Free;
   for var Item in FCheckpoints do
-    if Assigned(Item) then
-      Item.Free;
+    Item.Free;
+  inherited;
+end;
+
+{ TRepositoryParams }
+
+function TRepositoryParams.Name(const Value: string): TRepositoryParams;
+begin
+  Result := TRepositoryParams(Add('name', Value));
+end;
+
+class function TRepositoryParams.New(
+  const ParamProc: TProcRef<TRepositoryParams>): TRepositoryParams;
+begin
+  Result := TRepositoryParams.Create;
+  if Assigned(ParamProc) then
+    begin
+      ParamProc(Result);
+    end;
+end;
+
+function TRepositoryParams.Owner(const Value: string): TRepositoryParams;
+begin
+  Result := TRepositoryParams(Add('owner', Value));
+end;
+
+function TRepositoryParams.Ref(const Value: string): TRepositoryParams;
+begin
+  Result := TRepositoryParams(Add('ref', Value));
+end;
+
+function TRepositoryParams.Token(const Value: string): TRepositoryParams;
+begin
+  Result := TRepositoryParams(Add('token', Value));
+end;
+
+function TRepositoryParams.&Type(
+  const Value: TRepositoryType): TRepositoryParams;
+begin
+  Result := TRepositoryParams(Add('type', Value.ToString));
+end;
+
+function TRepositoryParams.Weight(const Value: Double): TRepositoryParams;
+begin
+  Result := TRepositoryParams(Add('weight', Value));
+end;
+
+{ THyperparametersParams }
+
+function THyperparametersParams.Epochs(
+  const Value: Double): THyperparametersParams;
+begin
+  Result := THyperparametersParams(Add('epochs', Value));
+end;
+
+function THyperparametersParams.FimRatio(
+  const Value: Double): THyperparametersParams;
+begin
+  Result := THyperparametersParams(Add('fim_ratio', Value));
+end;
+
+function THyperparametersParams.LearningRate(
+  const Value: Double): THyperparametersParams;
+begin
+  Result := THyperparametersParams(Add('learning_rate', Value));
+end;
+
+class function THyperparametersParams.New(
+  const ParamProc: TProcRef<THyperparametersParams>): THyperparametersParams;
+begin
+  Result := THyperparametersParams.Create;
+  if Assigned(ParamProc) then
+    begin
+      ParamProc(Result);
+    end;
+end;
+
+function THyperparametersParams.SeqLen(
+  const Value: Integer): THyperparametersParams;
+begin
+  Result := THyperparametersParams(Add('seq_len', Value));
+end;
+
+function THyperparametersParams.TrainingSteps(
+  const Value: Integer): THyperparametersParams;
+begin
+  Result := THyperparametersParams(Add('training_steps', Value));
+end;
+
+function THyperparametersParams.WarmupFraction(
+  const Value: Double): THyperparametersParams;
+begin
+  Result := THyperparametersParams(Add('warmup_fraction', Value));
+end;
+
+function THyperparametersParams.WeightDecay(
+  const Value: Double): THyperparametersParams;
+begin
+  Result := THyperparametersParams(Add('weight_decay', Value));
+end;
+
+{ TJobIntegrationsParams }
+
+function TJobIntegrationsParams.ApiKey(
+  const Value: string): TJobIntegrationsParams;
+begin
+  Result := TJobIntegrationsParams(Add('api_key', Value));
+end;
+
+function TJobIntegrationsParams.Name(
+  const Value: string): TJobIntegrationsParams;
+begin
+  Result := TJobIntegrationsParams(Add('name', Value));
+end;
+
+class function TJobIntegrationsParams.New(
+  const ParamProc: TProcRef<TJobIntegrationsParams>): TJobIntegrationsParams;
+begin
+  Result := TJobIntegrationsParams.Create;
+  if Assigned(ParamProc) then
+    begin
+      ParamProc(Result);
+    end;
+end;
+
+function TJobIntegrationsParams.Project(
+  const Value: string): TJobIntegrationsParams;
+begin
+  Result := TJobIntegrationsParams(Add('project', Value));
+end;
+
+function TJobIntegrationsParams.RunName(
+  const Value: string): TJobIntegrationsParams;
+begin
+  Result := TJobIntegrationsParams(Add('run_name', Value));
+end;
+
+function TJobIntegrationsParams.&Type(
+  const Value: TFineTuningIntegrationType): TJobIntegrationsParams;
+begin
+  Result := TJobIntegrationsParams(Add('type', Value.ToString));
+end;
+
+{ TJobOutEvent }
+
+destructor TJobOutEvent.Destroy;
+begin
+  if Assigned(FData) then
+    FData.Free;
   inherited;
 end;
 

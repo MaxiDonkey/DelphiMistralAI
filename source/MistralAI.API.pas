@@ -101,6 +101,11 @@ type
     procedure ParseError(const Code: Int64; const ResponseText: string);
     procedure SetCustomHeaders(const Value: TNetHeaders);
 
+  private
+    function JSONValueAsString(const Value: string): string; overload;
+    function JSONValueAsString(const Value: string; const Field: string): string; overload;
+    function JSONValueAsString(const Value: string; const Field: TArray<string>): string; overload;
+
   protected
     function GetHeaders: TNetHeaders;
     function GetRequestURL(const Path: string): string;
@@ -109,16 +114,20 @@ type
     function Post(const Path: string; Response: TStringStream): Integer; overload;
     function Post(const Path: string; Body: TJSONObject; Response: TStringStream; OnReceiveData: TReceiveDataCallback = nil): Integer; overload;
     function Post(const Path: string; Body: TMultipartFormData; Response: TStringStream): Integer; overload;
+    function Patch(const Path: string; Body: TJSONObject; Response: TStringStream; OnReceiveData: TReceiveDataCallback = nil): Integer; overload;
     function ParseResponse<T: class, constructor>(const Code: Int64; const ResponseText: string): T;
     procedure CheckAPI;
 
   public
-    function Get<TResult: class, constructor>(const Path: string): TResult; overload;
-    procedure GetFile(const Path: string; Response: TStream); overload;
+    function Get<TResult: class, constructor>(const Path: string; const MetadataAsObject: Boolean = False): TResult; overload;
+    function Get<TResult: class, constructor; TParams: TUrlParam>(const Path: string; ParamProc: TProc<TParams>; const MetadataAsObject: Boolean = False): TResult; overload;
+    function GetFile(const Path: string; Response: TStream): Integer; overload;
+    function GetFile<TResult: class, constructor>(const Path: string; const JSONFieldName: string = 'data'): TResult; overload;
     function Delete<TResult: class, constructor>(const Path: string): TResult; overload;
     function Post<TParams: TJSONParam>(const Path: string; ParamProc: TProc<TParams>; Response: TStringStream; Event: TReceiveDataCallback): Boolean; overload;
-    function Post<TResult: class, constructor; TParams: TJSONParam>(const Path: string; ParamProc: TProc<TParams>): TResult; overload;
-    function Post<TResult: class, constructor>(const Path: string): TResult; overload;
+    function Post<TResult: class, constructor; TParams: TJSONParam>(const Path: string; ParamProc: TProc<TParams>; const MetadataAsObject: Boolean = False): TResult; overload;
+    function Patch<TResult: class, constructor; TParams: TJSONParam>(const Path: string; ParamProc: TProc<TParams>; const MetadataAsObject: Boolean = False): TResult; overload;
+    function Post<TResult: class, constructor>(const Path: string; const MetadataAsObject: Boolean = False): TResult; overload;
     function PostForm<TResult: class, constructor; TParams: TMultipartFormData, constructor>(const Path: string; ParamProc: TProc<TParams>): TResult; overload;
 
   public
@@ -144,7 +153,10 @@ type
 implementation
 
 uses
-  System.StrUtils, REST.Json;
+  System.StrUtils, REST.Json, MistralAI.NetEncoding.Base64;
+
+const
+  JSONFieldsToString : TArray<string> = ['"metadata": {'];
 
 constructor TMistralAIAPI.Create;
 begin
@@ -181,7 +193,7 @@ begin
     Stream.Position := 0;
     Result := FHTTPClient.Post(GetRequestURL(Path), Stream, Response, Headers).StatusCode;
   finally
-    FHTTPClient.OnReceiveData := nil;
+    FHTTPClient.ReceiveDataCallBack := nil;
     Stream.Free;
   end;
 end;
@@ -218,7 +230,7 @@ begin
   end;
 end;
 
-function TMistralAIAPI.Post<TResult, TParams>(const Path: string; ParamProc: TProc<TParams>): TResult;
+function TMistralAIAPI.Post<TResult, TParams>(const Path: string; ParamProc: TProc<TParams>; const MetadataAsObject: Boolean): TResult;
 var
   Response: TStringStream;
   Params: TParams;
@@ -230,7 +242,11 @@ begin
     if Assigned(ParamProc) then
       ParamProc(Params);
     Code := Post(Path, Params.JSON, Response);
-    Result := ParseResponse<TResult>(Code, Response.DataString);
+    if MetadataAsObject then
+      {--- Returns Metadata as JSON object }
+      Result := ParseResponse<TResult>(Code, Response.DataString) else
+      {--- Returns Metadata as string }
+      Result := ParseResponse<TResult>(Code, JSONValueAsString(Response.DataString));
   finally
     Params.Free;
     Response.Free;
@@ -268,7 +284,7 @@ begin
   end;
 end;
 
-function TMistralAIAPI.Post<TResult>(const Path: string): TResult;
+function TMistralAIAPI.Post<TResult>(const Path: string; const MetadataAsObject: Boolean): TResult;
 var
   Response: TStringStream;
   Code: Integer;
@@ -276,7 +292,9 @@ begin
   Response := TStringStream.Create('', TEncoding.UTF8);
   try
     Code := Post(Path, Response);
-    Result := ParseResponse<TResult>(Code, Response.DataString);
+    if MetadataAsObject then
+      Result := ParseResponse<TResult>(Code, Response.DataString) else
+      Result := ParseResponse<TResult>(Code, JSONValueAsString(Response.DataString));
   finally
     Response.Free;
   end;
@@ -344,7 +362,29 @@ begin
   end;
 end;
 
-function TMistralAIAPI.Get<TResult>(const Path: string): TResult;
+function TMistralAIAPI.Get<TResult, TParams>(const Path: string;
+  ParamProc: TProc<TParams>; const MetadataAsObject: Boolean): TResult;
+var
+  Response: TStringStream;
+  Code: Integer;
+  Params: TParams;
+begin
+  Response := TStringStream.Create('', TEncoding.UTF8);
+  Params := TParams.Create;
+  try
+    if Assigned(ParamProc) then
+      ParamProc(Params);
+    Code := Get(Path + Params.Value, Response);
+    if MetadataAsObject then
+      Result := ParseResponse<TResult>(Code, Response.DataString) else
+      Result := ParseResponse<TResult>(Code, JSONValueAsString(Response.DataString));
+  finally
+    Response.Free;
+    Params.Free;
+  end;
+end;
+
+function TMistralAIAPI.Get<TResult>(const Path: string; const MetadataAsObject: Boolean): TResult;
 var
   Response: TStringStream;
   Code: Integer;
@@ -352,32 +392,56 @@ begin
   Response := TStringStream.Create('', TEncoding.UTF8);
   try
     Code := Get(Path, Response);
-    Result := ParseResponse<TResult>(Code, Response.DataString);
+    if MetadataAsObject then
+      Result := ParseResponse<TResult>(Code, Response.DataString) else
+      Result := ParseResponse<TResult>(Code, JSONValueAsString(Response.DataString));
   finally
     Response.Free;
   end;
 end;
 
-procedure TMistralAIAPI.GetFile(const Path: string; Response: TStream);
+function TMistralAIAPI.GetFile<TResult>(const Path: string; const JSONFieldName: string):TResult;
+var
+  Stream: TStringStream;
+  Temp: TStringStream;
+  Code: Integer;
+begin
+  Stream := TStringStream.Create;
+  try
+    Code := GetFile(Path, Stream);
+    Stream.Position := 0;
+    Temp := TStringStream.Create(BytesToString(Stream.Bytes).TrimRight([#0]));
+    try
+      Result := ParseResponse<TResult>(Code, Format('{"%s":"%s"}', [JSONFieldName, EncodeBase64(Temp)]));
+    finally
+      Temp.Free;
+    end;
+  finally
+    Stream.Free;
+  end;
+end;
+
+function TMistralAIAPI.GetFile(const Path: string; Response: TStream): Integer;
 var
   Headers: TNetHeaders;
-  Code: Integer;
 begin
   CheckAPI;
   Headers := GetHeaders;
-  Code := FHTTPClient.Get(GetRequestURL(Path), Response, Headers).StatusCode;
-  case Code of
+  Result := FHTTPClient.Get(GetRequestURL(Path), Response, Headers).StatusCode;
+  case Result of
     200..299:
-      ; {success}
-  else
-    var Recieved := TStringStream.Create;
-    try
-      Response.Position := 0;
-      Recieved.LoadFromStream(Response);
-      ParseError(Code, Recieved.DataString);
-    finally
-      Recieved.Free;
-    end;
+       {success};
+    else
+      begin
+        var Recieved := TStringStream.Create;
+        try
+          Response.Position := 0;
+          Recieved.LoadFromStream(Response);
+          ParseError(Result, Recieved.DataString);
+        finally
+          Recieved.Free;
+        end;
+      end;
   end;
 end;
 
@@ -440,6 +504,49 @@ begin
     raise MistralAIExceptionInvalidResponse.Create(Code, 'Empty or invalid response');
 end;
 
+function TMistralAIAPI.Patch(const Path: string; Body: TJSONObject;
+  Response: TStringStream; OnReceiveData: TReceiveDataCallback): Integer;
+var
+  Headers: TNetHeaders;
+  Stream: TStringStream;
+begin
+  CheckAPI;
+  Headers := GetHeaders + [TNetHeader.Create('Content-Type', 'application/json')];
+  Headers := Headers + [TNetHeader.Create('Accept', 'application/json')];
+  Stream := TStringStream.Create;
+  FHTTPClient.ReceiveDataCallBack := OnReceiveData;
+  try
+    Stream.WriteString(Body.ToJSON);
+    Stream.Position := 0;
+    Result := FHTTPClient.Patch(GetRequestURL(Path), Stream, Response, Headers).StatusCode;
+  finally
+    FHTTPClient.ReceiveDataCallBack := nil;
+    Stream.Free;
+  end;
+end;
+
+function TMistralAIAPI.Patch<TResult, TParams>(const Path: string;
+  ParamProc: TProc<TParams>; const MetadataAsObject: Boolean): TResult;
+var
+  Response: TStringStream;
+  Params: TParams;
+  Code: Integer;
+begin
+  Response := TStringStream.Create('', TEncoding.UTF8);
+  Params := TParams.Create;
+  try
+    if Assigned(ParamProc) then
+      ParamProc(Params);
+    Code := Patch(Path, Params.JSON, Response);
+    if MetadataAsObject then
+      Result := ParseResponse<TResult>(Code, Response.DataString) else
+      Result := ParseResponse<TResult>(Code, JSONValueAsString(Response.DataString));
+  finally
+    Params.Free;
+    Response.Free;
+  end;
+end;
+
 procedure TMistralAIAPI.SetBaseUrl(const Value: string);
 begin
   FBaseUrl := Value;
@@ -458,6 +565,51 @@ end;
 procedure TMistralAIAPI.SetToken(const Value: string);
 begin
   FToken := Value;
+end;
+
+function TMistralAIAPI.JSONValueAsString(const Value: string;
+  const Field: TArray<string>): string;
+begin
+  Result := Value;
+  if Length(Field) > 0 then
+    begin
+      for var Item in Field do
+        Result := JSONValueAsString(Result, Item);
+    end;
+end;
+
+function TMistralAIAPI.JSONValueAsString(const Value, Field: string): string;
+begin
+  Result := Value;
+  var i := Pos(Field, Result);
+  while (i > 0) and (i < Result.Length) do
+    begin
+      i := i + Field.Length - 1;
+      Result[i] := '"';
+      Inc(i);
+      var j := 0;
+      while (j > 0) or ((j = 0) and not (Result[i] = '}')) do
+        begin
+          case Result[i] of
+            '{':
+              Inc(j);
+            '}':
+              j := j - 1;
+            '"':
+              Result[i] := '`';
+          end;
+          Inc(i);
+          if i > Result.Length then
+            raise Exception.Create('Invalid JSON string');
+        end;
+      Result[i] := '"';
+      i := Pos(Field, Result);
+    end;
+end;
+
+function TMistralAIAPI.JSONValueAsString(const Value: string): string;
+begin
+  Result := JSONValueAsString(Value, JSONFieldsToString);
 end;
 
 { MistralAIException }

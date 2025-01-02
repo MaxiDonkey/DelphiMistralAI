@@ -11,109 +11,10 @@ interface
 
 uses
   System.Classes, System.SysUtils, REST.JsonReflect, REST.Json.Types, System.Net.Mime,
-  System.Threading, MistralAI.API.Params, MistralAI.API, MistralAI.Async.Support;
+  System.Threading, MistralAI.API.Params, MistralAI.API, MistralAI.Async.Support,
+  MistralAI.Types;
 
 type
-  /// <summary>
-  /// Specifies the intended purpose of the uploaded file.
-  /// </summary>
-  /// <remarks>
-  /// Currently, only 'finetune' is supported.
-  /// </remarks>
-  TFilePurpose = (
-    /// <summary>
-    /// The file will be used for fine-tuning.
-    /// </summary>
-    finetune
-  );
-
-  /// <summary>
-  /// Helper methods for <c>TFilePurpose</c> enumeration.
-  /// </summary>
-  TFilePurposeHelper = record helper for TFilePurpose
-    /// <summary>
-    /// Converts the <c>TFilePurpose</c> value to its string representation.
-    /// </summary>
-    /// <returns>
-    /// A string representing the <c>TFilePurpose</c> value.
-    /// </returns>
-    /// <remarks>
-    /// For example:
-    /// <code>
-    /// var
-    ///   Purpose: TFilePurpose;
-    /// begin
-    ///   Purpose := TFilePurpose.finetune;
-    ///   ShowMessage(Purpose.ToString); // Outputs 'fine-tune'
-    /// end;
-    /// </code>
-    /// </remarks>
-    function ToString: string;
-    /// <summary>
-    /// Creates a <c>TFilePurpose</c> from its string representation.
-    /// </summary>
-    /// <param name="Value">
-    /// The string representation of the <c>TFilePurpose</c>.
-    /// </param>
-    /// <returns>
-    /// The <c>TFilePurpose</c> corresponding to the specified string.
-    /// </returns>
-    /// <exception cref="Exception">
-    /// Raised if the string does not correspond to any <c>TFilePurpose</c> value.
-    /// </exception>
-    /// <remarks>
-    /// For example:
-    /// <code>
-    /// var
-    ///   Purpose: TFilePurpose;
-    /// begin
-    ///   Purpose := TFilePurposeHelper.Create('fine-tune');
-    ///   // Purpose now equals TFilePurpose.finetune
-    /// end;
-    /// </code>
-    /// </remarks>
-    class function Create(const Value: string): TFilePurpose; static;
-  end;
-
-  /// <summary>
-  /// JSON interceptor to convert <c>TFilePurpose</c> to and from its string representation during JSON serialization.
-  /// </summary>
-  TFilePurposeInterceptor = class(TJSONInterceptorStringToString)
-  public
-    /// <summary>
-    /// Converts the <c>TFilePurpose</c> field value to its string representation.
-    /// </summary>
-    /// <param name="Data">
-    /// The object containing the field.
-    /// </param>
-    /// <param name="Field">
-    /// The name of the field to convert.
-    /// </param>
-    /// <returns>
-    /// The string representation of the <c>TFilePurpose</c> value.
-    /// </returns>
-    /// <remarks>
-    /// This method is used internally during JSON serialization.
-    /// </remarks>
-    function StringConverter(Data: TObject; Field: string): string; override;
-    /// <summary>
-    /// Converts a string to the <c>TFilePurpose</c> field value during JSON deserialization.
-    /// </summary>
-    /// <param name="Data">
-    /// The object containing the field.
-    /// </param>
-    /// <param name="Field">
-    /// The name of the field to convert.
-    /// </param>
-    /// <param name="Arg">
-    /// The string value to convert to <c>TFilePurpose</c>.
-    /// </param>
-    /// <remarks>
-    /// This method is used internally during JSON deserialization.
-    /// </remarks>
-    procedure StringReverter(Data: TObject; Field: string; Arg: string); override;
-  end;
-
   /// <summary>
   /// Parameters for uploading a file.
   /// </summary>
@@ -222,6 +123,77 @@ type
   end;
 
   /// <summary>
+  /// Represents the parameters for listing files with specific criteria.
+  /// </summary>
+  /// <remarks>
+  /// This class is used to configure and pass parameters when listing files from the API.
+  /// It provides methods to set pagination, filtering, and searching options.
+  /// </remarks>
+  TListParams = class(TUrlParam)
+  public
+    /// <summary>
+    /// Sets the intended page in the returned list.
+    /// </summary>
+    /// <param name="Value">
+    /// Integer type size value. Default 0
+    /// </param>
+    /// <returns>
+    /// The current <c>TListParams</c> instance.
+    /// </returns>
+    function Page(const Value: Integer): TListParams;
+    /// <summary>
+    /// Sets the intended page size of the returned list.
+    /// </summary>
+    /// <param name="Value">
+    /// Integer type size value. Default 100
+    /// </param>
+    /// <returns>
+    /// The current <c>TListParams</c> instance.
+    /// </returns>
+    function PageSize(const Value: Integer): TListParams;
+    /// <summary>
+    /// Sets the intended sample_type of the listed file.
+    /// </summary>
+    /// <param name="Value">
+    /// The sample_type as a <c>TSampleType</c> value.
+    /// </param>
+    /// <returns>
+    /// The current <c>TListParams</c> instance.
+    /// </returns>
+    function SampleType(const Value: TArray<TSampleType>): TListParams;
+    /// <summary>
+    /// Sets the intended source of the listed file.
+    /// </summary>
+    /// <param name="Value">
+    /// The source as a <c>TSourceType</c> value.
+    /// </param>
+    /// <returns>
+    /// The current <c>TListParams</c> instance.
+    /// </returns>
+    function Source(const Value: TArray<TSourceType>): TListParams;
+    /// <summary>
+    /// Sets the intended search of the listed file.
+    /// </summary>
+    /// <param name="Value">
+    /// The search as a <c>string</c> type value.
+    /// </param>
+    /// <returns>
+    /// The current <c>TListParams</c> instance.
+    /// </returns>
+    function Search(const Value: string): TListParams;
+    /// <summary>
+    /// Sets the intended purpose of the listed file.
+    /// </summary>
+    /// <param name="Value">
+    /// The purpose as a <c>TFilePurpose</c> value.
+    /// </param>
+    /// <returns>
+    /// The current <c>TListParams</c> instance.
+    /// </returns>
+    function Purpose(const Value: TFilePurpose): TListParams;
+  end;
+
+  /// <summary>
   /// Represents a file in the Mistral AI system.
   /// </summary>
   /// <remarks>
@@ -229,18 +201,22 @@ type
   /// </remarks>
   TFile = class
   private
-    [JsonNameAttribute('bytes')]
     FBytes: Int64;
     [JsonNameAttribute('created_at')]
     FCreated_at: Int64;
-    [JsonNameAttribute('filename')]
     FFilename: string;
-    [JsonNameAttribute('id')]
     FId: string;
-    [JsonNameAttribute('object')]
     FObject: string;
     [JsonReflectAttribute(ctString, rtString, TFilePurposeInterceptor)]
     FPurpose: TFilePurpose;
+    [JsonReflectAttribute(ctString, rtString, TSampleTypeInterceptor)]
+    [JsonNameAttribute('sample_type')]
+    FSampleType: TSampleType;
+    [JsonNameAttribute('num_lines')]
+    FNumLines: Int64;
+    [JsonReflectAttribute(ctString, rtString, TSourceTypeInterceptor)]
+    FSource: TSourceType;
+    FDeleted: Boolean;
   public
     /// <summary>
     /// The size (in bytes) of the file.
@@ -277,6 +253,22 @@ type
     /// The intended purpose of the file.
     /// </summary>
     property Purpose: TFilePurpose read FPurpose write FPurpose;
+    /// <summary>
+    /// Enum: "pretrain" "instruct" "batch_request" "batch_result" "batch_error"
+    /// </summary>
+    property SampleType: TSampleType read FSampleType write FSampleType;
+    /// <summary>
+    /// Num lines returned
+    /// </summary>
+    property NumLines: Int64 read FNumLines write FNumLines;
+    /// <summary>
+    /// Enum: "upload" "repository" "mistral"
+    /// </summary>
+    property Source: TSourceType read FSource write FSource;
+    /// <summary>
+    /// Indicator when file retrieving only
+    /// </summary>
+    property Deleted: Boolean read FDeleted write FDeleted;
   end;
 
   /// <summary>
@@ -304,10 +296,9 @@ type
   /// </remarks>
   TFiles = class
   private
-    [JsonNameAttribute('data')]
     FData: TArray<TFile>;
-    [JsonNameAttribute('object')]
     FObject: string;
+    FTotal: Int64;
   public
     /// <summary>
     /// An array of <c>TFile</c> objects representing the files.
@@ -317,6 +308,10 @@ type
     /// The object type, which is always 'list'.
     /// </summary>
     property &Object: string read FObject write FObject;
+    /// <summary>
+    /// The total returned
+    /// </summary>
+    property Total: Int64 read FTotal write FTotal;
     /// <summary>
     /// Destroys the <c>TFiles</c> instance and frees associated resources.
     /// </summary>
@@ -356,12 +351,59 @@ type
   end;
 
   /// <summary>
-  /// Asynchronous callback parameters for operations returning <c>TFiles</c>.
+  /// Represents a downloaded file, providing functionality to access and save its data.
   /// </summary>
   /// <remarks>
-  /// Used when performing asynchronous operations that return a <c>TFiles</c> instance.
+  /// This class encapsulates a downloaded file and provides methods to retrieve its data as a stream
+  /// or save it to a file. The file data is expected to be in a base64-encoded format.
   /// </remarks>
-  TAsynFiles = TAsyncCallBack<TFiles>;
+  TDownLoadFile = class
+  private
+    FData: string;
+    FFileName: string;
+  public
+    /// <summary>
+    /// Gets the file name where the data was saved.
+    /// </summary>
+    /// <value>
+    /// The file path as a string.
+    /// </value>
+    /// <remarks>
+    /// This property holds the file name specified in the last call to <c>SaveToFile</c>.
+    /// </remarks>
+    property FileName: string read FFileName write FFileName;
+    /// <summary>
+    /// Retrieves the downloaded file as a <c>TStream</c>.
+    /// </summary>
+    /// <returns>
+    /// A <c>TStream</c> containing the decoded image data.
+    /// </returns>
+    /// <remarks>
+    /// This method decodes the base64-encoded data and returns it as a stream.
+    /// The caller is responsible for freeing the returned stream.
+    /// </remarks>
+    /// <exception cref="Exception">
+    /// Raises an exception data field is empty.
+    /// </exception>
+    function GetStream: TStream;
+    /// <summary>
+    /// Saves the gdownloaded file to a file.
+    /// </summary>
+    /// <param name="FileName">
+    /// The file path to save data.
+    /// </param>
+    /// <remarks>
+    /// This method decodes the base64-encoded data and saves it to the specified file.
+    /// </remarks>
+    /// <exception cref="Exception">
+    /// Raises an exception if the data cannot be decoded or saved.
+    /// </exception>
+    procedure SaveToFile(const FileName: string; const FailIfExists: Boolean = True);
+    /// <summary>
+    /// File downloaded as base64-encoded data
+    /// </summary>
+    property Data: string read FData write FData;
+  end;
 
   /// <summary>
   /// Asynchronous callback parameters for operations returning a single <c>TFile</c>.
@@ -372,12 +414,28 @@ type
   TAsynFile = TAsyncCallBack<TFile>;
 
   /// <summary>
+  /// Asynchronous callback parameters for operations returning <c>TFiles</c>.
+  /// </summary>
+  /// <remarks>
+  /// Used when performing asynchronous operations that return a <c>TFiles</c> instance.
+  /// </remarks>
+  TAsynFiles = TAsyncCallBack<TFiles>;
+
+  /// <summary>
   /// Asynchronous callback parameters for file deletion operations.
   /// </summary>
   /// <remarks>
   /// Used when performing asynchronous operations that return a <c>TDeletedResult</c> instance.
   /// </remarks>
   TAsynFilesDelete = TAsyncCallBack<TDeletedResult>;
+
+  /// <summary>
+  /// Asynchronous callback parameters for file download operations.
+  /// </summary>
+  /// <remarks>
+  /// Used when performing asynchronous operations that return a <c>TDownLoadFile</c> instance.
+  /// </remarks>
+  TAsynDownLoadFile = TAsyncCallBack<TDownLoadFile>;
 
   /// <summary>
   /// Provides methods to interact with the Mistral AI Files API.
@@ -432,8 +490,38 @@ type
     ///   end);
     /// </code>
     /// </remarks>
-    procedure AsyncDelete(const FileId: string;
-      const CallBacks: TFunc<TAsynFilesDelete>);
+    procedure AsyncDelete(const FileId: string; const CallBacks: TFunc<TAsynFilesDelete>);
+    /// <summary>
+    /// Asynchronously download a file.
+    /// </summary>
+    /// <param name="FileId">
+    /// The unique identifier of the file to download.
+    /// </param>
+    /// <param name="CallBacks">
+    /// A function that returns the asynchronous callback parameters.
+    /// </param>
+    /// <remarks>
+    /// Example:
+    /// <code>
+    /// MistralAI.File.AsynDownload(
+    ///   'file_id',
+    ///   function: TAsynDownLoadFile
+    ///   begin
+    ///     Result.OnSuccess :=
+    ///       procedure(Sender: TObject; Value: TDownLoadFile)
+    ///       begin
+    ///         // Handle successful deletion
+    ///       end;
+    ///
+    ///     Result.OnError :=
+    ///       procedure(Sender: TObject; ErrorMsg: string)
+    ///       begin
+    ///         // Handle error
+    ///       end;
+    ///   end);
+    /// </code>
+    /// </remarks>
+    procedure AsyncDownload(const FileId: string; const CallBacks: TFunc<TAsynDownLoadFile>);
     /// <summary>
     /// Asynchronously retrieves the list of files belonging to the user's organization.
     /// </summary>
@@ -460,7 +548,37 @@ type
     ///   end);
     /// </code>
     /// </remarks>
-    procedure AsynchList(const CallBacks: TFunc<TAsynFiles>);
+    procedure AsyncList(CallBacks: TFunc<TAsynFiles>); overload;
+    /// <summary>
+    /// Asynchronously retrieves the list of files belonging to the user's organization.
+    /// </summary>
+    /// <param name="ParamProc">
+    /// A procedure used to configure the <c>TListParams</c> for the upload.
+    /// </param>
+    /// <param name="CallBacks">
+    /// A function that returns the asynchronous callback parameters.
+    /// </param>
+    /// <remarks>
+    /// Example:
+    /// <code>
+    /// MistralAI.File.AsyncList(
+    ///   function: TAsynFiles
+    ///   begin
+    ///     Result.OnSuccess :=
+    ///       procedure(Sender: TObject; Files: TFiles)
+    ///       begin
+    ///         // Process files
+    ///       end;
+    ///
+    ///     Result.OnError :=
+    ///       procedure(Sender: TObject; ErrorMsg: string)
+    ///       begin
+    ///         // Handle error
+    ///       end;
+    ///   end);
+    /// </code>
+    /// </remarks>
+    procedure AsyncList(ParamProc: TProc<TListParams>; CallBacks: TFunc<TAsynFiles>); overload;
     /// <summary>
     /// Asynchronously retrieves information about a specific file.
     /// </summary>
@@ -491,8 +609,7 @@ type
     ///   end);
     /// </code>
     /// </remarks>
-    procedure AsyncRetrieve(const FileId: string;
-      const CallBacks: TFunc<TAsynFile>);
+    procedure AsyncRetrieve(const FileId: string; const CallBacks: TFunc<TAsynFile>);
     /// <summary>
     /// Asynchronously uploads a file that can be used across various endpoints.
     /// </summary>
@@ -528,8 +645,7 @@ type
     ///   end);
     /// </code>
     /// </remarks>
-    procedure ASyncUpload(ParamProc: TProc<TUploadParams>;
-      const CallBacks: TFunc<TAsynFile>);
+    procedure ASyncUpload(ParamProc: TProc<TUploadParams>; const CallBacks: TFunc<TAsynFile>);
     /// <summary>
     /// Deletes a file.
     /// </summary>
@@ -553,6 +669,27 @@ type
     /// </remarks>
     function Delete(const FileId: string): TDeletedResult;
     /// <summary>
+    /// Download a file.
+    /// </summary>
+    /// <param name="FileId">
+    /// The unique identifier of the file to delete.
+    /// </param>
+    /// <returns>
+    /// A <c>TDownLoadFile</c> instance representing the result of the download.
+    /// </returns>
+    /// <remarks>
+    /// Example:
+    /// <code>
+    ///   with MistralAI.File.Download('file_id');
+    ///   try
+    ///     //do something
+    ///   finally
+    ///     Free;
+    ///   end;
+    /// </code>
+    /// </remarks>
+    function Download(const FileId: string): TDownLoadFile;
+    /// <summary>
     /// Retrieves the list of files belonging to the user's organization.
     /// </summary>
     /// <returns>
@@ -569,7 +706,32 @@ type
     /// end;
     /// </code>
     /// </remarks>
-    function List: TFiles;
+    function List: TFiles; overload;
+    /// <summary>
+    /// Retrieves the list of files belonging to the user's organization.
+    /// </summary>
+    /// <param name="ParamProc">
+    /// A procedure used to configure the <c>TListParams</c> for the upload.
+    /// </param>
+    /// <returns>
+    /// A <c>TFiles</c> instance containing the list of files.
+    /// </returns>
+    /// <remarks>
+    /// Example:
+    /// <code>
+    ///   var Files := MistralAI.File.List(
+    ///     procedure (Params: TListParams)
+    ///     begin
+    ///       // Set parameters
+    ///     end);
+    ///   try
+    ///     // Process files
+    ///   finally
+    ///     Files.Free;
+    /// end;
+    /// </code>
+    /// </remarks>
+    function List(ParamProc: TProc<TListParams>): TFiles; overload;
     /// <summary>
     /// Retrieves information about a specific file.
     /// </summary>
@@ -623,29 +785,7 @@ type
 implementation
 
 uses
-  System.StrUtils, Rest.Json, System.Rtti;
-
-{ TFilePurposeHelper }
-
-class function TFilePurposeHelper.Create(const Value: string): TFilePurpose;
-begin
-  case IndexStr(AnsiLowerCase(Value), ['fine-tune']) of
-    0 :
-      Exit(finetune);
-    else
-      raise Exception.CreateFmt('(Files: TFilePurpose) %s is not an enum value', [Value]);
-  end;
-end;
-
-function TFilePurposeHelper.ToString: string;
-begin
-  case self of
-    FineTune:
-      Exit('fine-tune');
-    else
-      raise Exception.Create('(Files) error converting object to string');
-  end;
-end;
+  System.StrUtils, Rest.Json, System.Rtti, MistralAI.NetEncoding.Base64, Vcl.Dialogs;
 
 { TUploadParams }
 
@@ -703,8 +843,25 @@ begin
   end;
 end;
 
-procedure TFilesRoute.AsynchList(
-  const CallBacks: TFunc<TAsynFiles>);
+procedure TFilesRoute.AsyncList(ParamProc: TProc<TListParams>; CallBacks: TFunc<TAsynFiles>);
+begin
+  with TAsyncCallBackExec<TAsynFiles, TFiles>.Create(CallBacks) do
+  try
+    Sender := Use.Param.Sender;
+    OnStart := Use.Param.OnStart;
+    OnSuccess := Use.Param.OnSuccess;
+    OnError := Use.Param.OnError;
+    Run(
+      function: TFiles
+      begin
+        Result := List(ParamProc);
+      end);
+  finally
+    Free;
+  end;
+end;
+
+procedure TFilesRoute.AsyncList(CallBacks: TFunc<TAsynFiles>);
 begin
   with TAsyncCallBackExec<TAsynFiles, TFiles>.Create(CallBacks) do
   try
@@ -760,14 +917,43 @@ begin
   end;
 end;
 
+procedure TFilesRoute.AsyncDownload(const FileId: string;
+  const CallBacks: TFunc<TAsynDownLoadFile>);
+begin
+  with TAsyncCallBackExec<TAsynDownLoadFile, TDownLoadFile>.Create(CallBacks) do
+  try
+    Sender := Use.Param.Sender;
+    OnStart := Use.Param.OnStart;
+    OnSuccess := Use.Param.OnSuccess;
+    OnError := Use.Param.OnError;
+    Run(
+      function: TDownLoadFile
+      begin
+        Result := Self.Download(FileId);
+      end);
+  finally
+    Free;
+  end;
+end;
+
 function TFilesRoute.Delete(const FileId: string): TDeletedResult;
 begin
   Result := API.Delete<TDeletedResult>('files/' + FileId);
 end;
 
+function TFilesRoute.Download(const FileId: string): TDownLoadFile;
+begin
+  Result := API.GetFile<TDownLoadFile>(Format('files/%s/content', [FileId]));
+end;
+
 function TFilesRoute.List: TFiles;
 begin
   Result := API.Get<TFiles>('files');
+end;
+
+function TFilesRoute.List(ParamProc: TProc<TListParams>): TFiles;
+begin
+  Result := API.Get<TFiles, TListParams>('files', ParamProc);
 end;
 
 function TFilesRoute.Retrieve(const FileId: string): TFile;
@@ -790,18 +976,70 @@ begin
   inherited;
 end;
 
-{ TFilePurposeInterceptor }
+{ TListParams }
 
-function TFilePurposeInterceptor.StringConverter(Data: TObject;
-  Field: string): string;
+function TListParams.Page(const Value: Integer): TListParams;
 begin
-  Result := RTTI.GetType(Data.ClassType).GetField(Field).GetValue(Data).AsType<TFilePurpose>.ToString;
+  Result := TListParams(Add('page', Value));
 end;
 
-procedure TFilePurposeInterceptor.StringReverter(Data: TObject; Field,
-  Arg: string);
+function TListParams.PageSize(const Value: Integer): TListParams;
 begin
-  RTTI.GetType(Data.ClassType).GetField(Field).SetValue(Data, TValue.From(TFilePurpose.Create(Arg)));
+  Result := TListParams(Add('page_size', Value));
+end;
+
+function TListParams.Purpose(const Value: TFilePurpose): TListParams;
+begin
+  Result := TListParams(Add('purpose', Value.ToString));
+end;
+
+function TListParams.SampleType(const Value: TArray<TSampleType>): TListParams;
+begin
+  var Param: TArray<string> := [];
+  for var Item in Value do
+    Param := Param + [Item.ToString];
+  Result := TListParams(Add('sample_type', Param));
+end;
+
+function TListParams.Search(const Value: string): TListParams;
+begin
+  Result := TListParams(Add('search', Value));
+end;
+
+function TListParams.Source(const Value: TArray<TSourceType>): TListParams;
+begin
+  var Param: TArray<string> := [];
+  for var Item in Value do
+    Param := Param + [Item.ToString];
+  Result := TListParams(Add('source', Param));
+end;
+
+{ TDownLoadFile }
+
+function TDownLoadFile.GetStream: TStream;
+begin
+  {--- Create a memory stream to write the decoded content. }
+  Result := TMemoryStream.Create;
+  try
+    {--- Convert the base-64 string directly into the memory stream. }
+    DecodeBase64ToStream(Data, Result)
+  except
+    Result.Free;
+    raise;
+  end;
+end;
+
+procedure TDownLoadFile.SaveToFile(const FileName: string; const FailIfExists: Boolean);
+begin
+  if FileExists(FileName) and FailIfExists then
+    raise Exception.CreateFmt('The file "%s" already exists and has not been overwritten.', [FileName]);
+  try
+    Self.FFileName := FileName;
+    {--- Perform the decoding operation and save it into the file specified by the FileName parameter. }
+    DecodeBase64ToFile(Data, FileName)
+  except
+    raise;
+  end;
 end;
 
 end.

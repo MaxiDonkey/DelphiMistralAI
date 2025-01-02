@@ -4,38 +4,9 @@ interface
 
 uses
   System.SysUtils, System.Classes, REST.JsonReflect, System.JSON, REST.Json.Types,
-  MistralAI.Functions.Core;
+  MistralAI.Functions.Core, MistralAI.Types;
 
 type
-  /// <summary>
-  /// Defines the model's function call behavior. This type determines whether the model generates
-  /// a response, calls a function, or decides between the two.
-  /// </summary>
-  TToolChoice = (
-    /// <summary>
-    /// The model won't call a function and will generate a message instead
-    /// </summary>
-    none,
-    /// <summary>
-    /// The model can choose to either generate a message or call a function
-    /// </summary>
-    auto,
-    /// <summary>
-    /// The model is forced to call a function
-    /// </summary>
-    any);
-
-  /// <summary>
-  /// A helper record for the <c>TToolChoice</c> type, providing additional functionality.
-  /// </summary>
-  TToolChoiceHelper = record helper for TToolChoice
-    /// <summary>
-    /// Converts the <c>TToolChoice</c> value to its string representation.
-    /// </summary>
-    /// <returns>A string representing the current <c>TToolChoice</c> value.</returns>
-    function ToString: string;
-  end;
-
   /// <summary>
   /// Represents a tool used for interacting with chat messages, including the ability to convert
   /// functions to JSON format.
@@ -74,9 +45,7 @@ type
   /// </summary>
   TCalledFunctionSpecifics = class
   private
-    [JsonNameAttribute('name')]
     FName: string;
-    [JsonNameAttribute('arguments')]
     FArguments: string;
   public
     /// <summary>
@@ -94,9 +63,18 @@ type
   /// </summary>
   TCalledFunction = class
   private
-    [JsonNameAttribute('function')]
+    FId: string;
+    FType: string;
     FFunction: TCalledFunctionSpecifics;
   public
+    /// <summary>
+    /// Gets or sets the id of the called function
+    /// </summary>
+    property Id: string read FId write FId;
+    /// <summary>
+    /// Gets or sets the type of the called function
+    /// </summary>
+    property &Type: string read FType write FType;
     /// <summary>
     /// Gets or sets the specifics of the called function
     /// </summary>
@@ -109,20 +87,6 @@ type
   end;
 
 implementation
-
-{ TToolChoiceHelper }
-
-function TToolChoiceHelper.ToString: string;
-begin
-  case Self of
-    auto:
-      Exit('auto');
-    any:
-      Exit('any');
-    else
-      Exit('none');
-  end;
-end;
 
 { TChatMessageTool }
 

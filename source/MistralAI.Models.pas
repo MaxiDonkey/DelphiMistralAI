@@ -68,6 +68,7 @@ type
     FFunctionCalling: Boolean;
     [JsonNameAttribute('fine_tuning')]
     FFineTuning: Boolean;
+    FVision: Boolean;
   public
     /// <summary>
     /// Indicates whether the model supports chat-based completions.
@@ -107,6 +108,10 @@ type
     /// for customizing the model to better suit particular applications or domains.
     /// </remarks>
     property FineTuning: Boolean read FFineTuning write FFineTuning;
+    /// <summary>
+    /// Indicates whether the model supports vision.
+    /// </summary>
+    property Vision: Boolean read FVision write FVision;
   end;
 
   /// <summary>
@@ -122,27 +127,16 @@ type
   /// </remarks>
   TCoreModel = class
   private
-    [JsonNameAttribute('id')]
     FId: string;
-    [JsonNameAttribute('object')]
     FObject: string;
-    [JsonNameAttribute('created')]
     FCreated: Int64;
     [JsonNameAttribute('owned_by')]
-    FOwned_by: string;
-    [JsonNameAttribute('root')]
-    FRoot: string;
-    [JsonNameAttribute('archived')]
-    FArchived: Boolean;
-    [JsonNameAttribute('name')]
-    FName: string;
-    [JsonNameAttribute('description')]
-    FDescription: string;
-    [JsonNameAttribute('capabilities')]
+    FOwnedBy: string;
     FCapabilities: TCapabilities;
+    FName: string;
+    FDescription: string;
     [JsonNameAttribute('max_context_length')]
     FMaxContextLength: Int64;
-    [JsonNameAttribute('aliases')]
     FAliases: TArray<string>;
   public
     /// <summary>
@@ -178,25 +172,16 @@ type
     /// This property shows who has ownership of the model. Ownership can affect
     /// permissions and accessibility, especially in shared environments.
     /// </remarks>
-    property OwnedBy: string read FOwned_by write FOwned_by;
+    property OwnedBy: string read FOwnedBy write FOwnedBy;
     /// <summary>
-    /// The root identifier of the model, indicating its base version or lineage.
+    /// Represents the capabilities of the model, such as whether it supports fine-tuning or chat-based completion.
     /// </summary>
     /// <remarks>
-    /// The root ID is used to track the lineage of the model, particularly when dealing
-    /// with versions or fine-tuned variants derived from a base model. It helps in
-    /// understanding the ancestry and evolution of the model.
+    /// The capabilities provide a quick overview of what the model can do. Each capability is
+    /// represented as a boolean value, indicating whether the model supports that feature. This
+    /// information is essential for determining the suitability of the model for specific tasks.
     /// </remarks>
-    property Root: string read FRoot write FRoot;
-    /// <summary>
-    /// Indicates whether the model is archived.
-    /// </summary>
-    /// <remarks>
-    /// If True, the model is archived and is not actively available for use. Archived
-    /// models are typically preserved for record-keeping or future reactivation but
-    /// cannot be used in regular operations unless unarchived.
-    /// </remarks>
-    property Archived: Boolean read FArchived write FArchived;
+    property Capabilities: TCapabilities read FCapabilities write FCapabilities;
     /// <summary>
     /// The name of the model, which is used for display and identification purposes.
     /// </summary>
@@ -214,15 +199,6 @@ type
     /// and communication within teams.
     /// </remarks>
     property Description: string read FDescription write FDescription;
-    /// <summary>
-    /// Represents the capabilities of the model, such as whether it supports fine-tuning or chat-based completion.
-    /// </summary>
-    /// <remarks>
-    /// The capabilities provide a quick overview of what the model can do. Each capability is
-    /// represented as a boolean value, indicating whether the model supports that feature. This
-    /// information is essential for determining the suitability of the model for specific tasks.
-    /// </remarks>
-    property Capabilities: TCapabilities read FCapabilities write FCapabilities;
     /// <summary>
     /// The maximum context length that the model can handle.
     /// </summary>
@@ -267,6 +243,9 @@ type
   private
     [JsonNameAttribute('deprecation')]
     FDeprecation: string;
+    [JsonNameAttribute('default_model_temperature')]
+    FDefaultModelTemperature: Double;
+    FType: string;
   public
     /// <summary>
     /// Indicates the deprecation date of the model as a string.
@@ -279,6 +258,17 @@ type
     /// and support.
     /// </remarks>
     property Deprecation: string read FDeprecation write FDeprecation;
+    /// <summary>
+    /// Value of the default temperature for the model.
+    /// </summary>
+    property DefaultModelTemperature: Double read FDefaultModelTemperature write FDefaultModelTemperature;
+    /// <summary>
+    /// Type of model, Enum: base, fine-tuned
+    /// </summary>
+    /// <remarks>
+    /// base is the default value
+    /// </remarks>
+    property &Type: string read FType write FType;
   end;
 
   /// <summary>
@@ -294,9 +284,15 @@ type
   /// </remarks>
   TFineTunedModel = class(TCoreModel)
   private
+    FRoot: string;
     [JsonNameAttribute('job')]
     FJob: string;
+    FArchived: Boolean;
   public
+    /// <summary>
+    /// Model uses for fine-tuning
+    /// </summary>
+    property Root: string read FRoot write FRoot;
     /// <summary>
     /// The identifier of the job associated with the fine-tuning process.
     /// </summary>
@@ -307,6 +303,10 @@ type
     /// particularly useful for auditing purposes and for understanding the history of the model.
     /// </remarks>
     property Job: string read FJob write FJob;
+    /// <summary>
+    /// Return True when the model is archived.
+    /// </summary>
+    property Archived: Boolean read FArchived write FArchived;
   end;
 
   /// <summary>
@@ -370,11 +370,8 @@ type
   /// </remarks>
   TModelDeletion = class
   private
-    [JsonNameAttribute('id')]
     FId: string;
-    [JsonNameAttribute('object')]
     FObject: string;
-    [JsonNameAttribute('deleted')]
     FDeleted: Boolean;
   public
     /// <summary>
@@ -419,11 +416,8 @@ type
   /// </remarks>
   TArchivingModel = class
   private
-    [JsonNameAttribute('id')]
     FId: string;
-    [JsonNameAttribute('object')]
     FObject: string;
-    [JsonNameAttribute('archived')]
     FArchived: Boolean;
   public
     /// <summary>
@@ -931,7 +925,7 @@ end;
 function TModelsRoute.Update(const ModelId: string;
   ParamProc: TProc<TModelParams>): TFineTunedModel;
 begin
-  Result := API.Post<TFineTunedModel, TModelParams>(Format('fine_tuning/models/%s', [ModelId]), ParamProc);
+  Result := API.Patch<TFineTunedModel, TModelParams>(Format('fine_tuning/models/%s', [ModelId]), ParamProc);
 end;
 
 { TCoreModel }

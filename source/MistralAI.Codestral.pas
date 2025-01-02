@@ -22,69 +22,9 @@ interface
 uses
   System.SysUtils, System.Classes, REST.JsonReflect, System.JSON, REST.Json.Types,
   System.Threading, MistralAI.API.Params, MistralAI.API, MistralAI.Async.Support,
-  MistralAI.Params.Core;
+  MistralAI.Params.Core, MistralAI.Functions.Tools, MistralAI.Types;
 
 type
-  /// <summary>
-  /// Represents the different reasons why the processing of a request can terminate.
-  /// </summary>
-  TCodestralFinishReason = (
-    /// <summary>
-    /// API returned complete model output
-    /// </summary>
-    stop,
-    /// <summary>
-    /// Incomplete model output due to max_tokens parameter or token limit
-    /// </summary>
-    length_limite,
-    /// <summary>
-    /// model_length
-    /// </summary>
-    model_length,
-    /// <summary>
-    /// An error was encountered while processing the request
-    /// </summary>
-    error);
-
-  /// <summary>
-  /// Provides helper methods for the TCodestralFinishReason enumeration.
-  /// </summary>
-  TCodestralFinishReasonHelper = record helper for TCodestralFinishReason
-    /// <summary>
-    /// Returns the string representation of the TCodestralFinishReason value.
-    /// </summary>
-    function ToString: string;
-    /// <summary>
-    /// Creates a TCodestralFinishReason value from a given string.
-    /// </summary>
-    /// <param name="Value">The string representation of the TCodestralFinishReason.</param>
-    /// <returns>A TCodestralFinishReason corresponding to the provided string.</returns>
-    class function Create(const Value: string): TCodestralFinishReason; static;
-  end;
-
-  /// <summary>
-  /// Interceptor class for converting and reverting TCodestralFinishReason values to and from strings in JSON.
-  /// </summary>
-  TCodestralFinishReasonInterceptor = class(TJSONInterceptorStringToString)
-  public
-    /// <summary>
-    /// Converts a TCodestralFinishReason value to its string representation for JSON serialization.
-    /// </summary>
-    /// <param name="Data">The object containing the field to be converted.</param>
-    /// <param name="Field">The name of the field to be converted.</param>
-    /// <returns>The string representation of the TCodestralFinishReason value.</returns>
-    function StringConverter(Data: TObject; Field: string): string; override;
-    /// <summary>
-    /// Reverts a string representation back to a TCodestralFinishReason value during JSON deserialization.
-    /// </summary>
-    /// <param name="Data">The object containing the field to be reverted.</param>
-    /// <param name="Field">The name of the field to be reverted.</param>
-    /// <param name="Arg">
-    /// The string representation of the TCodestralFinishReason value.
-    ///</param>
-    procedure StringReverter(Data: TObject; Field: string; Arg: string); override;
-  end;
-
   /// <summary>
   /// The <c>TCodestralParams</c> class represents the set of parameters used to configure the behavior and output generation of the Codestral model.
   /// </summary>
@@ -164,7 +104,7 @@ type
     /// <returns>
     /// The updated <c>TCodestralParams</c> instance.
     /// </returns>
-    function Temperature(const Value: Single = 0.7): TCodestralParams;
+    function Temperature(const Value: Single): TCodestralParams;
     /// <summary>
     /// Sets the nucleus sampling probability mass for the model (Top-p).
     /// For example, 0.1 means only the tokens comprising the top 10% probability mass are considered.
@@ -176,7 +116,7 @@ type
     /// <returns>
     /// The updated <c>TCodestralParams</c> instance.
     /// </returns>
-    function TopP(const Value: Single = 1): TCodestralParams;
+    function TopP(const Value: Single): TCodestralParams;
     /// <summary>
     /// Sets the maximum number of tokens to generate in the completion.
     /// The total token count of your prompt plus <c>max_tokens</c> cannot exceed the model's context length.
@@ -228,18 +168,24 @@ type
     /// Sets the tokens or sequences that will stop the generation process when detected.
     /// </summary>
     /// <param name="Value">
-    /// An array of strings representing the stop tokens or sequences.
-    /// Default is an empty array, meaning no specific stop sequences are defined.
+    /// A strings representing the stop tokens or sequences.
     /// Use this parameter to indicate when the model should stop generating, such as specifying a sequence like "\n\n".
     /// </param>
     /// <returns>
     /// The updated <c>TCodestralParams</c> instance.
     /// </returns>
-    function Stop(const Value: TArray<string> = []): TCodestralParams;
+    function Stop(const Value: string): TCodestralParams; overload;
     /// <summary>
-    /// Initializes a new instance of the TCodestralParams class with default values.
+    /// Sets the tokens or sequences that will stop the generation process when detected.
     /// </summary>
-    constructor Create; override;
+    /// <param name="Value">
+    /// An array of strings representing the stop tokens or sequences.
+    /// Use this parameter to indicate when the model should stop generating, such as specifying a sequence like "\n\n".
+    /// </param>
+    /// <returns>
+    /// The updated <c>TCodestralParams</c> instance.
+    /// </returns>
+    function Stop(const Value: TArray<string>): TCodestralParams; overload;
   end;
 
   /// <summary>
@@ -298,10 +244,11 @@ type
   /// </remarks>
   TCodestralMessage = class
   private
-    [JsonNameAttribute('role')]
     FRole: string;
-    [JsonNameAttribute('content')]
     FContent: string;
+    [JsonNameAttribute('tool_calls')]
+    FToolsCalls: TArray<TCalledFunction>;
+    FPrefix: Boolean;
   public
     /// <summary>
     /// The role of the author of this message.
@@ -319,6 +266,22 @@ type
     /// exchanged during the conversation.
     /// </remarks>
     property Content: string read FContent write FContent;
+    /// <summary>
+    /// A list of tool calls to be executed for query completion.
+    /// </summary>
+    /// <remarks>
+    /// The <c>ToolsCalls</c> property contains a list of functions or tools that need to be invoked to process the current query further.
+    /// This is typically used when the assistant needs to call external APIs or perform specific actions before delivering a final response.
+    /// </remarks>
+    property ToolsCalls: TArray<TCalledFunction> read FToolsCalls write FToolsCalls;
+    /// <summary>
+    /// The returned prefix: True or False
+    /// </summary>
+    property Prefix: Boolean read FPrefix write FPrefix;
+    /// <summary>
+    /// Destructor to release any resources used by this instance.
+    /// </summary>
+    destructor Destroy; override;
   end;
 
   /// <summary>
@@ -336,13 +299,10 @@ type
   /// </remarks>
   TCodestralChoices = class
   private
-    [JsonNameAttribute('index')]
     FIndex: Int64;
-    [JsonNameAttribute('message')]
     FMessage: TCodestralMessage;
     [JsonReflectAttribute(ctString, rtString, TCodestralFinishReasonInterceptor)]
     FFinish_reason: TCodestralFinishReason;
-    [JsonNameAttribute('delta')]
     FDelta: TCodestralMessage;
   public
     /// <summary>
@@ -396,17 +356,11 @@ type
   /// </remarks>
   TCodestral = class
   private
-    [JsonNameAttribute('id')]
     FId: string;
-    [JsonNameAttribute('object')]
     FObject: string;
-    [JsonNameAttribute('created')]
     FCreated: Int64;
-    [JsonNameAttribute('model')]
     FModel: string;
-    [JsonNameAttribute('choices')]
     FChoices: TArray<TCodestralChoices>;
-    [JsonNameAttribute('usage')]
     FUsage: TCodestralUsage;
   public
     /// <summary>
@@ -417,7 +371,6 @@ type
     /// This is useful for tracking and managing individual completions or retrieving the results of a particular request.
     /// </remarks>
     property Id: string read FId write FId;
-
     /// <summary>
     /// The object type, which is always "codestral.completion".
     /// </summary>
@@ -426,7 +379,6 @@ type
     /// providing a clear indication of the response type when working with multiple object types in a system.
     /// </remarks>
     property &Object: string read FObject write FObject;
-
     /// <summary>
     /// The Unix timestamp (in seconds) of when the codestral completion was created.
     /// </summary>
@@ -435,7 +387,6 @@ type
     /// This is useful for logging, auditing, or ordering completions chronologically.
     /// </remarks>
     property Created: Int64 read FCreated write FCreated;
-
     /// <summary>
     /// The model used for the codestral completion.
     /// </summary>
@@ -444,7 +395,6 @@ type
     /// when comparing results across different models or tracking which model versions are producing responses.
     /// </remarks>
     property Model: string read FModel write FModel;
-
     /// <summary>
     /// A list of codestral completion choices generated by the model.
     /// </summary>
@@ -453,7 +403,6 @@ type
     /// generated by the AI model. There may be multiple choices if the request specified more than one completion.
     /// </remarks>
     property Choices: TArray<TCodestralChoices> read FChoices write FChoices;
-
     /// <summary>
     /// Usage statistics for the completion request, including token counts for the prompt and completion.
     /// </summary>
@@ -462,7 +411,6 @@ type
     /// used in the prompt and those generated in the completion. This data is important for monitoring API usage and costs.
     /// </remarks>
     property Usage: TCodestralUsage read FUsage write FUsage;
-
     /// <summary>
     /// Destructor to clean up resources used by this <c>TCodestral</c> instance.
     /// </summary>
@@ -635,8 +583,7 @@ type
     ///   end);
     /// </code>
     /// </remarks>
-    procedure AsyncCreateStream(ParamProc: TProc<TCodestralParams>;
-      CallBacks: TFunc<TAsynCodeStream>);
+    procedure AsyncCreateStream(ParamProc: TProc<TCodestralParams>; CallBacks: TFunc<TAsynCodeStream>);
     /// <summary>
     /// Creates a completion for the codestral message using the provided parameters.
     /// </summary>
@@ -712,12 +659,6 @@ uses
 
 { TCodestralParams }
 
-constructor TCodestralParams.Create;
-begin
-  inherited;
-  Model('codestral-latest');
-end;
-
 function TCodestralParams.MaxTokens(const Value: Integer): TCodestralParams;
 begin
   Result := TCodestralParams(Add('max_tokens', Value));
@@ -760,6 +701,11 @@ begin
   Result := TCodestralParams(Add('stop', Items));
 end;
 
+function TCodestralParams.Stop(const Value: string): TCodestralParams;
+begin
+  Result := TCodestralParams(Add('stop', Value));
+end;
+
 function TCodestralParams.Stream(const Value: Boolean): TCodestralParams;
 begin
   Result := TCodestralParams(Add('stream', Value));
@@ -778,52 +724,6 @@ end;
 function TCodestralParams.TopP(const Value: Single): TCodestralParams;
 begin
   Result := TCodestralParams(Add('top_p', Value));
-end;
-
-{ TCodestralFinishReasonHelper }
-
-class function TCodestralFinishReasonHelper.Create(
-  const Value: string): TCodestralFinishReason;
-begin
-  case IndexStr(AnsiLowerCase(Value), ['stop', 'length', 'model_length', 'error']) of
-    0 :
-      Exit(stop);
-    1 :
-      Exit(length_limite);
-    2 :
-      Exit(model_length);
-    3 :
-      Exit(error);
-  end;
-  Result := stop;
-end;
-
-function TCodestralFinishReasonHelper.ToString: string;
-begin
-  case Self of
-    stop:
-      Exit('stop');
-    length_limite:
-      Exit('length');
-    model_length:
-      Exit('model_length');
-    error:
-      Exit('error');
-  end;
-end;
-
-{ TCodestralFinishReasonInterceptor }
-
-function TCodestralFinishReasonInterceptor.StringConverter(Data: TObject;
-  Field: string): string;
-begin
-  Result := RTTI.GetType(Data.ClassType).GetField(Field).GetValue(Data).AsType<TCodestralFinishReason>.ToString;
-end;
-
-procedure TCodestralFinishReasonInterceptor.StringReverter(Data: TObject; Field,
-  Arg: string);
-begin
-  RTTI.GetType(Data.ClassType).GetField(Field).SetValue(Data, TValue.From(TCodestralFinishReason.Create(Arg)));
 end;
 
 { TCodestralChoices }
@@ -1040,6 +940,15 @@ begin
   finally
     Response.Free;
   end;
+end;
+
+{ TCodestralMessage }
+
+destructor TCodestralMessage.Destroy;
+begin
+  for var Item in FToolsCalls do
+    Item.Free;
+  inherited;
 end;
 
 end.

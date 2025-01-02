@@ -12,178 +12,121 @@ interface
 uses
   System.SysUtils, System.Classes, REST.JsonReflect, System.JSON, System.Threading,
   REST.Json.Types, System.NetEncoding, System.Net.Mime, MistralAI.API.Params,
-  MistralAI.API, MistralAI.Functions.Core, MistralAI.Functions.Tools,
-  MistralAI.Vision.Params, MistralAI.Async.Support, MistralAI.Params.Core;
+  MistralAI.API, MistralAI.Functions.Tools, MistralAI.Async.Support,
+  MistralAI.Params.Core, MistralAI.Types;
 
 type
   /// <summary>
-  /// Type of message role
-  /// </summary>
-  TMessageRole = (
-    /// <summary>
-    /// System message
-    /// </summary>
-    system,
-    /// <summary>
-    /// User message
-    /// </summary>
-    user,
-    /// <summary>
-    /// Assistant message
-    /// </summary>
-    assistant,
-    /// <summary>
-    /// Function message
-    /// </summary>
-    tool);
-
-  /// <summary>
-  /// Helper record for the <c>TMessageRole</c> enumeration, providing utility methods for converting
-  /// between <c>TMessageRole</c> values and their string representations.
-  /// </summary>
-  TMessageRoleHelper = record helper for TMessageRole
-    /// <summary>
-    /// Converts the current <c>TMessageRole</c> value to its corresponding string representation.
-    /// </summary>
-    /// <returns>
-    /// A string representing the current <c>TMessageRole</c> value.
-    /// </returns>
-    /// <remarks>
-    /// <code>
-    /// var Role: TMessageRole;
-    /// begin
-    ///   Role := TMessageRole.system;
-    ///   ShowMessage(Role.ToString);  // Outputs "system"
-    /// end;
-    /// </code>
-    /// </remarks>
-    function ToString: string;
-    /// <summary>
-    /// Converts a string representation of a <c>TMessageRole</c> into its corresponding enumeration value.
-    /// </summary>
-    /// <param name="Value">
-    /// The string representing a <c>TMessageRole</c>.
-    /// </param>
-    /// <returns>
-    /// The <c>TMessageRole</c> enumeration value that corresponds to the provided string.
-    /// </returns>
-    /// <remarks>
-    /// If the input string does not match any valid <c>TMessageRole</c> value, an exception will be raised.
-    /// <code>
-    /// var Role: TMessageRole;
-    /// begin
-    ///   Role := TMessageRoleHelper.FromString('user');  // Returns TMessageRole.user
-    /// end;
-    /// </code>
-    /// </remarks>
-    class function FromString(const Value: string): TMessageRole; static;
-  end;
-
-  /// <summary>
-  /// Represents the different reasons why the processing of a request can terminate.
-  /// </summary>
-  TFinishReason = (
-    /// <summary>
-    /// API returned complete model output
-    /// </summary>
-    stop,
-    /// <summary>
-    /// Incomplete model output due to max_tokens parameter or token limit
-    /// </summary>
-    length_limit,
-    /// <summary>
-    /// model_length
-    /// </summary>
-    model_length,
-    /// <summary>
-    /// An error was encountered while processing the request
-    /// </summary>
-    error,
-    /// <summary>
-    /// A function must be invoked before further processing of the request
-    /// </summary>
-    tool_calls);
-
-  /// <summary>
-  /// Helper record for the <c>TFinishReason</c> enumeration, providing utility methods for conversion between string representations and <c>TFinishReason</c> values.
-  /// </summary>
-  TFinishReasonHelper = record helper for TFinishReason
-    /// <summary>
-    /// Converts the current <c>TFinishReason</c> value to its string representation.
-    /// </summary>
-    /// <returns>
-    /// A string representing the current <c>TFinishReason</c> value.
-    /// </returns>
-    function ToString: string;
-    /// <summary>
-    /// Creates a <c>TFinishReason</c> value from its corresponding string representation.
-    /// </summary>
-    /// <param name="Value">
-    /// The string value representing a <c>TFinishReason</c>.
-    /// </param>
-    /// <returns>
-    /// The corresponding <c>TFinishReason</c> enumeration value for the provided string.
-    /// </returns>
-    /// <remarks>
-    /// This method throws an exception if the input string does not match any valid <c>TFinishReason</c> values.
-    /// </remarks>
-    class function Create(const Value: string): TFinishReason; static;
-  end;
-
-  /// <summary>
-  /// Interceptor class for converting <c>TFinishReason</c> values to and from their string representations in JSON serialization and deserialization.
+  /// Represents a message payload that includes an image, identified by a URL or a base-64 encoded string.
   /// </summary>
   /// <remarks>
-  /// This class is used to facilitate the conversion between the <c>TFinishReason</c> enum and its string equivalents during JSON processing.
-  /// It extends the <c>TJSONInterceptorStringToString</c> class to override the necessary methods for custom conversion logic.
+  /// This class is used to encapsulate details of an image message, including its source (URL or base-64 string)
+  /// and additional descriptive information. It extends <c>TJSONParam</c> for JSON serialization and integration with APIs.
   /// </remarks>
-  TFinishReasonInterceptor = class(TJSONInterceptorStringToString)
+  /// <example>
+  /// This class can be utilized to construct structured image messages for communication in chat systems.
+  /// </example>
+  TMessageImageURL = class(TJSONParam)
   public
     /// <summary>
-    /// Converts the <c>TFinishReason</c> value of the specified field to a string during JSON serialization.
+    /// Url or base-64 string
     /// </summary>
-    /// <param name="Data">
-    /// The object containing the field to be converted.
-    /// </param>
-    /// <param name="Field">
-    /// The field name representing the <c>TFinishReason</c> value.
-    /// </param>
-    /// <returns>
-    /// The string representation of the <c>TFinishReason</c> value.
-    /// </returns>
-    function StringConverter(Data: TObject; Field: string): string; override;
+    function Url(const Value: string): TMessageImageURL;
     /// <summary>
-    /// Converts a string back to a <c>TFinishReason</c> value for the specified field during JSON deserialization.
+    /// Detail string
     /// </summary>
-    /// <param name="Data">
-    /// The object containing the field to be set.
-    /// </param>
-    /// <param name="Field">
-    /// The field name where the <c>TFinishReason</c> value will be set.
-    /// </param>
-    /// <param name="Arg">
-    /// The string representation of the <c>TFinishReason</c> to be converted back.
-    /// </param>
-    /// <remarks>
-    /// This method converts the string argument back to the corresponding <c>TFinishReason</c> value and assigns it to the specified field in the object.
-    /// </remarks>
-    procedure StringReverter(Data: TObject; Field: string; Arg: string); override;
+    function Detail(const Value: string): TMessageImageURL;
   end;
 
   /// <summary>
-  /// The <c>TChatMessagePayload</c> record represents a chat message payload, which includes both the role of the message sender and the content of the message.
-  /// This type is used to distinguish between different participants in the conversation (e.g., user, assistant, or system) and manage the flow of messages accordingly.
+  /// Represents the content of a message, which can be either text or an image URL.
   /// </summary>
   /// <remarks>
-  /// The <c>TChatMessagePayload</c> record is essential for managing conversations in a chat application, allowing the differentiation between user inputs, assistant responses,
-  /// and system messages. Each message has a role (defining the participant type) and a content field (the actual message being conveyed).
-  /// This record provides several helper methods to create messages with predefined roles for easier message handling.
+  /// This class is used to define the structure and type of content within a message,
+  /// such as textual data or image references. It extends <c>TJSONParam</c> for
+  /// seamless JSON serialization and integration with APIs.
   /// </remarks>
-  TChatMessagePayload = record
-  private
-    FRole: TMessageRole;
-    FContent: string;
-    FVisionSources: TArray<TVisionSource>;
+  TMessageContent = class(TJSONParam)
+  public
+    /// <summary>
+    /// Type of the content: text or image_url
+    /// </summary>
+    function &Type(const Value: TContentType): TMessageContent;
+    /// <summary>
+    /// Text when type is text
+    /// </summary>
+    function Text(const Value: string): TMessageContent;
+    /// <summary>
+    /// Url or base-64 string when type is image_url
+    /// </summary>
+    function ImageUrl(const Url: string): TMessageContent; overload;
+    /// <summary>
+    /// Url or base-64 string when type is image_url
+    /// </summary>
+    function ImageUrl(const Url: string; const Detail: string): TMessageContent; overload;
+  end;
+
+  /// <summary>
+  /// Represents the metadata and arguments of a function invoked during a chat interaction.
+  /// </summary>
+  /// <remarks>
+  /// This class is used to define the structure of function calls, including the function's name and its associated arguments.
+  /// It is designed to be serialized into JSON format for integration with APIs or other systems requiring structured function data.
+  /// </remarks>
+  TFunctionCalled = class(TJSONParam)
+  public
+    /// <summary>
+    /// The name of the function called
+    /// </summary>
+    function Name(const Value: string): TFunctionCalled;
+    /// <summary>
+    /// The arguments returned by the function called
+    /// </summary>
+    function Arguments(const Value: string): TFunctionCalled;
+  end;
+
+  /// <summary>
+  /// Represents a tool call configuration used in chat-based operations.
+  /// </summary>
+  /// <remarks>
+  /// This class is designed to define and manage tool calls within chat contexts, including
+  /// their type, identifier, and associated functions. It integrates with <c>TJSONParam</c>
+  /// for seamless serialization and API interactions.
+  /// </remarks>
+  TToolCalls = class(TJSONParam)
+  public
+    /// <summary>
+    /// Tool calls id
+    /// </summary>
+    function Id(const Value: string): TToolCalls;
+    /// <summary>
+    /// Tool calls type: Default: "function"
+    /// </summary>
+    function &Type(const Value: TToolType): TToolCalls;
+    /// <summary>
+    /// Represents the object function called
+    /// </summary>
+    function Func(const Name: string; Arguments: string): TToolCalls;
+    /// <summary>
+    /// Create a new <c>TtoolCalls</c> instance
+    /// </summary>
+    class function New(Id, Name, Arguments: string): TToolCalls; overload;
+    /// <summary>
+    /// Create a new <c>TtoolCalls</c> instance
+    /// </summary>
+    class function New(Name, Arguments: string): TToolCalls; overload;
+  end;
+
+  /// <summary>
+  /// Represents the payload structure for a chat message in the context of a conversation.
+  /// </summary>
+  /// <remarks>
+  /// This class encapsulates the essential elements of a chat message, including its role, content,
+  /// and associated metadata. It extends <c>TJSONParam</c>, enabling seamless integration with JSON-based
+  /// APIs for chat functionalities. This class is a foundational building block for managing the flow of
+  /// conversations between users, systems, and assistants.
+  /// </remarks>
+  TChatMessagePayload = class(TJSONParam)
   public
     /// <summary>
     /// Gets or sets the role of the message.
@@ -192,7 +135,7 @@ type
     /// The <c>Role</c> property determines who is sending the message. It can be a "user" (representing the end user), an "assistant" (representing an AI or bot),
     /// or "system" (representing system-level messages). This property is essential for contextualizing the content of the message within the chat.
     /// </remarks>
-    property Role: TMessageRole read FRole write FRole;
+    function Role(const Value: TMessageRole): TChatMessagePayload;
     /// <summary>
     /// Gets or sets the content of the message.
     /// </summary>
@@ -200,22 +143,43 @@ type
     /// The <c>Content</c> property contains the actual message text. This is a required field and cannot be empty, as it represents the core information being exchanged
     /// in the chat, whether it's from the user, the assistant, or the system.
     /// </remarks>
-    property Content: string read FContent write FContent;
+    function Content(const Value: string): TChatMessagePayload; overload;
     /// <summary>
-    /// Represents an array of <c>TVisionSource</c> objects that contain image sources for the vision system.
-    /// Each <c>TVisionSource</c> object stores the image either as a URL or a Base64-encoded string.
+    /// Gets or sets the content of the message.
     /// </summary>
-    /// <value>
-    /// A dynamic array (<c>TArray</c>) of <c>TVisionSource</c> objects. This array holds the image sources used in the vision system.
-    /// </value>
     /// <remarks>
-    /// The <c>TVisionSource</c> objects in this array can be used to provide images to the system. Each source is verified as a secure HTTPS URL or a Base64-encoded image.
+    /// The <c>Content</c> property contains the actual message text. This is a required field and cannot be empty, as it represents the core information being exchanged
+    /// in the chat, whether it's from the user, the assistant, or the system.
     /// </remarks>
-    property VisionSources: TArray<TVisionSource> read FVisionSources write FVisionSources;
+    function Content(const Value: TArray<string>): TChatMessagePayload; overload;
+    /// <summary>
+    /// Gets or sets the content of the message.
+    /// </summary>
+    /// <remarks>
+    /// The <c>Content</c> property contains the actual message text. This is a required field and cannot be empty, as it represents the core information being exchanged
+    /// in the chat, whether it's from the user, the assistant, or the system.
+    /// </remarks>
+    function Content(const Kind: TContentType; const Value: string; const Detail: string = ''): TChatMessagePayload; overload;
+    /// <summary>
+    /// Gets or sets the content of the message.
+    /// </summary>
+    /// <remarks>
+    /// The <c>Content</c> property contains the actual message text. This is a required field and cannot be empty, as it represents the core information being exchanged
+    /// in the chat, whether it's from the user, the assistant, or the system.
+    /// </remarks>
+    function Content(const Value: TJSONArray): TChatMessagePayload; overload;
+    /// <summary>
+    /// Set prefix value
+    /// </summary>
+    function Prefix(const Value: Boolean): TChatMessagePayload;
+    /// <summary>
+    /// Set a tool_calls with an array of functions
+    /// </summary>
+    function ToolCalls(const Value: TArray<TToolCalls>): TChatMessagePayload; overload;
     /// <summary>
     /// Creates a new chat message payload with the role of the assistant.
     /// </summary>
-    /// <param name="Content">
+    /// <param name="Value">
     /// The content of the message that the assistant is sending.
     /// </param>
     /// <returns>
@@ -224,40 +188,14 @@ type
     /// <remarks>
     /// This method is a convenience for creating assistant messages. Use this method when the assistant needs to respond to the user or system.
     /// </remarks>
-    class function Assistant(const Content: string): TChatMessagePayload; static;
+    class function Assistant(const Value: string; const Prefix: Boolean = False): TChatMessagePayload; overload;
     /// <summary>
-    /// Creates a new chat message payload with the role of the system.
+    /// Creates a new chat message payload with the role of the assistant and includes associated vision sources.
     /// </summary>
-    /// <param name="Content">
-    /// The content of the system message.
-    /// </param>
-    /// <returns>
-    /// A <c>TChatMessagePayload</c> instance with the role set to "system" and the provided content.
-    /// </returns>
-    /// <remarks>
-    /// This method is used to create system-level messages, which may be used for notifications, warnings, or other system-related interactions.
-    /// </remarks>
-    class function System(const Content: string): TChatMessagePayload; static;
-    /// <summary>
-    /// Creates a new chat message payload with the role of the user.
-    /// </summary>
-    /// <param name="Content">
+    /// <param name="Value">
     /// The content of the message that the user is sending.
     /// </param>
-    /// <returns>
-    /// A <c>TChatMessagePayload</c> instance with the role set to "user" and the provided content.
-    /// </returns>
-    /// <remarks>
-    /// This method is used to create messages from the user's perspective, typically representing inputs or queries in the conversation.
-    /// </remarks>
-    class function User(const Content: string): TChatMessagePayload; overload; static;
-    /// <summary>
-    /// Creates a new chat message payload with the role of the user and includes associated vision sources.
-    /// </summary>
-    /// <param name="Content">
-    /// The content of the message that the user is sending.
-    /// </param>
-    /// <param name="VisionSrc">
+    /// <param name="Url">
     /// An array of strings representing vision sources.
     /// </param>
     /// <returns>
@@ -267,9 +205,114 @@ type
     /// This method is used to create messages from the user's perspective that include both text content and optional vision sources.
     /// The vision sources can be URLs or Base64-encoded images, and they are used to enhance the message with visual information.
     /// </remarks>
-    class function User(const Content: string;
-      const VisionSrc: TArray<string>): TChatMessagePayload; overload; static;
+    class function Assistant(const Value: string; const Url: TArray<string>; const Prefix: Boolean = False): TChatMessagePayload; overload;
+    /// <summary>
+    /// Creates a new chat message payload with the role of the assistant and includes tool calls.
+    /// </summary>
+    /// <param name="Value">
+    /// The content of the message that the user is sending.
+    /// </param>
+    /// <param name="Func">
+    /// An array of strings representing tool calls sources.
+    /// </param>
+    /// <returns>
+    /// A <c>TChatMessagePayload</c> instance with the role set to "user", the provided content, and the specified vision sources.
+    /// </returns>
+    /// <remarks>
+    /// This method is used to create messages from the user's perspective that include both text content and optional vision sources.
+    /// The vision sources can be URLs or Base64-encoded images, and they are used to enhance the message with visual information.
+    /// </remarks>
+    class function Assistant(const Value: string; const Func: TArray<TToolCalls>; const Prefix: Boolean = False): TChatMessagePayload; overload;
+    /// <summary>
+    /// Creates a new chat message payload with the role of the assistant and includes associated vision sources and tool calls.
+    /// </summary>
+    /// <param name="Value">
+    /// The content of the message that the user is sending.
+    /// </param>
+    /// <param name="Url">
+    /// An array of strings representing vision sources.
+    /// </param>
+    /// </param>
+    /// <param name="Func">
+    /// An array of strings representing tool calls sources.
+    /// </param>
+    /// <returns>
+    /// A <c>TChatMessagePayload</c> instance with the role set to "user", the provided content, and the specified vision sources.
+    /// </returns>
+    /// <remarks>
+    /// This method is used to create messages from the user's perspective that include both text content and optional vision sources.
+    /// The vision sources can be URLs or Base64-encoded images, and they are used to enhance the message with visual information.
+    /// </remarks>
+    class function Assistant(const Value: string; const Url: TArray<string>;
+      const Func: TArray<TToolCalls>; const Prefix: Boolean = False): TChatMessagePayload; overload;
+    /// <summary>
+    /// Creates a new chat message payload with the role of the system.
+    /// </summary>
+    /// <param name="Value">
+    /// The content of the system message.
+    /// </param>
+    /// <returns>
+    /// A <c>TChatMessagePayload</c> instance with the role set to "system" and the provided content.
+    /// </returns>
+    /// <remarks>
+    /// This method is used to create system-level messages, which may be used for notifications, warnings, or other system-related interactions.
+    /// </remarks>
+    class function System(const Value: string): TChatMessagePayload; overload;
+    /// <summary>
+    /// Creates a new chat message payload with the role of the system.
+    /// </summary>
+    /// <param name="Value">
+    /// The content of the system message.
+    /// </param>
+    /// <returns>
+    /// A <c>TChatMessagePayload</c> instance with the role set to "system" and the provided content.
+    /// </returns>
+    /// <remarks>
+    /// This method is used to create system-level messages, which may be used for notifications, warnings, or other system-related interactions.
+    /// </remarks>
+    class function System(const Value: TArray<string>): TChatMessagePayload; overload;
+    /// <summary>
+    /// Creates a new chat message payload with the role of the user.
+    /// </summary>
+    /// <param name="Value">
+    /// The content of the message that the user is sending.
+    /// </param>
+    /// <returns>
+    /// A <c>TChatMessagePayload</c> instance with the role set to "user" and the provided content.
+    /// </returns>
+    /// <remarks>
+    /// This method is used to create messages from the user's perspective, typically representing inputs or queries in the conversation.
+    /// </remarks>
+    class function User(const Value: string): TChatMessagePayload; overload;
+    /// <summary>
+    /// Creates a new chat message payload with the role of the user and includes associated vision sources.
+    /// </summary>
+    /// <param name="Value">
+    /// The content of the message that the user is sending.
+    /// </param>
+    /// <param name="Url">
+    /// An array of strings representing vision sources.
+    /// </param>
+    /// <returns>
+    /// A <c>TChatMessagePayload</c> instance with the role set to "user", the provided content, and the specified vision sources.
+    /// </returns>
+    /// <remarks>
+    /// This method is used to create messages from the user's perspective that include both text content and optional vision sources.
+    /// The vision sources can be URLs or Base64-encoded images, and they are used to enhance the message with visual information.
+    /// </remarks>
+    class function User(const Value: string; const Url: TArray<string>): TChatMessagePayload; overload;
   end;
+
+  /// <summary>
+  /// Represents the payload structure for a chat message in the context of a conversation.
+  /// </summary>
+  /// <remarks>
+  /// This class encapsulates the essential elements of a chat message, including its role, content,
+  /// and associated metadata. It extends <c>TJSONParam</c>, enabling seamless integration with JSON-based
+  /// APIs for chat functionalities. This class is a foundational building block for managing the flow of
+  /// conversations between users, systems, and assistants.
+  /// </remarks>
+  PayLoad = TChatMessagePayload;
 
   /// <summary>
   /// The <c>TChatParams</c> class represents the set of parameters used to configure a chat interaction with an AI model.
@@ -325,7 +368,7 @@ type
     /// <returns>
     /// The updated <c>TChatParams</c> instance.
     /// </returns>
-    function MaxTokens(const Value: Integer = 16): TChatParams;
+    function MaxTokens(const Value: Integer): TChatParams;
     /// <summary>
     /// Provides the prompt(s) for the model to generate completions from, structured as a list of messages with roles (user, assistant, system) and content.
     /// </summary>
@@ -371,7 +414,7 @@ type
     /// <returns>
     /// The updated <c>TChatParams</c> instance.
     /// </returns>
-    function Temperature(const Value: Single = 0.7): TChatParams;
+    function Temperature(const Value: Single): TChatParams;
     /// <summary>
     /// Sets the nucleus sampling probability mass for the model (Top-p).
     /// For example, 0.1 means only the tokens comprising the top 10% probability mass are considered.
@@ -383,7 +426,7 @@ type
     /// <returns>
     /// The updated <c>TChatParams</c> instance.
     /// </returns>
-    function TopP(const Value: Single = 1): TChatParams;
+    function TopP(const Value: Single): TChatParams;
     /// <summary>
     /// Determines whether a safety prompt should be injected automatically before the conversation starts.
     /// </summary>
@@ -419,7 +462,17 @@ type
     /// <remarks>
     /// If set to <c>none</c>, the model will not call any functions and will generate a message instead. If set to <c>auto</c>, the model can choose between generating a message or calling a function. If set to <c>any</c>, the model is required to call a function.
     /// </remarks>
-    function ToolChoice(const Value: TToolChoice = auto): TChatParams;
+    function ToolChoice(const Value: TToolChoice): TChatParams; overload;
+    /// <summary>
+    /// Configures how the model interacts when required is on.
+    /// </summary>
+    /// <param name="Value">
+    /// The <c>TToolChoice</c> setting for function interaction, with a default of "auto".
+    /// </param>
+    /// <returns>
+    /// The updated <c>TChatParams</c> instance.
+    /// </returns>
+    function ToolChoice(const FunctionName: string): TChatParams; overload;
     /// <summary>
     /// Sets the random seed for deterministic results during sampling.
     /// </summary>
@@ -432,9 +485,62 @@ type
     /// </remarks>
     function RandomSeed(const Value: Integer): TChatParams;
     /// <summary>
-    /// Constructor to initialize the <c>TChatParams</c> object with default values.
+    /// Stop (string)
+    /// Stop generation if this token is detected. Or if one of these tokens is detected when providing an array
     /// </summary>
-    constructor Create; override;
+    /// <param name="Value">
+    /// The string that causes the stop
+    /// </param>
+    /// <returns>
+    /// The updated <c>TChatParams</c> instance.
+    /// </returns>
+    function Stop(const Value: string): TChatParams; overload;
+    /// <summary>
+    /// Stop Array of Stop (strings) (Stop)
+    /// Stop generation if this token is detected. Or if one of these tokens is detected when providing an array
+    /// </summary>
+    /// <param name="Value">
+    /// The array of string that causes the stop
+    /// </param>
+    /// <returns>
+    /// The updated <c>TChatParams</c> instance.
+    /// </returns>
+    function Stop(const Value: TArray<string>): TChatParams; overload;
+    /// <summary>
+    /// Presence_penalty determines how much the model penalizes the repetition of words or phrases
+    /// </summary>
+    /// <param name="Value">
+    /// number (Presence Penalty) [ -2 .. 2 ]; Default: 0
+    /// </param>
+    /// <returns>
+    /// The updated <c>TChatParams</c> instance.
+    /// </returns>
+    /// <remarks>
+    /// A higher presence penalty encourages the model to use a wider variety of words and phrases,
+    /// making the output more diverse and creative.
+    /// </remarks>
+    function PresencePenalty(const Value: Double): TChatParams;
+    /// <summary>
+    /// Frequency_penalty penalizes the repetition of words based on their frequency in the generated text.
+    /// </summary>
+    /// <param name="Value">
+    /// number (Presence Penalty) [ -2 .. 2 ]; Default: 0
+    /// </param>
+    /// <returns>
+    /// The updated <c>TChatParams</c> instance.
+    /// </returns>
+    /// <remarks>
+    /// A higher frequency penalty discourages the model from repeating words that have already appeared
+    /// frequently in the output, promoting diversity and reducing repetition.
+    /// </remarks>
+    function FrequencyPenalty(const Value: Double): TChatParams;
+    /// <summary>
+    /// Number of completions to return for each request, input tokens are only billed once.
+    /// </summary>
+    /// <returns>
+    /// The updated <c>TChatParams</c> instance.
+    /// </returns>
+    function N(const Value: Integer): TChatParams;
   end;
 
   /// <summary>
@@ -494,12 +600,11 @@ type
   /// </remarks>
   TChatMessage = class
   private
-    [JsonNameAttribute('role')]
     FRole: string;
-    [JsonNameAttribute('content')]
     FContent: string;
     [JsonNameAttribute('tool_calls')]
     FToolsCalls: TArray<TCalledFunction>;
+    FPrefix: Boolean;
   public
     /// <summary>
     /// The role of the author of this message, indicating the sender (e.g., user, assistant, or system).
@@ -525,6 +630,11 @@ type
     /// </remarks>
     property ToolsCalls: TArray<TCalledFunction> read FToolsCalls write FToolsCalls;
     /// <summary>
+    /// Prefix of the content.
+    /// </summary>
+    /// <remarks>
+    property Prefix: Boolean read FPrefix write FPrefix;
+    /// <summary>
     /// Destructor to release any resources used by this instance.
     /// </summary>
     destructor Destroy; override;
@@ -544,13 +654,10 @@ type
   /// </remarks>
   TChatChoices = class
   private
-    [JsonNameAttribute('index')]
     FIndex: Int64;
-    [JsonNameAttribute('message')]
     FMessage: TChatMessage;
     [JsonReflectAttribute(ctString, rtString, TFinishReasonInterceptor)]
     FFinish_reason: TFinishReason;
-    [JsonNameAttribute('delta')]
     FDelta: TChatMessage;
   public
     /// <summary>
@@ -604,17 +711,11 @@ type
   /// </remarks>
   TChat = class
   private
-    [JsonNameAttribute('id')]
     FId: string;
-    [JsonNameAttribute('object')]
     FObject: string;
-    [JsonNameAttribute('created')]
     FCreated: Int64;
-    [JsonNameAttribute('model')]
     FModel: string;
-    [JsonNameAttribute('choices')]
     FChoices: TArray<TChatChoices>;
-    [JsonNameAttribute('usage')]
     FUsage: TChatUsage;
   public
     /// <summary>
@@ -726,24 +827,18 @@ type
   /// <remarks>
   /// This class facilitates sending messages to a chat model, receiving responses, and managing them, whether synchronously or asynchronously.
   /// The primary methods in the class are:
-  /// <list type="bullet">
-  /// <item>
-  /// <term><c>Create</c></term>
-  /// <description>Sends a chat request and waits for a full response.</description>
-  /// </item>
-  /// <item>
-  /// <term><c>AsyncCreate</c></term>
-  /// <description>Performs an asynchronous chat completion request with event handling.</description>
-  /// </item>
-  /// <item>
-  /// <term><c>CreateStream</c></term>
-  /// <description>Initiates a chat completion request in streaming mode, receiving tokens progressively.</description>
-  /// </item>
-  /// <item>
-  /// <term><c>ASyncCreateStream</c></term>
-  /// <description>Performs an asynchronous request in streaming mode with event handling.</description>
-  /// </item>
-  /// </list>
+  /// <para>
+  /// - <c>Create</c> : Sends a chat request and waits for a full response.
+  /// </para>
+  /// <para>
+  /// - <c>AsyncCreate</c> : Performs an asynchronous chat completion request with event handling.
+  /// </para>
+  /// <para>
+  /// - <c>CreateStream</c> : Initiates a chat completion request in streaming mode, receiving tokens progressively.
+  /// </para>
+  /// <para>
+  /// - <c>ASyncCreateStream</c> : Performs an asynchronous request in streaming mode with event handling.
+  /// </para>
   /// Each method allows configuring model parameters, setting input messages, managing token limits, and including callbacks for processing responses or errors.
   /// </remarks>
   TChatRoute = class(TMistralAIAPIRoute)
@@ -858,6 +953,7 @@ type
     ///
     /// Example usage:
     /// <code>
+    ///   MistralAI := TMistralAIFactory.CreateInstance(BaererKey);
     ///   var Chat := MistralAI.Chat.Create(
     ///     procedure (Params: TChatParams)
     ///     begin
@@ -911,45 +1007,13 @@ type
 implementation
 
 uses
-  system.StrUtils, Rest.Json, System.Rtti;
-
-{ TMessageRoleHelper }
-
-class function TMessageRoleHelper.FromString(const Value: string): TMessageRole;
-begin
-  case IndexStr(AnsiLowerCase(Value), ['system', 'user', 'assistant', 'tool']) of
-    0 :
-      Exit(system);
-    1 :
-      Exit(user);
-    2 :
-      Exit(assistant);
-    3 :
-      Exit(tool);
-  end;
-  Result := user;
-end;
-
-function TMessageRoleHelper.ToString: string;
-begin
-  case Self of
-    system:
-      Exit('system');
-    user:
-      Exit('user');
-    assistant:
-      Exit('assistant');
-    tool:
-      Exit('tool');
-  end;
-end;
+  system.StrUtils, Rest.Json, System.Rtti, MistralAI.NetEncoding.Base64;
 
 { TChatParams }
 
-constructor TChatParams.Create;
+function TChatParams.FrequencyPenalty(const Value: Double): TChatParams;
 begin
-  inherited;
-  Model('mistral-tiny');
+  Result := TChatParams(Add('frequency_penalty', Value));
 end;
 
 function TChatParams.MaxTokens(const Value: Integer): TChatParams;
@@ -957,58 +1021,27 @@ begin
   Result := TChatParams(Add('max_tokens', Value));
 end;
 
-function TChatParams.Messages(
-  const Value: TArray<TChatMessagePayload>): TChatParams;
-var
-  JSON: TJSONObject;
+function TChatParams.Messages(const Value: TArray<TChatMessagePayload>): TChatParams;
 begin
-  var Items := TJSONArray.Create;
-  try
-    for var Item in Value do
-      begin
-        var SubItems: TJSONArray := nil;
-
-        if Length(Item.FVisionSources) > 0 then
-          {--- Processing with images }
-          begin
-            SubItems := TJSONArray.Create;
-
-            JSON := TJSONObject.Create;
-            {"type": "text", "text": "What’s in this image?"}
-            JSON.AddPair('type', 'text');
-            JSON.AddPair('text', Item.Content);
-            SubItems.Add(JSON);
-
-            for var Source in Item.VisionSources do
-              begin
-                JSON := TJSONObject.Create;
-                {"type": "image_url", "image_url": "Url or Image content to base64 string"}
-                JSON.AddPair('type', 'image_url');
-                JSON.AddPair('image_url', Source.Data);
-                SubItems.Add(JSON);
-              end;
-          end;
-
-        JSON := TJSONObject.Create;
-        {--- Add role}
-        JSON.AddPair('role', Item.Role.ToString);
-        {--- Add content}
-        if Length(Item.FVisionSources) > 0 then
-          JSON.AddPair('content', SubItems) else
-          JSON.AddPair('content', Item.Content);
-        Items.Add(JSON);
-      end;
-  except
-    Items.Free;
-    raise;
-  end;
-  Result := TChatParams(Add('messages', Items));
-  Exit;
+  var JSONArray := TJSONArray.Create;
+  for var Item in Value do
+    JSONArray.Add(Item.Detach);
+  Result := TChatParams(Add('messages', JSONArray));
 end;
 
 function TChatParams.Model(const Value: string): TChatParams;
 begin
   Result := TChatParams(Add('model', Value));
+end;
+
+function TChatParams.N(const Value: Integer): TChatParams;
+begin
+  Result := TChatParams(Add('n', Value));
+end;
+
+function TChatParams.PresencePenalty(const Value: Double): TChatParams;
+begin
+  Result := TChatParams(Add('presence_penalty', Value));
 end;
 
 function TChatParams.RandomSeed(const Value: Integer): TChatParams;
@@ -1028,6 +1061,16 @@ begin
   Result := TChatParams(Add('safe_prompt', Value));
 end;
 
+function TChatParams.Stop(const Value: string): TChatParams;
+begin
+  Result := TChatParams(Add('stop', Value));
+end;
+
+function TChatParams.Stop(const Value: TArray<string>): TChatParams;
+begin
+  Result := TChatParams(Add('stop', Value));
+end;
+
 function TChatParams.Stream(const Value: Boolean): TChatParams;
 begin
   Result := TChatParams(Add('stream', Value));
@@ -1041,6 +1084,15 @@ end;
 function TChatParams.ToolChoice(const Value: TToolChoice): TChatParams;
 begin
   Result := TChatParams(Add('tool_choice', Value.ToString));
+end;
+
+function TChatParams.ToolChoice(const FunctionName: string): TChatParams;
+begin
+  var Tool := TJSONParam.Create
+        .Add('type', 'function')
+        .Add('function', TJSONObject.Create
+          .AddPair('Name', FunctionName));
+  Result := TChatParams(Add('tool_choice', Tool.Detach));
 end;
 
 function TChatParams.Tools(const Value: TArray<TChatMessageTool>): TChatParams;
@@ -1067,86 +1119,6 @@ end;
 function TChatParams.TopP(const Value: Single): TChatParams;
 begin
   Result := TChatParams(Add('top_p', Value));
-end;
-
-{ TChatMessagePayload }
-
-class function TChatMessagePayload.Assistant(
-  const Content: string): TChatMessagePayload;
-begin
-  Result.FRole := TMessageRole.assistant;
-  Result.FContent := Content;
-end;
-
-class function TChatMessagePayload.System(const Content: string): TChatMessagePayload;
-begin
-  Result.FRole := TMessageRole.system;
-  Result.FContent := Content;
-end;
-
-class function TChatMessagePayload.User(const Content: string;
-  const VisionSrc: TArray<string>): TChatMessagePayload;
-begin
-  Result.FRole := TMessageRole.user;
-  Result.FContent := Content;
-  for var Item in VisionSrc do
-    Result.VisionSources := Result.VisionSources + [TVisionSource.Create(Item)];         
-end;
-
-class function TChatMessagePayload.User(
-  const Content: string): TChatMessagePayload;
-begin
-  Result.FRole := TMessageRole.user;
-  Result.FContent := Content;
-end;
-
-{ TFinishReasonHelper }
-
-class function TFinishReasonHelper.Create(const Value: string): TFinishReason;
-begin
-  case IndexStr(AnsiLowerCase(Value), ['stop', 'length', 'model_length', 'error', 'tool_calls']) of
-    0 :
-      Exit(stop);
-    1 :
-      Exit(length_limit);
-    2 :
-      Exit(model_length);
-    3 :
-      Exit(error);
-    4 :
-      Exit(tool_calls);
-  end;
-  Result := stop;
-end;
-
-function TFinishReasonHelper.ToString: string;
-begin
-  case Self of
-    stop:
-      Exit('stop');
-    length_limit:
-      Exit('length');
-    model_length:
-      Exit('model_length');
-    error:
-      Exit('error');
-    tool_calls:
-      Exit('tool_calls');
-  end;
-end;
-
-{ TFinishReasonInterceptor }
-
-function TFinishReasonInterceptor.StringConverter(Data: TObject;
-  Field: string): string;
-begin
-  Result := RTTI.GetType(Data.ClassType).GetField(Field).GetValue(Data).AsType<TFinishReason>.ToString;
-end;
-
-procedure TFinishReasonInterceptor.StringReverter(Data: TObject; Field,
-  Arg: string);
-begin
-  RTTI.GetType(Data.ClassType).GetField(Field).SetValue(Data, TValue.From(TFinishReason.Create(Arg)));
 end;
 
 { TChatChoices }
@@ -1371,6 +1343,195 @@ begin
   for var Tool in FToolsCalls do
     Tool.Free;
   inherited;
+end;
+
+{ TChatMessagePayload }
+
+function TChatMessagePayload.Content(const Value: string): TChatMessagePayload;
+begin
+  Result := TChatMessagePayload(Add('content', Value));
+end;
+
+class function TChatMessagePayload.Assistant(const Value: string; const Prefix: Boolean): TChatMessagePayload;
+begin
+  Result := TChatMessagePayload.Create.Role(TMessageRole.assistant).Content(Value).Prefix(Prefix);
+end;
+
+function TChatMessagePayload.Content(const Kind: TContentType; const Value,
+  Detail: string): TChatMessagePayload;
+begin
+  var MessageContent := TMessageContent.Create.&Type(Kind);
+  case Kind of
+    text:
+      MessageContent := MessageContent.Text(Value);
+    image_url:
+      MessageContent := MessageContent.ImageUrl(Value, Detail);
+  end;
+  Result := TChatMessagePayload(Add('content', MessageContent.Detach));
+end;
+
+class function TChatMessagePayload.Assistant(const Value: string;
+  const Url: TArray<string>; const Prefix: Boolean): TChatMessagePayload;
+begin
+  var JSONArray := TJSONArray.Create;
+  JSONArray.Add(TMessageContent.Create.&Type(TContentType.text).Text(Value).Detach);
+  for var Item in Url do
+    JSONArray.Add(TMessageContent.Create.&Type(TContentType.image_url).ImageUrl(UrlCheck(Item)).Detach);
+  Result := TChatMessagePayload.Create.Role(TMessageRole.assistant).Content(JSONArray).Prefix(Prefix);
+end;
+
+class function TChatMessagePayload.Assistant(const Value: string;
+  const Func: TArray<TToolCalls>; const Prefix: Boolean): TChatMessagePayload;
+begin
+  Result := TChatMessagePayload.Create.Role(TMessageRole.assistant).Content(Value).ToolCalls(Func).Prefix(Prefix);
+end;
+
+function TChatMessagePayload.Content(const Value: TJSONArray): TChatMessagePayload;
+begin
+  Result := TChatMessagePayload(Add('content', Value));
+end;
+
+function TChatMessagePayload.Content(
+  const Value: TArray<string>): TChatMessagePayload;
+begin
+  var JSONArray := TJSONArray.Create;
+  for var Item in Value do
+    JSONArray.Add(TJSONObject.Create.AddPair('type', 'text').AddPair('text', Item));
+  Result := TChatMessagePayload(Add('content', JSONArray));
+end;
+
+function TChatMessagePayload.Prefix(const Value: Boolean): TChatMessagePayload;
+begin
+  Result := TChatMessagePayload(Add('prefix', Value));
+end;
+
+function TChatMessagePayload.Role(const Value: TMessageRole): TChatMessagePayload;
+begin
+  Result := TChatMessagePayload(Add('role', Value.ToString));
+end;
+
+class function TChatMessagePayload.System(
+  const Value: TArray<string>): TChatMessagePayload;
+begin
+  Result := TChatMessagePayload.Create.Role(TMessageRole.system).Content(Value);
+end;
+
+class function TChatMessagePayload.System(const Value: string): TChatMessagePayload;
+begin
+  Result := TChatMessagePayload.Create.Role(TMessageRole.system).Content(Value);
+end;
+
+function TChatMessagePayload.ToolCalls(
+  const Value: TArray<TToolCalls>): TChatMessagePayload;
+begin
+  if Length(Value) = 0 then
+    Exit(Self);
+
+  var JSONArray := TJSONArray.Create;
+  for var Item in Value do
+    JSONArray.Add(Item.Detach);
+  Result := TChatMessagePayload(Add('tool_calls', JSONArray));
+end;
+
+class function TChatMessagePayload.User(const Value: string;
+  const Url: TArray<string>): TChatMessagePayload;
+begin
+  var JSONArray := TJSONArray.Create;
+  JSONArray.Add(TMessageContent.Create.&Type(TContentType.text).Text(Value).Detach);
+  for var Item in Url do
+    JSONArray.Add(TMessageContent.Create.&Type(TContentType.image_url).ImageUrl(UrlCheck(Item)).Detach);
+  Result := TChatMessagePayload.Create.Role(TMessageRole.user).Content(JSONArray);
+end;
+
+class function TChatMessagePayload.User(const Value: string): TChatMessagePayload;
+begin
+  Result := TChatMessagePayload.Create.Role(TMessageRole.user).Content(Value);
+end;
+
+class function TChatMessagePayload.Assistant(const Value: string;
+  const Url: TArray<string>;
+  const Func: TArray<TToolCalls>;
+  const Prefix: Boolean = False): TChatMessagePayload;
+begin
+  Result := User(Value, Url);
+  Result := Result.ToolCalls(Func).Prefix(Prefix);
+end;
+
+{ TMessageContent }
+
+function TMessageContent.ImageUrl(const Url, Detail: string): TMessageContent;
+begin
+  var Value := TMessageImageURL.Create.Url(Url);
+  if not Detail.IsEmpty then
+    Value := Value.Detail(Detail);
+  Result := TMessageContent(Add('image_url', Value.Detach));
+end;
+
+function TMessageContent.ImageUrl(const Url: string): TMessageContent;
+begin
+  Result := TMessageContent(Add('image_url', Url));
+end;
+
+function TMessageContent.Text(const Value: string): TMessageContent;
+begin
+  Result := TMessageContent(Add('text', Value));
+end;
+
+function TMessageContent.&Type(const Value: TContentType): TMessageContent;
+begin
+  Result := TMessageContent(Add('type', Value.ToString));
+end;
+
+{ TMessageImageURL }
+
+function TMessageImageURL.Detail(const Value: string): TMessageImageURL;
+begin
+  Result := TMessageImageURL(Add('detail', Value));
+end;
+
+function TMessageImageURL.Url(const Value: string): TMessageImageURL;
+begin
+  Result := TMessageImageURL(Add('url', Value));
+end;
+
+{ TToolCalls }
+
+function TToolCalls.&Type(const Value: TToolType): TToolCalls;
+begin
+  Result := TToolCalls(Add('type', Value.ToString));
+end;
+
+function TToolCalls.Func(const Name: string; Arguments: string): TToolCalls;
+begin
+  var Value := TFunctionCalled.Create.Name(Name).Arguments(Arguments);
+  Result := TToolCalls(Add('function', Value.Detach));
+end;
+
+function TToolCalls.Id(const Value: string): TToolCalls;
+begin
+  Result := TToolCalls(Add('id', Value));
+end;
+
+class function TToolCalls.New(Name, Arguments: string): TToolCalls;
+begin
+  Result := TToolCalls.Create.Func(Name, Arguments);
+end;
+
+class function TToolCalls.New(Id, Name, Arguments: string): TToolCalls;
+begin
+  Result := TToolCalls.Create.Id(Id).Func(Name, Arguments);
+end;
+
+{ TFunctionCalled }
+
+function TFunctionCalled.Arguments(const Value: string): TFunctionCalled;
+begin
+  Result := TFunctionCalled(Add('arguments', Value));
+end;
+
+function TFunctionCalled.Name(const Value: string): TFunctionCalled;
+begin
+  Result := TFunctionCalled(Add('name', Value));
 end;
 
 end.
