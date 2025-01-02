@@ -3,7 +3,7 @@
 ___
 ![GitHub](https://img.shields.io/badge/IDE%20Version-Delphi%2010.3/11/12-yellow)
 ![GitHub](https://img.shields.io/badge/platform-all%20platforms-green)
-![GitHub](https://img.shields.io/badge/Updated%20on%20january%202,%202025-blue)
+![GitHub](https://img.shields.io/badge/Updated%20on%20january%203,%202025-blue)
 
 <br/>
 <br/>
