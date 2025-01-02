@@ -9,7 +9,7 @@ ___
 <br/>
 
 - [Introduction](#Introduction)
-- [Changelog](https://github.com/MaxiDonkey/Test/blob/main/Changelog.md)
+- [Changelog](https://github.com/MaxiDonkey/DelphiMistralAI/blob/main/Changelog.md)
 - [Remarks](#remarks)
 - [Wrapper Tools Info](#Wrapper-Tools-Info)
     - [Tools for simplifying this tutorial](#Tools-for-simplifying-this-tutorial)
