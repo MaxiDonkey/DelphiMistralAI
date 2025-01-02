@@ -1,5 +1,12 @@
 unit MistralAI.Models;
 
+{-------------------------------------------------------------------------------
+
+      Github repository : https://github.com/MaxiDonkey/DelphiMistralAI
+      Visit the Github repository for the documentation and use examples
+
+ ------------------------------------------------------------------------------}
+
 interface
 
 uses
@@ -10,7 +17,7 @@ type
   /// <summary>
   /// The TModelParams class is used to specify parameters for updating the properties
   /// of a fine-tuned model in the MistralAI environment. It allows you to set new values
-  /// for the model's name and description.
+  /// for the model's name and  description.
   /// </summary>
   /// <remarks>
   /// This class provides a fluent interface for configuring model parameters before

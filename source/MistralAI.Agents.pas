@@ -1,9 +1,11 @@
 unit MistralAI.Agents;
 
-{+-----------------------------------------------------------------------------+
- |     Github repository : https://github.com/MaxiDonkey/DelphiMistralAI       |
- |     Visit the Github repository for the documentation and use examples      |
- +-----------------------------------------------------------------------------+}
+{-------------------------------------------------------------------------------
+
+      Github repository :  https://github.com/MaxiDonkey/DelphiMistralAI
+      Visit the Github repository for the documentation and use examples
+
+ ------------------------------------------------------------------------------}
 
 interface
 

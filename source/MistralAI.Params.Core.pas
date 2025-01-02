@@ -17,7 +17,7 @@ unit MistralAI.Params.Core;
 
       These abstractions allow for  a flexible and  reusable  way  to  handle
       parameters  across  different  modules  and  contexts,  particularly in
-      asynchronous  scenarios  such  as  chat  operations.
+      asynchronous  scenarios  such  as  chat operations.
 
       Note  that  This  unit  is  designed   to  work   seamlessly  with  the
       MistralAI.Chat.AsyncEvents  unit,  which  relies  on  IUseParams<T> and

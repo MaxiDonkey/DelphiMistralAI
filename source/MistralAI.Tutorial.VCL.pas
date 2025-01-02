@@ -5,7 +5,7 @@ unit MistralAI.Tutorial.VCL;
    WARNING:
      This module is intended solely to illustrate the examples provided in the
      README.md file of the repository :
-         https://github.com/MaxiDonkey/DelphiMistralAI
+          https://github.com/MaxiDonkey/DelphiMistralAI
      Under no circumstances should the methods described below be used outside
      of the examples presented on the repository's page.
 }

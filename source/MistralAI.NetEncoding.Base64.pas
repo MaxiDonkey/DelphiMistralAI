@@ -92,7 +92,7 @@ uses
   /// <exception cref="Exception">Thrown if the specified file does not exist at the provided location.</exception>
   /// <remarks>
   /// This method reads the file from the specified location and converts it to a Base64 string.
-  /// It uses different encoding methods depending on the version of the RTL.
+  /// It uses different encoding methods depending on the version of  the RTL.
   /// For RTL version 35.0 and later, it uses <c>TNetEncoding.Base64String.Encode</c>,
   /// and for earlier versions, it uses <c>TNetEncoding.Base64.Encode</c>.
   /// </remarks>

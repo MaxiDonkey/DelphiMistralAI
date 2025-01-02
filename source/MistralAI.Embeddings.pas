@@ -1,5 +1,12 @@
 unit MistralAI.Embeddings;
 
+{-------------------------------------------------------------------------------
+
+      Github repository : https://github.com/MaxiDonkey/DelphiMistralAI
+      Visit the Github repository for the documentation and use examples
+
+ ------------------------------------------------------------------------------}
+
 interface
 
 uses
