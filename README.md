@@ -1084,7 +1084,7 @@ It is essential to populate the Purpose field to specify the category to which t
     procedure (Params: TUploadParams)
     begin
       //Params.Purpose(TFilePurpose.finetune);
-      //                              or
+      //     or
       //Params.Purpose(TFilePurpose.batch);
       Params.&File(TutorialHub.FileName);
     end,
@@ -1483,6 +1483,11 @@ Here's an example of how to structure a batch request:
 //      Params.Endpoint(TEndPointType.epChatCompletion);
 //      Params.Metadata(TJSONObject.Create.AddPair('job_type', 'texting'));
 //    end);
+//  try
+//    Display(TutorialHub, Value);
+//  finally
+//    Value.Free;
+//  end;
 ```
 
 >[!NOTE]
