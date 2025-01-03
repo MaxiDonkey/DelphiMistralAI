@@ -1084,7 +1084,7 @@ It is essential to populate the Purpose field to specify the category to which t
     procedure (Params: TUploadParams)
     begin
       //Params.Purpose(TFilePurpose.finetune);
-      //     or
+      //  or
       //Params.Purpose(TFilePurpose.batch);
       Params.&File(TutorialHub.FileName);
     end,
