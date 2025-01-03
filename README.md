@@ -586,8 +586,9 @@ Function calling allows Mistral models to connect to external tools. By integrat
 
 See also [documentation](https://docs.mistral.ai/capabilities/function_calling/) at the MistralAI web site.
 
-Warning : While this technology is powerful, it also carries potential risks. We strongly advise incorporating user confirmation processes before executing real-world actions on behalf of users, such as sending emails, posting online, making purchases, etc.
-
+>[!WARNING]
+> While this technology is powerful, it also carries potential risks. We strongly advise incorporating user confirmation processes before executing real-world actions on behalf of users, such as sending emails, posting online, making purchases, etc.
+>
 In the following section, we will explore the use of the tools through a practical example: *What’s the weather like in Paris?*
 
 ### The weather in Paris
