@@ -1234,7 +1234,9 @@ begin
                                  following processing}
                             LocalChat.Free;
                           end;
-                        end);
+                        end)
+                      else
+                        LocalChat.Free;
                     end
                   else
                   if IsDone then

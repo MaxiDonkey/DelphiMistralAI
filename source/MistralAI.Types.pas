@@ -1625,7 +1625,7 @@ class function TRepositoryTypeHelper.Create(
 begin
   var index := IndexStr(Value.ToLower, ['github']);
   if index = -1 then
-    raise Exception.Create(' Invalid repository value.');
+    raise Exception.Create('Invalid repository value.');
   Result := TRepositoryType(index);
 end;
 

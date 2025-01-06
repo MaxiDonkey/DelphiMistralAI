@@ -839,7 +839,9 @@ begin
                                  following processing}
                             LocalCode.Free;
                           end;
-                        end);
+                        end)
+                      else
+                        LocalCode.Free;
                     end
                   else
                   if IsDone then
