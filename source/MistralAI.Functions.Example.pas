@@ -20,6 +20,7 @@ type
     function GetParameters: string; override;
   public
     function Execute(const Arguments: string): string; override;
+    class function CreateInstance: IFunctionCore;
   end;
 
 implementation
@@ -28,6 +29,11 @@ uses
   System.StrUtils, System.JSON;
 
 { TWeatherReportFunction }
+
+class function TWeatherReportFunction.CreateInstance: IFunctionCore;
+begin
+  Result := TWeatherReportFunction.create;
+end;
 
 function TWeatherReportFunction.Execute(const Arguments: string): string;
 

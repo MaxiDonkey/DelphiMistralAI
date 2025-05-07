@@ -12,8 +12,8 @@ interface
 uses
   System.SysUtils, System.Classes, REST.JsonReflect, System.JSON, System.Threading,
   REST.Json.Types, System.NetEncoding, System.Net.Mime, MistralAI.API.Params,
-  MistralAI.API, MistralAI.Functions.Tools, MistralAI.Async.Support,
-  MistralAI.Params.Core, MistralAI.Types;
+  MistralAI.API, MistralAI.Functions.Core, MistralAI.Functions.Tools,
+  MistralAI.Async.Support, MistralAI.Params.Core, MistralAI.Types;
 
 type
   /// <summary>
@@ -181,6 +181,9 @@ type
     /// </summary>
     /// <param name="Value">
     /// The content of the message that the assistant is sending.
+    /// </param>
+    /// <param name="Prefix">
+    /// Use prefix or no.
     /// </param>
     /// <returns>
     /// A <c>TChatMessagePayload</c> instance with the role set to "assistant" and the provided content.
@@ -449,7 +452,20 @@ type
     /// <remarks>
     /// These tools can include functions that the model can utilize when generating output. For example, they can help the model produce structured data for specific tasks.
     /// </remarks>
-    function Tools(const Value: TArray<TChatMessageTool>): TChatParams;
+    function Tools(const Value: TArray<TChatMessageTool>): TChatParams; overload;
+    /// <summary>
+    /// Specifies a list of tools that the model can use to generate structured outputs such as JSON inputs for function calls.
+    /// </summary>
+    /// <param name="Value">
+    /// An array of <c>IFunctionCore</c> representing the tools available to the model.
+    /// </param>
+    /// <returns>
+    /// The updated <c>TChatParams</c> instance.
+    /// </returns>
+    /// <remarks>
+    /// These tools can include functions that the model can utilize when generating output. For example, they can help the model produce structured data for specific tasks.
+    /// </remarks>
+    function Tools(const Value: TArray<IFunctionCore>): TChatParams; overload;
     /// <summary>
     /// Configures how the model interacts with functions. This can either prevent, allow, or require function calls depending on the setting.
     /// </summary>
@@ -1095,6 +1111,15 @@ begin
   Result := TChatParams(Add('tool_choice', Tool.Detach));
 end;
 
+function TChatParams.Tools(const Value: TArray<IFunctionCore>): TChatParams;
+var
+  Arr: TArray<TChatMessageTool>;
+begin
+  for var Item in Value do
+    Arr := Arr + [TChatMessageTool.Add(Item)];
+  Result := Tools(Arr);
+end;
+
 function TChatParams.Tools(const Value: TArray<TChatMessageTool>): TChatParams;
 var
   Item: TChatMessageTool;
@@ -1235,8 +1260,8 @@ begin
                             LocalChat.Free;
                           end;
                         end)
-                      else
-                        LocalChat.Free;
+                     else
+                       LocalChat.Free;
                     end
                   else
                   if IsDone then
@@ -1461,17 +1486,17 @@ end;
 
 { TMessageContent }
 
+function TMessageContent.ImageUrl(const Url: string): TMessageContent;
+begin
+  Result := TMessageContent(Add('image_url', Url));
+end;
+
 function TMessageContent.ImageUrl(const Url, Detail: string): TMessageContent;
 begin
   var Value := TMessageImageURL.Create.Url(Url);
   if not Detail.IsEmpty then
     Value := Value.Detail(Detail);
   Result := TMessageContent(Add('image_url', Value.Detach));
-end;
-
-function TMessageContent.ImageUrl(const Url: string): TMessageContent;
-begin
-  Result := TMessageContent(Add('image_url', Url));
 end;
 
 function TMessageContent.Text(const Value: string): TMessageContent;
