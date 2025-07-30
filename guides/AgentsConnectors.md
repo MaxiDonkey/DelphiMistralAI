@@ -1,12 +1,18 @@
 # Agents & connectors (v1/agents)
 
 - [Introduction](#introduction)
-- [Agent Creation](#agent-creation)
-- [Reasoning](#reasoning)
-- [Web search](#web-search)
-- [Image generation](#image-generation)
-- [Document library](#document-library)
-- [Code interpreter](#code-interpreter)
+
+- [Agent creation](#agent-creation)
+- [Agent listing](#agent-listing)
+- [Get agent](#get-agent)
+- [Agent update](#agent-update)
+- [Agent version update](#agent-version-update)
+- [Connectors](#connectors)
+    - [Reasoning](#reasoning)
+    - [Web search](#web-search)
+    - [Image generation](#image-generation)
+    - [Document library](#document-library)
+    - [Code interpreter](#code-interpreter)
 
 <br>
 
@@ -32,35 +38,71 @@ When you set up a new Agent, you’ll need to configure several key properties u
 
 ___
 
-## Agent Creation
+## Agent creation
 
 <br>
 
 ___
 
-## Reasoning
+## Agent listing
 
 <br>
 
 ___
 
-## Web search
+## Get agent
 
 <br>
 
 ___
 
-## Image generation
+## Agent update
 
 <br>
 
 ___
 
-## Document library
+## Agent version update
 
 <br>
 
 ___
 
-## Code interpreter
+## Connectors
+
+- [Reasoning](#reasoning)
+- [Web search](#web-search)
+- [Image generation](#image-generation)
+- [Document library](#document-library)
+- [Code interpreter](#code-interpreter)
+
+<br>
+
+___
+
+### Reasoning
+
+<br>
+
+___
+
+### Web search
+
+<br>
+
+___
+
+### Image generation
+
+<br>
+
+___
+
+### Document library
+
+<br>
+
+___
+
+### Code interpreter
 
