@@ -682,7 +682,7 @@ begin
 end;  
 ```
 
->[NOTE]
+>[!NOTE]
 > The same method also exists with the FMX version of the TutorialHub wizard.
 
 <br/>
