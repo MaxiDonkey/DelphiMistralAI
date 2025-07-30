@@ -5,12 +5,12 @@
     - [Streamed](#streamed)
     - [Multi-turn conversations](#multi-turn-conversations) 
     - [Parallel method for generating text](#parallel-method-for-generating-text)
-    - [Input Audio for Chat](#input-audio-for-chat)
-    - [Vision](#vision)
-        - [Analyze single source](#analyze-single-source)
-        - [Analyze multi-source](#analyze-multi-source)
-    - [Function calling](#function-calling)
-    - [Structured Output](#structured-output)
+- [Input Audio for Chat](#input-audio-for-chat)
+- [Vision](#vision)
+    - [Analyze single source](#analyze-single-source)
+    - [Analyze multi-source](#analyze-multi-source)
+- [Function calling](#function-calling)
+- [Structured Output](#structured-output)
 
 <br>
 
@@ -361,7 +361,7 @@ This approach enables the simultaneous execution of multiple prompts, provided t
 
 ___
 
-### Input Audio for Chat
+## Input Audio for Chat
 
 It’s possible to include an audio file when calling the `v1/chat/completions` endpoint to process its content within a conversation. You can provide the audio data in two ways: <br>
  - **Via URL (signed or unsigned)**
@@ -407,11 +407,11 @@ It’s possible to include an audio file when calling the `v1/chat/completions` 
 
 ___
 
-### Vision
+## Vision
 
 Refer to the [official documentation](https://docs.mistral.ai/capabilities/vision/).
 
-#### Analyze single source
+### Analyze single source
 
 `MistralAI` processes images from both web sources and local files uniformly. It manages the submission of the source to the API, thereby simplifying the developer's task. Therefore, in this example, we will handle sources in the form of a ***URL*** and ***base-64 encoded*** data.
 
@@ -482,7 +482,7 @@ Refer to the [official documentation](https://docs.mistral.ai/capabilities/visio
 //  end;
 ```
 
-#### Analyze multi-source
+### Analyze multi-source
 
 **Streamed code example**
 
@@ -580,7 +580,7 @@ Refer to the [official documentation](https://docs.mistral.ai/capabilities/visio
 
 ___
 
-### Function calling
+## Function calling
 
 Allow models to access data and execute actions. <br/>
 Function calling offers a robust and versatile method for MistralAI models to interact with your code or external services, serving two main purposes:
@@ -593,7 +593,7 @@ Refer to the [official documentation](https://docs.mistral.ai/capabilities/funct
 
 <br>
 
-#### How build a plugin
+### How build a plugin
 
 Use case : **What’s the weather in Paris?**
 
@@ -601,7 +601,7 @@ In the `MistralAI.Functions.Example` unit, there is a class that defines a funct
 
 <br>
 
-#### Plan
+### Plan
  - [Use a schema](#use-a-schema)
  - [Methods to display result](#methods-to-display-result)
  - [Display a stream text](#display-a-stream-text) 
@@ -652,7 +652,7 @@ With this tutorial, a method is defined within TutorialHub. Let’s take a close
 
 <br>
 
-##### Display a stream text
+#### Display a stream text
 
 ```Delphi
 procedure TVCLTutorialHub.WeatherFunction(const Value: TCalledFunction;
@@ -768,12 +768,12 @@ end;
 
 ___
 
-### Structured Output
+## Structured Output
 
  - [JSON mode](#json-mode)
  - [Custom Structured Outputs](#custom-structured-outputs)
 
-#### JSON mode
+### JSON mode
 
 To activate JSON mode, set response_format to {"type":"json_object"}. This JSON output option is now supported for every model via our API.
 
@@ -832,7 +832,7 @@ To activate JSON mode, set response_format to {"type":"json_object"}. This
 
 ___
 
-#### Custom Structured Outputs
+### Custom Structured Outputs
 
 By defining a strict JSON schema up front, Custom Structured Outputs compel the model to emit responses that match your exact structure—right down to field names and data types. In practice, this means you get reliably formatted JSON every time, with the correct keywords and types baked in.
 
