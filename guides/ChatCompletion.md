@@ -600,7 +600,7 @@ In the `MistralAI.Functions.Example` unit, there is a class that defines a funct
 
 <br>
 
-**Plan**
+#### Plan
  - [Use a schema](#use-a-schema)
  - [Methods to display result](#methods-to-display-result)
  - [Display a stream text](#display-a-stream-text) 
