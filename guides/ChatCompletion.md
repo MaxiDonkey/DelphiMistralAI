@@ -760,7 +760,7 @@ begin
 end;
 ```
 
->[!WARNING]
+>[!IMPORTANT]
 >Ensure user confirmation for actions like sending emails or making purchases to avoid unintended consequences.
 
 <br/>
