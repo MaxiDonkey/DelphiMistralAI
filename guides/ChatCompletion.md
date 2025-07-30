@@ -367,6 +367,8 @@ It’s possible to include an audio file when calling the `v1/chat/completions` 
  - **Via URL (signed or unsigned)**
  - **As a Base64‑encoded string**
 
+Refer to [official documentation](https://docs.mistral.ai/capabilities/audio/)
+
 ```Delphi
 //uses MistralAI, MistralAI.Types, MistralAI.Tutorial.VCL or MistralAI.Tutorial.FMX;
 
