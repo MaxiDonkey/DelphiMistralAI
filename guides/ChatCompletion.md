@@ -10,6 +10,7 @@
         - [Analyze single source](#analyze-single-source)
         - [Analyze multi-source](#analyze-multi-source)
     - [Function calling](#function-calling)
+    - [Structured Output](#structured-output)
 
 <br>
 
@@ -764,3 +765,143 @@ end;
 >Ensure user confirmation for actions like sending emails or making purchases to avoid unintended consequences.
 
 <br/>
+
+___
+
+### Structured Output
+
+ - [JSON mode](#json-mode)
+ - [Custom Structured Outputs](#custom-structured-outputs)
+
+#### JSON mode
+
+To activate JSON mode, set response_format to {"type":"json_object"}. This JSON output option is now supported for every model via our API.
+
+```Delphi
+//uses MistralAI, MistralAI.Types, MistralAI.Tutorial.VCL or MistralAI.Tutorial.FMX;
+
+  TutorialHub.JSONRequestClear;
+
+  //Asynchronous promise example
+  Start(TutorialHub);
+  var Promise := Client.Chat.AsyncAwaitCreate(
+    procedure (Params: TChatParams)
+    begin
+      Params.Model('mistral-large-latest');
+      Params.Messages([
+        Payload.User('What is the best French meal? Return the name and the ingredients in short JSON object.')
+      ]);
+      Params.ResponseFormat(TResponseFormatParams.Json_Oject);
+      Params.MaxTokens(1024);
+      TutorialHub.JSONRequest := Params.ToFormat();
+    end);
+
+  promise
+    .&Then<string>(
+      function (Value: TChat): string
+      begin
+        for var Item in Value.Choices do
+          Result := Result + Item.Message.Content[0].Text;
+        Display(TutorialHub, Value);
+      end)
+    .&Catch(
+      procedure (E: Exception)
+      begin
+        Display(TutorialHub, E.Message);
+      end);
+```
+
+**Example output:**
+```Json
+{
+  "name": "Boeuf Bourguignon",
+  "ingredients": [
+    "Beef",
+    "Red wine",
+    "Carrots",
+    "Onions",
+    "Garlic",
+    "Bacon",
+    "Mushrooms",
+    "Herbs (thyme, bay leaf, parsley)"
+  ]
+}
+```
+
+<br>
+
+___
+
+#### Custom Structured Outputs
+
+By defining a strict JSON schema up front, Custom Structured Outputs compel the model to emit responses that match your exact structure—right down to field names and data types. In practice, this means you get reliably formatted JSON every time, with the correct keywords and types baked in.
+
+Refer to the [official documentation](https://docs.mistral.ai/capabilities/structured-output/custom_structured_output/)
+
+```Delphi
+//uses MistralAI, MistralAI.Types, MistralAI.Tutorial.VCL or MistralAI.Tutorial.FMX;
+
+  TutorialHub.JSONRequestClear;
+
+  var Schema :=
+    '{' +
+    '    "schema": {' +
+    '      "properties": {' +
+    '        "name": {' +
+    '          "title": "Name",' +
+    '          "type": "string"' +
+    '        },' +
+    '        "authors": {' +
+    '          "items": {' +
+    '            "type": "string"' +
+    '          },' +
+    '          "title": "Authors",' +
+    '          "type": "array"' +
+    '        }' +
+    '      },' +
+    '      "required": ["name", "authors"],' +
+    '      "title": "Book",' +
+    '      "type": "object",' +
+    '      "additionalProperties": false' +
+    '    },' +
+    '    "name": "book",' +
+    '    "strict": true' +
+    '  }';
+
+  //Asynchronous promise example
+  Start(TutorialHub);
+  var Promise := Client.Chat.AsyncAwaitCreate(
+    procedure (Params: TChatParams)
+    begin
+      Params.Model('mistral-large-latest');
+      Params.Messages([
+        Payload.System('Extract the books information.'),
+        Payload.User('I recently read To Kill a Mockingbird by Harper Lee.')
+      ]);
+      Params.ResponseFormat(Schema);
+      Params.MaxTokens(1024);
+      TutorialHub.JSONRequest := Params.ToFormat();
+    end);
+
+  promise
+    .&Then<string>(
+      function (Value: TChat): string
+      begin
+        for var Item in Value.Choices do
+          Result := Result + Item.Message.Content[0].Text;
+        Display(TutorialHub, Value);
+      end)
+    .&Catch(
+      procedure (E: Exception)
+      begin
+        Display(TutorialHub, E.Message);
+      end);
+```
+
+**Example output:**
+```Json
+{
+  "name": "To Kill a Mockingbird",
+  "authors": ["Harper Lee"]
+}
+```
