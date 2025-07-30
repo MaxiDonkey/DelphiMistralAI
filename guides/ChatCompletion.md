@@ -593,6 +593,8 @@ Refer to the [official documentation](https://docs.mistral.ai/capabilities/funct
 
 <br>
 
+___
+
 ### How build a plugin
 
 Use case : **What’s the weather in Paris?**
@@ -609,6 +611,8 @@ In the `MistralAI.Functions.Example` unit, there is a class that defines a funct
  - [The FinishReason](#the-finishreason)
 
 <br>
+
+___
 
 #### Use a schema
 
@@ -644,6 +648,8 @@ We will use the TWeatherReportFunction plugin defined in the `MistralAI.Function
 ```
 <br/>
 
+___
+
 #### Methods to display result
 
 We then define a method to display the result of the query using the Weather tool.
@@ -651,6 +657,8 @@ We then define a method to display the result of the query using the Weather too
 With this tutorial, a method is defined within TutorialHub. Let’s take a closer look at how this method works.
 
 <br>
+
+___
 
 #### Display a stream text
 
@@ -687,6 +695,8 @@ end;
 > The same method also exists with the FMX version of the TutorialHub wizard.
 
 <br/>
+
+___
 
 #### The main method
 
@@ -739,6 +749,8 @@ Building the query using the Weather tool. (Simply copy/paste this last code to 
 ``` 
 
 <br>
+
+___
 
 #### The FinishReason
 
