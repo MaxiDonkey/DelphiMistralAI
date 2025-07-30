@@ -40,3 +40,7 @@ ___
 
 ## Agents & connectors
 
+An agent is a preconfigured entity that bundles a model, instructions, and tools to enrich and steer the model’s capabilities.
+It’s used to automate and tailor interactions by supplying context and dedicated functionality without having to reconfigure for each request.
+
+Follow the link to learn [how to create agents and use connectors](https://github.com/MaxiDonkey/DelphiMistralAI/blob/main/guides/AgentsConnectors.md).
