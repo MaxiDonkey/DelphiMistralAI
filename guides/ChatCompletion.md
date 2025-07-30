@@ -482,6 +482,10 @@ Refer to the [official documentation](https://docs.mistral.ai/capabilities/visio
 //  end;
 ```
 
+<br>
+
+___
+
 ### Analyze multi-source
 
 **Streamed code example**
