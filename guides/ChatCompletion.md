@@ -903,7 +903,19 @@ begin
       end
     else
       begin
-        Display(Sender, Item.Message.Content[0].Text);
+        for var SubItem in Item.Message.Content do
+          begin
+            case SubItem.&Type of
+              TContentType.text:
+                Display(Sender, SubItem.Text);
+
+              TContentType.thinking:
+                begin
+                  for var Think in SubItem.Thinking do
+                    Display(TutorialHub.Memo2, Think.Text);
+                end;
+            end;
+          end;
       end;
 end;
 ```

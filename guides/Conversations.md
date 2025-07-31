@@ -14,7 +14,6 @@
     - [Retrieve all entries in a conversation](#retrieve-all-entries-in-a-conversation)
     - [Retrieve all messages in a conversation](#retrieve-all-messages-in-a-conversation)
 - [Tools for conversations](#tools-for-conversations)
-- [Vision](#vision)
 - [Function calling](#function-calling)
 - [Structured Output](#structured-output)
 - [Agents & connectors](#agents--connectors)
@@ -1008,35 +1007,131 @@ Please refer to the [Conversation & Agents](https://github.com/MaxiDonkey/Delphi
 
 ___
 
+## Function calling
 
+The step-by-step process is already covered in the [Function calling](https://github.com/MaxiDonkey/DelphiMistralAI/blob/main/guides/ChatCompletion.md#function-calling) section of the chat/completions chapter. Refer to that section for the general approach to invoking a function with DelphiMistralAI.
+Here, we will only outline the specific differences applicable when using the v1/conversations endpoint.
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-## Vision
-
+ - [Display a stream text](#display-a-stream-text) 
+ - [The main method](#the-main-method)
+ - [The FinishReason](#the-finishreason)
 
 <br>
 
 ___
 
-## Function calling
+### Display a stream text
 
+```Delphi
+procedure TVCLTutorialHub.WeatherFunctionEx(const Value: TMessageOutputEntry;
+  Func: IFunctionCore);
+begin
+  var ArgResult := Func.Execute(Value.Arguments);
+
+  FClient.Conversations.AsyncCreateStream(
+    procedure (Params: TConversationsParams)
+    begin
+      Params.Instructions('Respond like a star weather presenter on a prime-time TV channel.');
+      Params.Inputs(ArgResult);
+      Params.Model('mistral-medium-2505');
+      Params.Stream;
+      Params.Store(False);
+      Params.CompletionArgs(TCompletionArgsParams.Create
+        .Temperature(0.3)
+        .TopP(0.95)
+      )
+    end,
+    function : TAsyncConversationsEvent
+    begin
+      Result.Sender := TutorialHub;
+      Result.OnProgress := DisplayStream;
+      Result.OnSuccess := Display;
+      Result.OnDoCancel := DoCancellation;
+      Result.OnCancellation := Cancellation;
+      Result.OnError := Display;
+    end);
+end;  
+```
+>[!NOTE]
+>The same method also exists with the FMX version of the TutorialHub wizard.
+
+<br>
+
+___
+
+### The main method
+
+Building the query using the Weather tool. (Simply copy/paste this last code to test the usage of the functions.)
+
+```Delphi
+//uses MistralAI, MistralAI.Types, MistralAI.Tutorial.VCL, MistralAI.Functions.Example or Mistral.Tutorial.FMX;
+
+  TutorialHub.JSONRequestClear;
+  var WeatherFunc: IFunctionCore := TWeatherReportFunction.Create;
+
+  TutorialHub.Tool := WeatherFunc;
+  TutorialHub.ToolCallEx := TutorialHub.WeatherFunctionEx;
+
+  //Asynchronous example
+  Client.Conversations.ASyncCreate(
+    procedure (Params: TConversationsParams)
+    begin
+      Params.Model('mistral-large-latest');
+      Params.Inputs('What''s the weather like in Paris temperature in celcius?');
+      Params.Tools([TConnectorParams.New(WeatherFunc)]);
+      TutorialHub.JSONRequest := Params.ToFormat();
+    end,
+    function : TAsyncConversation
+    begin
+      Result.Sender := TutorialHub;
+      Result.OnStart := Start;
+      Result.OnSuccess := Display;
+      Result.OnError := Display;
+    end);
+```
+
+<br>
+
+___
+
+### The FinishReason
+
+Let's look at how the display method handles the function call.
+
+```Delphi
+procedure Display(Sender: TObject; Value: TConversation);
+begin
+  TutorialHub.JSONResponse := Value.JSONResponse;
+  for var Item in Value.Outputs do
+  begin
+    case Item.&Type of
+      TConversatonEvent.function_call :
+        TutorialHub.ToolCallEx(Item, TutorialHub.Tool);  //call the function execution
+
+      TConversatonEvent.message_input,
+      TConversatonEvent.message_output:
+        begin
+          for var SubItem in Item.Content do
+            case SubItem.&Type of
+              TContentChunkType.text:
+                Display(Sender, SubItem.Text);
+
+              TContentChunkType.tool_file:
+                begin
+                  case Subitem.Tool of
+                    TConversationTool.image_generation:
+                      TutorialHub.LoadImage(SubItem.FileId);
+                  end;
+                end;
+            end;
+        end;
+    end;
+  end;
+end;
+```
+
+>[!CAUTION]
+>Ensure user confirmation for actions like sending emails or making purchases to avoid unintended consequences.
 
 <br>
 
@@ -1044,6 +1139,144 @@ ___
 
 ## Structured Output
 
+ - [Custom Structured Outputs](#custom-structured-outputs)
+ - [JSON mode](#json-mode)
+
+### Custom Structured Outputs
+
+To activate JSON mode, set response_format to {"type":"json_object"}. This JSON output option is now supported for every model via our API.
+
+```Delphi
+//uses MistralAI, MistralAI.Types, MistralAI.Tutorial.VCL or MistralAI.Tutorial.FMX;
+
+  TutorialHub.JSONRequestClear;
+
+  var Schema :=
+    '{' +
+    '    "schema": {' +
+    '      "properties": {' +
+    '        "name": {' +
+    '          "title": "Name",' +
+    '          "type": "string"' +
+    '        },' +
+    '        "authors": {' +
+    '          "items": {' +
+    '            "type": "string"' +
+    '          },' +
+    '          "title": "Authors",' +
+    '          "type": "array"' +
+    '        }' +
+    '      },' +
+    '      "required": ["name", "authors"],' +
+    '      "title": "Book",' +
+    '      "type": "object",' +
+    '      "additionalProperties": false' +
+    '    },' +
+    '    "name": "book",' +
+    '    "strict": true' +
+    '  }';
+
+  //Asynchronous promise example
+  Start(TutorialHub);
+  var Promise := Client.Conversations.AsyncAwaitCreate(
+    procedure (Params: TConversationsParams)
+    begin
+      Params.Model('mistral-large-latest');
+      Params.Instructions('Extract the books information.');
+      Params.Inputs('I recently read To Kill a Mockingbird by Harper Lee.');
+      Params.CompletionArgs(
+        TCompletionArgsParams.Create
+          .ResponseFormat(Schema)
+      );
+      Params.Store(False);
+      TutorialHub.JSONRequest := Params.ToFormat();
+    end);
+
+  promise
+    .&Then<string>(
+      function (Value: TConversation): string
+      begin
+        Display(TutorialHub, Value);
+      end)
+    .&Catch(
+      procedure (E: Exception)
+      begin
+        Display(TutorialHub, E.Message);
+      end);
+```
+
+**Example output:**
+
+```Json
+{
+ "name": "To Kill a Mockingbird",
+ "authors": [
+  "Harper Lee"
+ ]
+}
+```
+
+<br>
+
+___
+
+### JSON mode
+
+By defining a strict JSON schema up front, Custom Structured Outputs compel the model to emit responses that match your exact structure—right down to field names and data types. In practice, this means you get reliably formatted JSON every time, with the correct keywords and types baked in.
+
+Refer to the [official documentation](https://docs.mistral.ai/capabilities/structured-output/custom_structured_output/)
+
+```Delphi
+//uses MistralAI, MistralAI.Types, MistralAI.Tutorial.VCL or MistralAI.Tutorial.FMX;
+
+  TutorialHub.JSONRequestClear;
+
+  //Asynchronous promise example
+  Start(TutorialHub);
+  var Promise := Client.Conversations.AsyncAwaitCreate(
+    procedure (Params: TConversationsParams)
+    begin
+      Params.Model('mistral-large-latest');
+      Params.Inputs('What is the best French meal? Return the name and the ingredients in short JSON object.');
+      Params.CompletionArgs(
+        TCompletionArgsParams.Create
+          .ResponseFormat(TResponseFormatParams.Json_Oject)
+      );
+      Params.Store(False);
+      TutorialHub.JSONRequest := Params.ToFormat();
+    end);
+
+  promise
+    .&Then<string>(
+      function (Value: TConversation): string
+      begin
+        Display(TutorialHub, Value);
+      end)
+    .&Catch(
+      procedure (E: Exception)
+      begin
+        Display(TutorialHub, E.Message);
+      end);
+```
+
+**Example output:**
+
+```Json
+{
+  "name": "Boeuf Bourguignon",
+  "ingredients": [
+    "beef",
+    "red wine",
+    "carrots",
+    "onions",
+    "garlic",
+    "bacon",
+    "mushrooms",
+    "herbs",
+    "beef stock"
+  ]
+}
+```
 
 <br>
 
