@@ -6,6 +6,14 @@
     - [Streamed](#streamed)
     - [Multi-turn conversations](#multi-turn-conversations) 
     - [Parallel method for generating text](#parallel-method-for-generating-text)
+- [Conversations managment](#conversations-managment)
+    - [Continue a conversation](#continue-a-conversation)
+    - [Retrieve conversations](#retrieve-conversations)
+    - [Restart a conversation](#restart-a-conversation)
+    - [List all created conversations](#list-all-created-conversations)
+    - [Retrieve all entries in a conversation](#retrieve-all-entries-in-a-conversation)
+    - [Retrieve all messages in a conversation](#retrieve-all-messages-in-a-conversation)
+- [Tools for conversations](#tools-for-conversations)
 - [Vision](#vision)
 - [Function calling](#function-calling)
 - [Structured Output](#structured-output)
@@ -41,7 +49,7 @@ ___
 
 ## Text generation
 
-First, let’s take a structured look at how to craft a request to the v1/conversations endpoint, whether in streaming or non-streaming mode.
+First, let’s take a structured look at how to craft a request to the `v1/conversations` endpoint, whether in streaming or non-streaming mode.
 
 ___
 
@@ -450,6 +458,570 @@ This approach enables the simultaneous execution of multiple prompts, provided t
 <br>
 
 ___
+
+## Conversations managment
+
+### Continue a conversation
+
+#### Non streamed
+
+Refer to the [official documentation](https://docs.mistral.ai/api/#tag/beta.conversations/operation/agents_api_v1_conversations_append)
+
+```Delphi
+//uses MistralAI, MistralAI.Types, MistralAI.Tutorial.VCL or MistralAI.Tutorial.FMX;
+
+  TutorialHub.JSONRequestClear;
+  ConvId := 'conversation_id'; //e.g. conv_0198261f353271a4bd9e95ef32105994
+
+  //Asynchronous promise example
+  var Promise := Client.Conversations.AsyncAwaitAppend(ConvId,
+    procedure (Params: TConversationsParams)
+    begin
+      Params.Inputs('In what proportion of the Canadian population is joual used?');
+      TutorialHub.JSONRequest := Params.ToFormat();
+    end);
+
+  Promise
+    .&Then<TConversation>(
+      function (Value: TConversation): TConversation
+      begin
+        Result := Value;
+        Display(TutorialHub, Value);
+      end)
+    .&Catch(
+      procedure (E: Exception)
+      begin
+        Display(TutorialHub, E.Message);
+      end);
+
+  //Asynchronous example
+//  Client.Conversations.AsyncAppend(ConvId,
+//    procedure (Params: TConversationsParams)
+//    begin
+//      Params.Inputs('In what proportion of the Canadian population is joual used?);
+//      TutorialHub.JSONRequest := Params.ToFormat();
+//    end,
+//    function : TAsyncConversation
+//    begin
+//      Result.Sender := TutorialHub;
+//      Result.OnStart := Start;
+//      Result.OnSuccess := Display;
+//      Result.OnError := Display;
+//    end);
+
+  //Synchronous example
+//  var Value := Client.Conversations.Append(ConvId,
+//    procedure (Params: TConversationsParams)
+//    begin
+//      Params.Inputs('In what proportion of the Canadian population is joual used?);
+//      TutorialHub.JSONRequest := Params.ToFormat();
+//    end);
+//  try
+//    Display(TutorialHub, Value);
+//  finally
+//    Value.Free;
+//  end;  
+```
+<br>
+
+___
+
+#### Streamed
+
+Refer to the [official documentation](https://docs.mistral.ai/api/#tag/beta.conversations/operation/agents_api_v1_conversations_append_stream)
+
+```Delphi
+//uses MistralAI, MistralAI.Types, MistralAI.Tutorial.VCL or MistralAI.Tutorial.FMX;
+
+  TutorialHub.JSONRequestClear;
+  ConvId := 'conversation_id'; //e.g. conv_0198261f353271a4bd9e95ef32105994 
+
+  //Asynchronous promise example
+  var Promise := Client.Conversations.AsyncAwaitAppendStream(ConvId,
+    procedure(Params: TConversationsParams)
+    begin
+      Params.Inputs('In what proportion of the Canadian population is joual used?');
+      Params.Stream;
+      Params.Store;
+      TutorialHub.JSONRequest := Params.ToFormat();
+    end,
+    function : TPromiseConversationsEvent
+    begin
+      Result.Sender := TutorialHub;
+      Result.OnProgress :=
+        procedure (Sender: TObject; Event: TConversationsEvent)
+        begin
+          DisplayStream(Sender, Event);
+        end;
+      Result.OnDoCancel := DoCancellation;
+      Result.OnCancellation :=
+        function (Sender: TObject): string
+        begin
+          Cancellation(Sender);
+        end;
+    end);
+
+  Promise
+    .&Then<string>(
+       function (Value: string): string
+       begin
+         Result := Value;
+         ShowMessage(Value);
+       end)
+    .Catch(
+      procedure (E: Exception)
+      begin
+        Display(TutorialHub, E.Message);
+      end);
+
+  //Asynchronous example
+//  Client.Conversations.AsyncAppendStream(ConvId,
+//    procedure(Params: TConversationsParams)
+//    begin
+//      Params.Inputs('In what proportion of the Canadian population is joual used?');
+//      Params.Stream;
+//      Params.Store;
+//      TutorialHub.JSONRequest := Params.ToFormat();
+//    end,
+//    function : TAsyncConversationsEvent
+//    begin
+//      Result.Sender := TutorialHub;
+//      Result.OnStart := Start;
+//      Result.OnProgress := DisplayStream;
+//      Result.OnError := Display;
+//    end);
+
+  //Synchronous example
+//  Client.Conversations.AppendStream(ConvId,
+//    procedure(Params: TConversationsParams)
+//    begin
+//      Params.Inputs('In what proportion of the Canadian population is joual used?');
+//      Params.Stream;
+//      Params.Store;
+//      TutorialHub.JSONRequest := Params.ToFormat();
+//    end,
+//    procedure(var Chunk: TConversationsEvent; IsDone: Boolean; var Cancel: Boolean)
+//    begin
+//      if (not IsDone) and Assigned(Chunk) then
+//        begin
+//          DisplayStream(TutorialHub, Chunk);
+//        end;
+//    end);
+```
+
+<br>
+
+___
+
+### Retrieve conversations
+
+Refer to the [official documentation](https://docs.mistral.ai/api/#tag/beta.conversations/operation/agents_api_v1_conversations_get)
+
+```Delphi
+//uses MistralAI, MistralAI.Types, MistralAI.Tutorial.VCL or MistralAI.Tutorial.FMX;
+
+  TutorialHub.JSONRequestClear;
+  ConvId := 'conversation_id'; //e.g. conv_0198261f353271a4bd9e95ef32105994
+  
+  //Asynchronous promise example
+  var Promise := Client.Conversations.AsyncAwaitRetrieve(ConvId);
+
+  Promise
+    .&Then<TConversationsListItem>(
+       function (Value: TConversationsListItem): TConversationsListItem
+       begin
+         Result := Value;
+         Display(TutorialHub, Value);
+       end)
+    .Catch(
+      procedure (E: Exception)
+      begin
+        Display(TutorialHub, E.Message);
+      end);
+
+  //Asynchronous example
+//  Client.Conversations.AsyncRetrieve(ConvId,
+//    function : TAsyncConversationsListItem
+//    begin
+//      Result.Sender := TutorialHub;
+//      Result.OnStart := Start;
+//      Result.OnSuccess := Display;
+//      Result.OnError := Display;
+//    end);
+
+  //Synchronous example
+//  var Value := Client.Conversations.Retrieve(ConvId);
+//  try
+//    Display(TutorialHub, Value);
+//  finally
+//    Value.Free;
+//  end;
+```
+
+<br>
+
+___
+
+### Restart a conversation
+
+#### Non streamed
+
+Refer to the [official documentation](https://docs.mistral.ai/api/#tag/beta.conversations/operation/agents_api_v1_conversations_restart)
+
+```Delphi
+//uses MistralAI, MistralAI.Types, MistralAI.Tutorial.VCL or MistralAI.Tutorial.FMX;
+
+  TutorialHub.JSONRequestClear;
+  ConvId := 'conversation_id'; //e.g. conv_0198261f353271a4bd9e95ef32105994
+  
+  //Asynchronous promise example
+  var Promise := Client.Conversations.AsyncAwaitRestart(ConvId,
+    procedure (Params: TConversationsParams)
+    begin
+      Params.Inputs('Name some dialects of French, such as Joual.');
+      Params.FromEntryId(Restart_id); //e.g. msg_019835d44cd47796b0066c6e10951eac
+      TutorialHub.JSONRequest := Params.ToFormat();
+    end);
+
+  Promise
+    .&Then<TConversation>(
+      function (Value: TConversation): TConversation
+      begin
+        Result := Value;
+        Display(TutorialHub, Value);
+      end)
+    .&Catch(
+      procedure (E: Exception)
+      begin
+        Display(TutorialHub, E.Message);
+      end);
+
+  //Asynchronous example
+//  Client.Conversations.AsyncRestart(ConvId,
+//    procedure (Params: TConversationsParams)
+//    begin
+//      Params.Inputs('Name some dialects of French, such as Joual.');
+//      Params.FromEntryId(Restart_id); //e.g. msg_019835d44cd47796b0066c6e10951eac
+//      TutorialHub.JSONRequest := Params.ToFormat();
+//    end,
+//    function : TAsyncConversation
+//    begin
+//      Result.Sender := TutorialHub;
+//      Result.OnStart := Start;
+//      Result.OnSuccess := Display;
+//      Result.OnError := Display;
+//    end);
+
+  //Synchronous example
+//  var Value := Client.Conversations.Restart(ConvId,
+//    procedure (Params: TConversationsParams)
+//    begin
+//      Params.Inputs('Name some dialects of French, such as Joual.');
+//      Params.FromEntryId(Restart_id); //e.g. msg_019835d44cd47796b0066c6e10951eac
+//      TutorialHub.JSONRequest := Params.ToFormat();
+//    end);
+//  try
+//    Display(TutorialHub, Value);
+//  finally
+//    Value.Free;
+//  end;
+```
+<br>
+
+___
+
+#### Streamed
+
+Refer to the [official documentation](https://docs.mistral.ai/api/#tag/beta.conversations/operation/agents_api_v1_conversations_restart_stream)
+
+```Delphi
+//uses MistralAI, MistralAI.Types, MistralAI.Tutorial.VCL or MistralAI.Tutorial.FMX;
+
+  TutorialHub.JSONRequestClear;
+  ConvId := 'conversation_id'; //e.g. conv_0198261f353271a4bd9e95ef32105994
+  
+  //Asynchronous promise example
+  var Promise := Client.Conversations.AsyncAwaitRestartStream(ConvId,
+    procedure (Params: TConversationsParams)
+    begin
+      Params.Inputs('Name some dialects of French, such as Joual.l');
+      Params.FromEntryId(Restart_id); //e.g. msg_019835d44cd47796b0066c6e10951eac
+      Params.Stream;
+      Params.Store;
+      Params.HandoffExecution('server');
+      TutorialHub.JSONRequest := Params.ToFormat();
+    end,
+    function : TPromiseConversationsEvent
+    begin
+      Result.Sender := TutorialHub;
+      Result.OnProgress :=
+        procedure (Sender: TObject; Event: TConversationsEvent)
+        begin
+          DisplayStream(Sender, Event);
+        end;
+      Result.OnDoCancel := DoCancellation;
+      Result.OnCancellation :=
+        function (Sender: TObject): string
+        begin
+          Cancellation(Sender);
+        end;
+    end);
+
+  Promise
+    .&Then<string>(
+       function (Value: string): string
+       begin
+         Result := Value;
+         ShowMessage(Value);
+       end)
+    .Catch(
+      procedure (E: Exception)
+      begin
+        Display(TutorialHub, E.Message);
+      end);
+
+  //Asynchronous example
+//  Client.Conversations.AsyncRestartStream(ConvId,
+//    procedure (Params: TConversationsParams)
+//    begin
+//      Params.Inputs('Name some dialects of French, such as Joual.');
+//      Params.FromEntryId(Restart_id); //e.g. msg_019835d44cd47796b0066c6e10951eac
+//      Params.Stream;
+//      Params.Store;
+//      Params.HandoffExecution('server');
+//      TutorialHub.JSONRequest := Params.ToFormat();
+//    end,
+//    function : TAsyncConversationsEvent
+//    begin
+//      Result.Sender := TutorialHub;
+//      Result.OnStart := Start;
+//      Result.OnProgress := DisplayStream;
+//      Result.OnError := Display;
+//    end);
+
+  //Synchronous example
+//  Client.Conversations.RestartStream(ConvId,
+//    procedure (Params: TConversationsParams)
+//    begin
+//      Params.Inputs('Name some dialects of French, such as Joual.');
+//      Params.FromEntryId(Restart_id); //e.g. msg_019835d44cd47796b0066c6e10951eac
+//      Params.Stream;
+//      Params.Store;
+//      Params.HandoffExecution('server');
+//      TutorialHub.JSONRequest := Params.ToFormat();
+//    end,
+//    procedure(var Chunk: TConversationsEvent; IsDone: Boolean; var Cancel: Boolean)
+//    begin
+//      if (not IsDone) and Assigned(Chunk) then
+//        begin
+//          DisplayStream(TutorialHub, Chunk);
+//        end;
+//    end);
+```
+
+<br>
+
+___
+
+
+### List all created conversations
+
+Refer to the [official documentation](https://docs.mistral.ai/api/#tag/beta.conversations/operation/agents_api_v1_conversations_list)
+
+```Delphi
+//uses MistralAI, MistralAI.Types, MistralAI.Tutorial.VCL or MistralAI.Tutorial.FMX;
+
+  TutorialHub.JSONRequestClear;
+
+  //Asynchronous promise example
+  var Promise := Client.Conversations.AsyncAwaitList(
+    procedure (Params: TConversationsListParams)
+    begin
+      Params.Page(0);
+      Params.PageSize(100);
+    end);
+
+  Promise
+    .&Then<TConversationsList>(
+      function (Value: TConversationsList): TConversationsList
+      begin
+        Result := Value;
+        Display(TutorialHub, Value);
+      end)
+    .&Catch(
+      procedure (E: Exception)
+      begin
+        Display(TutorialHub, E.Message);
+      end);
+
+  //Asynchronous example
+//  Client.Conversations.AsyncList(
+//    procedure (Params: TConversationsListParams)
+//    begin
+//      Params.Page(0);
+//      Params.PageSize(100);
+//    end,
+//    function : TAsyncConversationsList
+//    begin
+//      Result.Sender := TutorialHub;
+//      Result.OnStart := Start;
+//      Result.OnSuccess := Display;
+//      Result.OnError := Display;
+//    end);
+
+  //Synchronous example
+//  var Value := Client.Conversations.List(
+//    procedure (Params: TConversationsListParams)
+//    begin
+//      Params.Page(0);
+//      Params.PageSize(100);
+//    end);
+//
+//  try
+//    Display(TutorialHub, Value);
+//  finally
+//    Value.Free;
+//  end;
+```
+
+<br>
+
+___
+
+### Retrieve all entries in a conversation
+
+Refer to the [official documentation](https://docs.mistral.ai/api/#tag/beta.conversations/operation/agents_api_v1_conversations_history)
+
+```Delphi
+//uses MistralAI, MistralAI.Types, MistralAI.Tutorial.VCL or MistralAI.Tutorial.FMX;
+
+  TutorialHub.JSONRequestClear;
+  ConvId := 'conversation_id'; //e.g. conv_0198261f353271a4bd9e95ef32105994
+  
+  //Asynchronous promise example
+  var Promise := Client.Conversations.AsyncAwaitGetHistory(ConvId);
+
+  Promise
+    .&Then<TRetrievedEntries>(
+       function (Value: TRetrievedEntries): TRetrievedEntries
+       begin
+         Result := Value;
+         Display(TutorialHub, Value);
+       end)
+    .Catch(
+      procedure (E: Exception)
+      begin
+        Display(TutorialHub, E.Message);
+      end);
+
+  //Asynchronous example
+//  Client.Conversations.AsyncGetHistory(ConvId,
+//    function : TAsyncRetrievedEntries
+//    begin
+//      Result.Sender := TutorialHub;
+//      Result.OnStart := Start;
+//      Result.OnSuccess := Display;
+//      Result.OnError := Display;
+//    end);
+
+  //Synchronous example
+//  var Value := Client.Conversations.GetHistory(ConvId);
+//  try
+//    Display(TutorialHub, Value);
+//  finally
+//    Value.Free;
+//  end;
+```
+
+<br>
+
+___
+
+### Retrieve all messages in a conversation
+
+Refer to the [official documentation](https://docs.mistral.ai/api/#tag/beta.conversations/operation/agents_api_v1_conversations_messages)
+
+```Delphi
+//uses MistralAI, MistralAI.Types, MistralAI.Tutorial.VCL or MistralAI.Tutorial.FMX;
+
+  TutorialHub.JSONRequestClear;
+  ConvId := 'conversation_id'; //e.g. conv_0198261f353271a4bd9e95ef32105994
+  
+  //Asynchronous promise example
+  var Promise := Client.Conversations.AsyncAwaitGetMessages(ConvId);
+
+  Promise
+    .&Then<TRetrieveMessages>(
+       function (Value: TRetrieveMessages): TRetrieveMessages
+       begin
+         Result := Value;
+         Display(TutorialHub, Value);
+       end)
+    .Catch(
+      procedure (E: Exception)
+      begin
+        Display(TutorialHub, E.Message);
+      end);
+
+  //Asynchronous example
+//  Client.Conversations.AsyncGetMessages(ConvId,
+//    function : TAsyncRetrieveMessages
+//    begin
+//      Result.Sender := TutorialHub;
+//      Result.OnStart := Start;
+//      Result.OnSuccess := Display;
+//      Result.OnError := Display;
+//    end);
+
+  //Synchronous example
+//  var Value := Client.Conversations.GetMessages(ConvId);
+//  try
+//    Display(TutorialHub, Value);
+//  finally
+//    Value.Free;
+//  end;
+```
+
+<br>
+
+___
+
+## Tools for conversations
+
+Connectors are tools that conversations—or the agents driving them—can invoke at any point to fulfill requests. They are deployed and available for on-demand use within agent workflows.
+
+Additionally, connectors can be called directly by users through the Conversations API without the need to create an agent first.
+
+There are four primary tools available:
+- **Web Search**
+- **Code Interpreter**
+- **Image Generation**
+- **Document Library**
+
+Additionally, **reasoning** can be treated as a de facto tool in its own right.
+
+We do not provide code snippets that demonstrate direct use of the tools within conversations; instead, those tool-specific snippets are exposed via agents. Since a conversation can delegate to agents, this simplifies the tutorial.
+
+Please refer to the [Conversation & Agents](https://github.com/MaxiDonkey/DelphiMistralAI/blob/main/guides/AgentsConnectors.md) section.
+
+<br>
+
+___
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

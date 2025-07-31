@@ -5,6 +5,7 @@
     - [Streamed](#streamed)
     - [Multi-turn conversations](#multi-turn-conversations) 
     - [Parallel method for generating text](#parallel-method-for-generating-text)
+    - [Reasoning](#reasoning)
 - [Input Audio for Chat](#input-audio-for-chat)
 - [Vision](#vision)
     - [Analyze single source](#analyze-single-source)
@@ -359,6 +360,134 @@ This approach enables the simultaneous execution of multiple prompts, provided t
 
 <br>
 
+___
+
+### Reasoning
+
+Refer to the [official documentation](https://docs.mistral.ai/capabilities/reasoning/)
+
+Reasoning is the follow-up phase to Chain of Thought (CoT); it refers to the logical progression the model generates internally before arriving at a final response. Enhancing reasoning involves training the model to freely produce these chains of thought ahead of the answer, enabling deeper exploration of the problem. By allocating additional computation at inference time—often called Test Time Computation—the model can emit more intermediate tokens, refine its internal deliberation, and ultimately deliver a stronger, more accurate solution.
+
+>[!NOTE]
+>Two approaches are available to enable reasoning: rely on MistralAI’s built-in instruction chain or supply your own custom instructions.
+
+Here, we’re providing only the streaming approach based on Promises; the simpler scenarios are left to the reader’s discretion.
+
+<br>
+
+___
+
+#### Based on MistralAI’s built-in instruction
+
+```Delphi
+//uses MistralAI, MistralAI.Types, MistralAI.Tutorial.VCL or MistralAI.Tutorial.FMX;
+
+  TutorialHub.JSONResponseClear;
+
+  //Asynchronous promise example
+  var Promise := Client.Chat.AsyncAwaitCreateStream(
+    procedure (Params: TChatParams)
+    begin
+      Params.Model('magistral-medium-latest');
+      Params.Messages([
+        Payload.User('John is one of 4 children. The first sister is 4 years old. Next year, the second sister will be twice as old as the first sister. The third sister is two years older than the second sister. The third sister is half the age of her older brother. How old is John?')]);
+      Params.Stream;
+      TutorialHub.JSONRequest := Params.ToFormat();
+    end,
+    function : TPromiseChatStream
+    begin
+      Result.Sender := TutorialHub;
+      Result.OnStart := Start;
+
+      Result.OnProgress :=
+        procedure (Sender: TObject; Chunk: TChat)
+        begin
+          DisplayStream(Sender, Chunk);
+        end;
+
+      Result.OnDoCancel := DoCancellation;
+
+      Result.OnCancellation :=
+        function (Sender: TObject): string
+        begin
+          Cancellation(Sender);
+        end
+    end);
+
+  Promise
+    .&Then<string>(
+      function (Value: string): string
+      begin
+        Result := Value;
+        ShowMessage(Result);
+      end)
+    .&Catch(
+      procedure (E: Exception)
+      begin
+        Display(TutorialHub, E.Message);
+      end);
+```
+
+<br>
+
+___
+
+#### Based on your own custom instructions
+
+```Delphi
+//uses MistralAI, MistralAI.Types, MistralAI.Tutorial.VCL or MistralAI.Tutorial.FMX;
+
+  TutorialHub.JSONResponseClear;
+
+  //Asynchronous promise example
+  var Promise := Client.Chat.AsyncAwaitCreateStream(
+    procedure (Params: TChatParams)
+    begin
+      Params.Model('magistral-medium-latest');
+      Params.Messages([
+        PayLoad.System(ReasoningEnglishInstructions), //insert your own custom instructions
+        Payload.User('John is one of 4 children. The first sister is 4 years old. Next year, the second sister will be twice as old as the first sister. The third sister is two years older than the second sister. The third sister is half the age of her older brother. How old is John?')]);
+      Params.Stream;
+      TutorialHub.JSONRequest := Params.ToFormat();
+    end,
+    function : TPromiseChatStream
+    begin
+      Result.Sender := TutorialHub;
+      Result.OnStart := Start;
+
+      Result.OnProgress :=
+        procedure (Sender: TObject; Chunk: TChat)
+        begin
+          DisplayStream(Sender, Chunk);
+        end;
+
+      Result.OnDoCancel := DoCancellation;
+
+      Result.OnCancellation :=
+        function (Sender: TObject): string
+        begin
+          Cancellation(Sender);
+        end
+    end);
+
+  Promise
+    .&Then<string>(
+      function (Value: string): string
+      begin
+        Result := Value;
+        ShowMessage(Result);
+      end)
+    .&Catch(
+      procedure (E: Exception)
+      begin
+        Display(TutorialHub, E.Message);
+      end);
+```
+
+>[!NOTE]
+> The string `ReasoningEnglishInstructions` is available in the `MistralAI.Types` unit.
+
+<br>
 ___
 
 ## Input Audio for Chat
