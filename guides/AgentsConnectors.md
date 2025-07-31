@@ -1,7 +1,6 @@
 # Agents & connectors (v1/agents)
 
 - [Introduction](#introduction)
-
 - [Agent creation](#agent-creation)
 - [Agent listing](#agent-listing)
 - [Get agent](#get-agent)
