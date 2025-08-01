@@ -57,7 +57,7 @@ ___
 
 Create a new agent giving it instructions, tools, description. The agent is then available to be used as a regular assistant in a conversation or as part of an agent pool from which it can be used.
 
-```Delphi
+```Pascal
 //uses MistralAI, MistralAI.Types, MistralAI.Tutorial.VCL or MistralAI.Tutorial.FMX;
 
   TutorialHub.JSONRequestClear;
@@ -126,7 +126,7 @@ ___
 
 Retrieve a list of agent entities sorted by creation time.
 
-```Delphi
+```Pascal
 //uses MistralAI, MistralAI.Types, MistralAI.Tutorial.VCL or MistralAI.Tutorial.FMX;
 
   TutorialHub.JSONRequestClear;
@@ -189,7 +189,7 @@ ___
 
 Given an agent retrieve an agent entity with its attributes.
 
-```Delphi
+```Pascal
 //uses MistralAI, MistralAI.Types, MistralAI.Tutorial.VCL or MistralAI.Tutorial.FMX;
 
   TutorialHub.JSONRequestClear;
@@ -239,7 +239,7 @@ ___
 
 Update an agent attributes and create a new version.
 
-```Delphi
+```Pascal
 //uses MistralAI, MistralAI.Types, MistralAI.Tutorial.VCL or MistralAI.Tutorial.FMX;
 
   TutorialHub.JSONRequestClear;
@@ -301,7 +301,7 @@ ___
 
 Switch the version of an agent.
 
-```Delphi
+```Pascal
 //uses MistralAI, MistralAI.Types, MistralAI.Tutorial.VCL or MistralAI.Tutorial.FMX;
 
   TutorialHub.JSONRequestClear;
@@ -377,7 +377,7 @@ ___
 
 #### Agent creation
 
-```Delphi
+```Pascal
 //uses MistralAI, MistralAI.Types, MistralAI.Tutorial.VCL or MistralAI.Tutorial.FMX;
 
   TutorialHub.JSONRequestClear;
@@ -420,7 +420,7 @@ ___
 
 #### Using the agent
 
-```Delphi
+```Pascal
 //uses MistralAI, MistralAI.Types, MistralAI.Tutorial.VCL or MistralAI.Tutorial.FMX;
 
   TutorialHub.JSONRequestClear;
@@ -474,7 +474,7 @@ ___
 
 #### Agent creation
 
-```Delphi
+```Pascal
 //uses MistralAI, MistralAI.Types, MistralAI.Tutorial.VCL or MistralAI.Tutorial.FMX;
   
   TutorialHub.JSONRequestClear;
@@ -517,7 +517,7 @@ ___
 
 #### Using the agent
 
-```Delphi
+```Pascal
 //uses MistralAI, MistralAI.Types, MistralAI.Tutorial.VCL or MistralAI.Tutorial.FMX;
 
   TutorialHub.JSONRequestClear;
@@ -559,7 +559,7 @@ ___
 
 #### Agent creation
 
-```Delphi
+```Pascal
 //uses MistralAI, MistralAI.Types, MistralAI.Tutorial.VCL or MistralAI.Tutorial.FMX;
 
   TutorialHub.JSONRequestClear;
@@ -602,7 +602,7 @@ ___
 
 #### Using the agent
 
-```Delphi
+```Pascal
 //uses MistralAI, MistralAI.Types, MistralAI.Tutorial.VCL or MistralAI.Tutorial.FMX;
 
   TutorialHub.JSONRequestClear;
@@ -643,7 +643,7 @@ ___
 
 #### Agent creation
 
-```Delphi
+```Pascal
 //uses MistralAI, MistralAI.Types, MistralAI.Tutorial.VCL or MistralAI.Tutorial.FMX;
 
   //Asynchronous promise example
@@ -684,7 +684,7 @@ ___
 
 #### Using the agent
 
-```Delphi
+```Pascal
 //uses MistralAI, MistralAI.Types, MistralAI.Tutorial.VCL or MistralAI.Tutorial.FMX;
 
     TutorialHub.JSONRequestClear;
@@ -741,7 +741,7 @@ ___
 
 #### Agent creation
 
-```Delphi
+```Pascal
 //uses MistralAI, MistralAI.Types, MistralAI.Tutorial.VCL or MistralAI.Tutorial.FMX;
 
   //Asynchronous promise example
@@ -782,7 +782,7 @@ ___
 
 #### Using the agent
 
-```Delphi
+```Pascal
 //uses MistralAI, MistralAI.Types, MistralAI.Tutorial.VCL or MistralAI.Tutorial.FMX;
 
   TutorialHub.JSONRequestClear;

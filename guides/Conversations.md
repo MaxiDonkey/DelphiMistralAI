@@ -55,7 +55,7 @@ ___
 
 ### Non streamed
 
-```Delphi
+```Pascal
 //uses MistralAI, MistralAI.Types, MistralAI.Tutorial.VCL or MistralAI.Tutorial.FMX;
 
   TutorialHub.JSONRequestClear;
@@ -142,7 +142,7 @@ ___
 
 ### Streamed
 
-```Delphi
+```Pascal
 //uses MistralAI, MistralAI.Types, MistralAI.Tutorial.VCL or MistralAI.Tutorial.FMX;
 
   TutorialHub.JSONRequestClear;
@@ -264,7 +264,7 @@ ___
 ##### Step 1 
 **Initialize the conversational agent**
 
-```Delphi
+```Pascal
 var AgentId: string;
 
 //Asynchronous promise example
@@ -301,7 +301,7 @@ ___
 ##### Step 2
 **Send the initial request to the endpoint to start the exchange and retrieve the conversation_id**
 
-```Delphi
+```Pascal
   var Promise := Client.Conversations.AsyncAwaitCreateStream(
      procedure (Params: TConversationsParams)
     begin
@@ -343,7 +343,7 @@ ___
 
 We can continue the conversation by using the Append or AppendStream methods, as well as their asynchronous variants.
 
-```Delphi
+```Pascal
   var Promise := Client.Conversations.AsyncAwaitAppendStream(ConvId,
     procedure(Params: TConversationsParams)
     begin
@@ -379,7 +379,7 @@ This approach enables the simultaneous execution of multiple prompts, provided t
 
 #### Example : Two prompts processed in parallel.
 
-```Delphi
+```Pascal
 //uses MistralAI, MistralAI.Types, MistralAI.Tutorial.VCL or MistralAI.Tutorial.FMX;
 
   TutorialHub.JSONRequestClear;
@@ -463,7 +463,7 @@ ___
 
 The implementation of reasoning with the `v1/conversations` endpoint differs from that of `v1/chat/completions`. In particular, the `v1/conversations` API does not incorporate tokenized “thought” blocks via control tokens; consequently, there is no explicit trace of reflection within the content segments.
 
-```Delphi
+```Pascal
 //uses MistralAI, MistralAI.Types, MistralAI.Tutorial.VCL or MistralAI.Tutorial.FMX;
 
   TutorialHub.JSONRequestClear;
@@ -561,7 +561,7 @@ ___
 
 Refer to the [official documentation](https://docs.mistral.ai/api/#tag/beta.conversations/operation/agents_api_v1_conversations_append)
 
-```Delphi
+```Pascal
 //uses MistralAI, MistralAI.Types, MistralAI.Tutorial.VCL or MistralAI.Tutorial.FMX;
 
   TutorialHub.JSONRequestClear;
@@ -624,7 +624,7 @@ ___
 
 Refer to the [official documentation](https://docs.mistral.ai/api/#tag/beta.conversations/operation/agents_api_v1_conversations_append_stream)
 
-```Delphi
+```Pascal
 //uses MistralAI, MistralAI.Types, MistralAI.Tutorial.VCL or MistralAI.Tutorial.FMX;
 
   TutorialHub.JSONRequestClear;
@@ -711,7 +711,7 @@ ___
 
 Refer to the [official documentation](https://docs.mistral.ai/api/#tag/beta.conversations/operation/agents_api_v1_conversations_get)
 
-```Delphi
+```Pascal
 //uses MistralAI, MistralAI.Types, MistralAI.Tutorial.VCL or MistralAI.Tutorial.FMX;
 
   TutorialHub.JSONRequestClear;
@@ -762,7 +762,7 @@ ___
 
 Refer to the [official documentation](https://docs.mistral.ai/api/#tag/beta.conversations/operation/agents_api_v1_conversations_restart)
 
-```Delphi
+```Pascal
 //uses MistralAI, MistralAI.Types, MistralAI.Tutorial.VCL or MistralAI.Tutorial.FMX;
 
   TutorialHub.JSONRequestClear;
@@ -828,7 +828,7 @@ ___
 
 Refer to the [official documentation](https://docs.mistral.ai/api/#tag/beta.conversations/operation/agents_api_v1_conversations_restart_stream)
 
-```Delphi
+```Pascal
 //uses MistralAI, MistralAI.Types, MistralAI.Tutorial.VCL or MistralAI.Tutorial.FMX;
 
   TutorialHub.JSONRequestClear;
@@ -922,7 +922,7 @@ ___
 
 Refer to the [official documentation](https://docs.mistral.ai/api/#tag/beta.conversations/operation/agents_api_v1_conversations_list)
 
-```Delphi
+```Pascal
 //uses MistralAI, MistralAI.Types, MistralAI.Tutorial.VCL or MistralAI.Tutorial.FMX;
 
   TutorialHub.JSONRequestClear;
@@ -986,7 +986,7 @@ ___
 
 Refer to the [official documentation](https://docs.mistral.ai/api/#tag/beta.conversations/operation/agents_api_v1_conversations_history)
 
-```Delphi
+```Pascal
 //uses MistralAI, MistralAI.Types, MistralAI.Tutorial.VCL or MistralAI.Tutorial.FMX;
 
   TutorialHub.JSONRequestClear;
@@ -1035,7 +1035,7 @@ ___
 
 Refer to the [official documentation](https://docs.mistral.ai/api/#tag/beta.conversations/operation/agents_api_v1_conversations_messages)
 
-```Delphi
+```Pascal
 //uses MistralAI, MistralAI.Types, MistralAI.Tutorial.VCL or MistralAI.Tutorial.FMX;
 
   TutorialHub.JSONRequestClear;
@@ -1117,7 +1117,7 @@ ___
 
 ### Display a stream text
 
-```Delphi
+```Pascal
 procedure TVCLTutorialHub.WeatherFunctionEx(const Value: TMessageOutputEntry;
   Func: IFunctionCore);
 begin
@@ -1158,7 +1158,7 @@ ___
 
 Building the query using the Weather tool. (Simply copy/paste this last code to test the usage of the functions.)
 
-```Delphi
+```Pascal
 //uses MistralAI, MistralAI.Types, MistralAI.Tutorial.VCL, MistralAI.Functions.Example or Mistral.Tutorial.FMX;
 
   TutorialHub.JSONRequestClear;
@@ -1193,7 +1193,7 @@ ___
 
 Let's look at how the display method handles the function call.
 
-```Delphi
+```Pascal
 procedure Display(Sender: TObject; Value: TConversation);
 begin
   TutorialHub.JSONResponse := Value.JSONResponse;
@@ -1241,7 +1241,7 @@ ___
 
 To activate JSON mode, set response_format to {"type":"json_object"}. This JSON output option is now supported for every model via our API.
 
-```Delphi
+```Pascal
 //uses MistralAI, MistralAI.Types, MistralAI.Tutorial.VCL or MistralAI.Tutorial.FMX;
 
   TutorialHub.JSONRequestClear;
@@ -1321,7 +1321,7 @@ By defining a strict JSON schema up front, Custom Structured Outputs compel the 
 
 Refer to the [official documentation](https://docs.mistral.ai/capabilities/structured-output/custom_structured_output/)
 
-```Delphi
+```Pascal
 //uses MistralAI, MistralAI.Types, MistralAI.Tutorial.VCL or MistralAI.Tutorial.FMX;
 
   TutorialHub.JSONRequestClear;

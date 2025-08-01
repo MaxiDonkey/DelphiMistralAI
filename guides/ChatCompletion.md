@@ -36,7 +36,7 @@ ___
 
 ### Non streamed
 
-```Delphi
+```Pascal
 //uses MistralAI, MistralAI.Types, MistralAI.Tutorial.VCL or MistralAI.Tutorial.FMX;
 
   TutorialHub.JSONRequestClear;
@@ -112,7 +112,7 @@ ___
 
 ### Streamed
 
-```Delphi
+```Pascal
 //uses MistralAI, MistralAI.Types, MistralAI.Tutorial.VCL or MistralAI.Tutorial.FMX;
   
   TutorialHub.JSONResponseClear;
@@ -220,7 +220,7 @@ The `MistralAI Chat API` enables the creation of interactive chat experiences ta
 - **Educational tools**
 - **Customer support assistants**
 
-```Delphi
+```Pascal
 //uses MistralAI, MistralAI.Types, MistralAI.Tutorial.VCL or MistralAI.Tutorial.FMX;
 
   //Asynchronous example
@@ -283,7 +283,7 @@ This approach enables the simultaneous execution of multiple prompts, provided t
 
 #### Example : Two prompts processed in parallel.
 
-```Delphi
+```Pascal
 //uses MistralAI, MistralAI.Types, MistralAI.Tutorial.VCL or MistralAI.Tutorial.FMX;
 
   TutorialHub.JSONRequestClear;
@@ -379,7 +379,7 @@ ___
 
 #### Based on MistralAI’s built-in instruction
 
-```Delphi
+```Pascal
 //uses MistralAI, MistralAI.Types, MistralAI.Tutorial.VCL or MistralAI.Tutorial.FMX;
 
   TutorialHub.JSONResponseClear;
@@ -434,7 +434,7 @@ ___
 
 #### Based on your own custom instructions
 
-```Delphi
+```Pascal
 //uses MistralAI, MistralAI.Types, MistralAI.Tutorial.VCL or MistralAI.Tutorial.FMX;
 
   TutorialHub.JSONResponseClear;
@@ -498,7 +498,7 @@ It’s possible to include an audio file when calling the `v1/chat/completions` 
 
 Refer to [official documentation](https://docs.mistral.ai/capabilities/audio/)
 
-```Delphi
+```Pascal
 //uses MistralAI, MistralAI.Types, MistralAI.Tutorial.VCL or MistralAI.Tutorial.FMX;
 
   TutorialHub.JSONRequestClear;
@@ -548,7 +548,7 @@ Refer to the [official documentation](https://docs.mistral.ai/capabilities/visio
 
 **Non streamed code example**
 
-```Delphi
+```Pascal
 //uses MistralAI, MistralAI.Types, MistralAI.Tutorial.VCL or MistralAI.Tutorial.FMX;
 
   TutorialHub.JSONRequestClear;
@@ -621,7 +621,7 @@ ___
 
 **Streamed code example**
 
-```Delphi
+```Pascal
 //uses MistralAI, MistralAI.Types, MistralAI.Tutorial.VCL or MistralAI.Tutorial.FMX;
 
   TutorialHub.JSONRequestClear;
@@ -774,7 +774,7 @@ In this unit, this schema will be used for function calls.
 
 We will use the TWeatherReportFunction plugin defined in the `MistralAI.Functions.Example` unit.
 
-```Delphi
+```Pascal
   var Weather := TWeatherReportFunction.CreateInstance;
   //or
   var Weather := TWeatherReportFunction.CreateInstance(True);  //To activate `Strict` option
@@ -797,7 +797,7 @@ ___
 
 #### Display a stream text
 
-```Delphi
+```Pascal
 procedure TVCLTutorialHub.WeatherFunction(const Value: TCalledFunction;
   Func: IFunctionCore);
 begin
@@ -837,7 +837,7 @@ ___
 
 Building the query using the Weather tool. (Simply copy/paste this last code to test the usage of the functions.)
 
-```Delphi
+```Pascal
 //uses MistralAI, MistralAI.Types, MistralAI.Tutorial.VCL, MistralAI.Functions.Example or Mistral.Tutorial.FMX;
 
   TutorialHub.JSONRequestClear;
@@ -891,7 +891,7 @@ ___
 
 Let's look at how the display method handles the function call.
 
-```Delphi
+```Pascal
 procedure Display(Sender: TObject; Value: TChat);
 begin
   TutorialHub.JSONResponse := Value.JSONResponse;
@@ -936,7 +936,7 @@ ___
 
 To activate JSON mode, set response_format to {"type":"json_object"}. This JSON output option is now supported for every model via our API.
 
-```Delphi
+```Pascal
 //uses MistralAI, MistralAI.Types, MistralAI.Tutorial.VCL or MistralAI.Tutorial.FMX;
 
   TutorialHub.JSONRequestClear;
@@ -997,7 +997,7 @@ By defining a strict JSON schema up front, Custom Structured Outputs compel the 
 
 Refer to the [official documentation](https://docs.mistral.ai/capabilities/structured-output/custom_structured_output/)
 
-```Delphi
+```Pascal
 //uses MistralAI, MistralAI.Types, MistralAI.Tutorial.VCL or MistralAI.Tutorial.FMX;
 
   TutorialHub.JSONRequestClear;
