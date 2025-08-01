@@ -6,6 +6,7 @@
     - [Streamed](#streamed)
     - [Multi-turn conversations](#multi-turn-conversations) 
     - [Parallel method for generating text](#parallel-method-for-generating-text)
+    - [Reasoning](#reasoning)
 - [Conversations managment](#conversations-managment)
     - [Continue a conversation](#continue-a-conversation)
     - [Retrieve conversations](#retrieve-conversations)
@@ -453,6 +454,100 @@ This approach enables the simultaneous execution of multiple prompts, provided t
 //      Result.OnError := Display;
 //    end);
 ```
+
+<br>
+
+___
+
+### Reasoning
+
+The implementation of reasoning with the `v1/conversations` endpoint differs from that of `v1/chat/completions`. In particular, the `v1/conversations` API does not incorporate tokenized “thought” blocks via control tokens; consequently, there is no explicit trace of reflection within the content segments.
+
+```Delphi
+//uses MistralAI, MistralAI.Types, MistralAI.Tutorial.VCL or MistralAI.Tutorial.FMX;
+
+  TutorialHub.JSONRequestClear;
+
+  //Asynchronous promise example
+  var Promise := Client.Conversations.AsyncAwaitCreateStream(
+    procedure (Params: TConversationsParams)
+    begin
+      Params.Model('magistral-small-latest');
+      Params.Instructions;
+      Params.Inputs('John is one of 4 children. The first sister is 4 years old. Next year, the second sister will be twice as old as the first sister. The third sister is two years older than the second sister. The third sister is half the age of her older brother. How old is John?');
+      Params.Store(False);
+      Params.Stream;
+      TutorialHub.JSONRequest := Params.ToFormat();
+    end,
+    function : TPromiseConversationsEvent
+    begin
+      Result.Sender := TutorialHub;
+      Result.OnProgress :=
+        procedure (Sender: TObject; Event: TConversationsEvent)
+        begin
+          DisplayStream(Sender, Event);
+        end;
+      Result.OnDoCancel := DoCancellation;
+      Result.OnCancellation :=
+        function (Sender: TObject): string
+        begin
+          Cancellation(Sender);
+        end;
+    end);
+
+    Promise
+    .&Then<string>(
+      function (Value: string): string
+      begin
+        Result := Value;
+      end)
+    .&Catch(
+      procedure (E: Exception)
+      begin
+        Display(TutorialHub, E.Message);
+      end);
+
+  //Asynchronous example
+//  Client.Conversations.AsyncCreateStream(
+//    procedure (Params: TConversationsParams)
+//    begin
+//      Params.Model('magistral-small-latest');
+//      Params.Instructions;
+//      Params.Inputs('John is one of 4 children. The first sister is 4 years old. Next year, the second sister will be twice as old as the first sister. The third sister is two years older than the second sister. The third sister is half the age of her older brother. How old is John?');
+//      Params.Store(False);
+//      Params.Stream;
+//      TutorialHub.JSONRequest := Params.ToFormat();
+//    end,
+//    function : TAsyncConversationsEvent
+//    begin
+//      Result.Sender := TutorialHub;
+//      Result.OnStart := Start;
+//      Result.OnProgress := DisplayStream;
+//      Result.OnError := Display;
+//    end);
+
+  //Synchronous example
+//  Client.Conversations.CreateStream(
+//    procedure (Params: TConversationsParams)
+//    begin
+//      Params.Model('magistral-small-latest');
+//      Params.Instructions;
+//      Params.Inputs('John is one of 4 children. The first sister is 4 years old. Next year, the second sister will be twice as old as the first sister. The third sister is two years older than the second sister. The third sister is half the age of her older brother. How old is John?');
+//      Params.Store(False);
+//      Params.Stream;
+//      TutorialHub.JSONRequest := Params.ToFormat();
+//    end,
+//    procedure(var Chunk: TConversationsEvent; IsDone: Boolean; var Cancel: Boolean)
+//    begin
+//      if (not IsDone) and Assigned(Chunk) then
+//        begin
+//          DisplayStream(TutorialHub, Chunk);
+//        end;
+//    end);
+```
+
+>[!NOTE]
+> The string `ReasoningEnglishInstructions` is available in the `MistralAI.Types` unit.
 
 <br>
 
