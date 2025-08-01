@@ -44,7 +44,7 @@ The next step involves creating a fine-tuning job.
 You can also manage fine-tuning jobs using the available List, Retrieve, and Cancel methods. For the Retrieve and Cancel operations, you will need to supply the job ID as a parameter.
 
 
-**Operations**
+### Operations
 - [Create a Fine-tuning Job](#create-a-fine-tuning-job)
 - [Delete a Fine-tuned Model](#delete-a-fine-tuned-model)
 - [List of Fine-tune Job](#list-of-fine-tune-job)
