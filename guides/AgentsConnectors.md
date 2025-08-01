@@ -361,6 +361,8 @@ ___
 
 ## Connectors
 
+Only code snippets for the asynchronous approach (returning a Promise) are included. Templates for synchronous implementations and straightforward asynchronous cases have already been provided; adapting them takes only seconds and is left to the reader.
+
 - [Reasoning](#reasoning)
 - [Web search](#web-search)
 - [Image generation](#image-generation)
@@ -373,11 +375,181 @@ ___
 
 ### Reasoning
 
+#### Agent creation
+
+```Delphi
+//uses MistralAI, MistralAI.Types, MistralAI.Tutorial.VCL or MistralAI.Tutorial.FMX;
+
+  TutorialHub.JSONRequestClear;
+
+  //Asynchronous promise example
+  var Promise := Client.ConversationsAgent.AsyncAwaitCreate(
+    procedure (Params: TConversationsAgentParams)
+    begin
+      Params.Model('magistral-medium-2506');
+      Params.Name('Web Search Agent');
+      Params.Description('Agent able to reasoning');
+      Params.Instructions; //use the string `ReasoningEnglishInstructions` defined in the MistralAI.Types unit.
+      Params.Tools([web_search]);
+      Params.CompletionArgs(
+        TCompletionArgsParams.Create
+          .Temperature(0.3)
+          .TopP(0.95)
+        );
+      TutorialHub.JSONRequest := Params.ToFormat();
+    end);
+
+  Promise
+    .&Then<TConversationsAgent>(
+      function (Value: TConversationsAgent): TConversationsAgent
+      begin
+        Result := Value;
+        Display(TutorialHub, 'Agent created');
+        Display(TutorialHub, Value);
+      end)
+    .&Catch(
+      procedure (E: Exception)
+      begin
+        Display(TutorialHub, E.Message);
+      end);
+```
+
+<br>
+
+___
+
+#### Using the agent
+
+```Delphi
+//uses MistralAI, MistralAI.Types, MistralAI.Tutorial.VCL or MistralAI.Tutorial.FMX;
+
+  TutorialHub.JSONRequestClear;
+
+  var Agent_id := 'id_value';  //e.g. ag_01985efe4b657539a2d6380dad6c5c66
+
+  //Asynchronous promise example
+  var Promise := Client.Conversations.AsyncAwaitCreateStream(
+    procedure (Params: TConversationsParams)
+    begin
+      Params.Inputs('John is one of 4 children. The first sister is 4 years old. Next year, the second sister will be twice as old as the first sister. The third sister is two years older than the second sister. The third sister is half the age of her older brother. How old is John?');
+      Params.Stream;
+      Params.AgentId(Agent_id);
+      Params.Store(False);
+      TutorialHub.JSONRequest := Params.ToFormat();
+    end,
+    function : TPromiseConversationsEvent
+    begin
+      Result.Sender := TutorialHub;
+      Result.OnProgress :=
+        procedure (Sender: TObject; Event: TConversationsEvent)
+        begin
+          DisplayStream(Sender, Event);
+        end;
+      Result.OnDoCancel := DoCancellation;
+      Result.OnCancellation :=
+        function (Sender: TObject): string
+        begin
+          Cancellation(Sender);
+        end;
+    end);
+
+  Promise
+    .&Then<string>(
+      function (Value: string): string
+      begin
+        Result := Value;
+      end)
+    .&Catch(
+      procedure (E: Exception)
+      begin
+        Display(TutorialHub, E.Message);
+      end);  
+```
+
 <br>
 
 ___
 
 ### Web search
+
+#### Agent creation
+
+```Delphi
+//uses MistralAI, MistralAI.Types, MistralAI.Tutorial.VCL or MistralAI.Tutorial.FMX;
+  
+  TutorialHub.JSONRequestClear;
+
+  //Asynchronous promise example
+  var Promise := Client.ConversationsAgent.AsyncAwaitCreate(
+    procedure (Params: TConversationsAgentParams)
+    begin
+      Params.Model('mistral-medium-2505');
+      Params.Name('Websearch Agent');
+      Params.Description('Agent able to search information over the web, such as news, weather, sport results...');
+      Params.Instructions('You have the ability to perform web searches with `web_search` to find up-to-date information.');
+      Params.Tools([web_search]); // or Params.Tools([web_search_premium]);
+      Params.CompletionArgs(
+        TCompletionArgsParams.Create
+          .Temperature(0.3)
+          .TopP(0.95)
+        );
+      TutorialHub.JSONRequest := Params.ToFormat();
+    end);
+
+  Promise
+    .&Then<TConversationsAgent>(
+      function (Value: TConversationsAgent): TConversationsAgent
+      begin
+        Result := Value;
+        Display(TutorialHub, 'Agent created');
+        Display(TutorialHub, Value);
+      end)
+    .&Catch(
+      procedure (E: Exception)
+      begin
+        Display(TutorialHub, E.Message);
+      end);
+```
+
+<br>
+
+___
+
+#### Using the agent
+
+```Delphi
+//uses MistralAI, MistralAI.Types, MistralAI.Tutorial.VCL or MistralAI.Tutorial.FMX;
+
+  TutorialHub.JSONRequestClear;
+
+  var Agent_id := 'id_value';  //e.g. ag_01985efe4b657539a2d6380dad6c5c66
+
+  //Asynchronous promise example
+  Start(TutorialHub);
+  var Promise := Client.Conversations.AsyncAwaitCreate(
+    procedure (Params: TConversationsParams)
+    begin
+      Params
+        .Inputs('Donne-moi les nouvelles du jour pour la France.')
+        .AgentId(Agent_id)
+        .Store(False);
+      TutorialHub.JSONRequest := Params.ToFormat();
+    end);
+
+  Promise
+    .&Then<TConversation>(
+      function (Value: TConversation): TConversation
+      begin
+        Result := Value;
+        Display(TutorialHub, Value);
+      end)
+    .&Catch(
+      procedure (E: Exception)
+      begin
+        Display(TutorialHub, E.Message);
+      end);
+end;
+```
 
 <br>
 
@@ -385,15 +557,261 @@ ___
 
 ### Image generation
 
+#### Agent creation
+
+```Delphi
+//uses MistralAI, MistralAI.Types, MistralAI.Tutorial.VCL or MistralAI.Tutorial.FMX;
+
+  TutorialHub.JSONRequestClear;
+
+  //Asynchronous promise example
+  var Promise := Client.ConversationsAgent.AsyncAwaitCreate(
+    procedure (Params: TConversationsAgentParams)
+    begin
+      Params.Model('mistral-medium-2505');
+      Params.Name('Image generation Agent');
+      Params.Description('Agent used to generate images.');
+      Params.Instructions('Use the image generation tool when you have to create images.');
+      Params.Tools([image_generation]);
+      Params.CompletionArgs(
+        TCompletionArgsParams.Create
+          .Temperature(0.3)
+          .TopP(0.95)
+        );
+      TutorialHub.JSONRequest := Params.ToFormat();
+    end);
+
+  Promise
+    .&Then<TConversationsAgent>(
+      function (Value: TConversationsAgent): TConversationsAgent
+      begin
+        Result := Value;
+        Display(TutorialHub, 'Agent created');
+        Display(TutorialHub, Value);
+      end)
+    .&Catch(
+      procedure (E: Exception)
+      begin
+        Display(TutorialHub, E.Message);
+      end);
+```
+
+<br>
+
+___
+
+#### Using the agent
+
+```Delphi
+//uses MistralAI, MistralAI.Types, MistralAI.Tutorial.VCL or MistralAI.Tutorial.FMX;
+
+  TutorialHub.JSONRequestClear;
+
+  var Agent_id := 'id_value';  //e.g. ag_01985efe4b657539a2d6380dad6c5c66
+
+  //Asynchronous promise example
+  Start(TutorialHub);
+  var Promise := Client.Conversations.AsyncAwaitCreate(
+    procedure (Params: TConversationsParams)
+    begin
+      Params
+        .Inputs('Generate an image of a neutron star interacting directly with a black hole')
+        .AgentId(Agent_id)
+        .Store(False);
+      TutorialHub.JSONRequest := Params.ToFormat();
+    end);
+
+  Promise
+    .&Then<TConversation>(
+      function (Value: TConversation): TConversation
+      begin
+        Result := Value;
+        Display(TutorialHub, Value);
+      end)
+    .&Catch(
+      procedure (E: Exception)
+      begin
+        Display(TutorialHub, E.Message);
+      end);
+```
+
 <br>
 
 ___
 
 ### Document library
 
+#### Agent creation
+
+```Delphi
+//uses MistralAI, MistralAI.Types, MistralAI.Tutorial.VCL or MistralAI.Tutorial.FMX;
+
+  //Asynchronous promise example
+  var Promise := Client.ConversationsAgent.AsyncAwaitCreate(
+    procedure (Params: TConversationsAgentParams)
+    begin
+      Params.Model('mistral-medium-2505');
+      Params.Name('Library Agent');
+      Params.Instructions('You have the ability to perform searches with `document_library` to find relevant information.');
+      Params.Description('Agent able to search information in your library to answer all questions regarding the Raoul project');
+      Params.Tools([document_library([library_id])]); //e.g. library_id = '0198502a-6f55-578e-9976-570167da0f14'
+      Params.CompletionArgs(
+        TCompletionArgsParams.Create
+          .Temperature(0.3)
+          .TopP(0.95)
+        );
+      TutorialHub.JSONRequest := Params.ToFormat();
+    end);
+
+  Promise
+    .&Then<TConversationsAgent>(
+      function (Value: TConversationsAgent): TConversationsAgent
+      begin
+        Result := Value;
+        Display(TutorialHub, 'Agent created');
+        Display(TutorialHub, Value);
+      end)
+    .&Catch(
+      procedure (E: Exception)
+      begin
+        Display(TutorialHub, E.Message);
+      end);
+```
+
+<br>
+
+___
+
+#### Using the agent
+
+```Delphi
+//uses MistralAI, MistralAI.Types, MistralAI.Tutorial.VCL or MistralAI.Tutorial.FMX;
+
+    TutorialHub.JSONRequestClear;
+
+  var Agent_id := 'id_value';  //e.g. ag_01985efe4b657539a2d6380dad6c5c66
+
+  //Asynchronous promise example
+  var Promise := Client.Conversations.AsyncAwaitCreateStream(
+     procedure (Params: TConversationsParams)
+    begin
+      Params
+        .Inputs(Memo2.Text)
+        .AgentId(Agent_id)
+        .Stream
+        .Store;
+      TutorialHub.JSONRequest := Params.ToFormat();
+    end,
+    function : TPromiseConversationsEvent
+    begin
+      Result.Sender := TutorialHub;
+      Result.OnProgress :=
+        procedure (Sender: TObject; Event: TConversationsEvent)
+        begin
+          if Event.&Type = TChunkEvent.conversation_response_started then
+            ConvId := Event.ConversationId;
+          DisplayStream(Sender, Event);
+        end;
+      Result.OnDoCancel := DoCancellation;
+      Result.OnCancellation :=
+        function (Sender: TObject): string
+        begin
+          Cancellation(Sender);
+        end;
+    end);
+
+  Promise
+    .&Then<string>(
+      function (Value: string): string
+      begin
+        Result := Value;
+      end)
+    .&Catch(
+      procedure (E: Exception)
+      begin
+        Display(TutorialHub, E.Message);
+      end);
+```
+
 <br>
 
 ___
 
 ### Code interpreter
+
+#### Agent creation
+
+```Delphi
+//uses MistralAI, MistralAI.Types, MistralAI.Tutorial.VCL or MistralAI.Tutorial.FMX;
+
+  //Asynchronous promise example
+  var Promise := Client.ConversationsAgent.AsyncAwaitCreate(
+    procedure (Params: TConversationsAgentParams)
+    begin
+      Params.Model('mistral-medium-2505');
+      Params.Name('Coding Agent');
+      Params.Description('Agent used to execute code using the interpreter tool.');
+      Params.Instructions('Use the code interpreter tool when you have to run code.');
+      Params.Tools([code_interpreter]);
+      Params.CompletionArgs(
+        TCompletionArgsParams.Create
+          .Temperature(0.3)
+          .TopP(0.95)
+        );
+      TutorialHub.JSONRequest := Params.ToFormat();
+    end);
+
+  Promise
+    .&Then<TConversationsAgent>(
+      function (Value: TConversationsAgent): TConversationsAgent
+      begin
+        Result := Value;
+        Display(TutorialHub, 'Agent created');
+        Display(TutorialHub, Value);
+      end)
+    .&Catch(
+      procedure (E: Exception)
+      begin
+        Display(TutorialHub, E.Message);
+      end);
+```
+
+<br>
+
+___
+
+#### Using the agent
+
+```Delphi
+//uses MistralAI, MistralAI.Types, MistralAI.Tutorial.VCL or MistralAI.Tutorial.FMX;
+
+  TutorialHub.JSONRequestClear;
+
+  var Agent_id := 'id_value';  //e.g. ag_01985efe4b657539a2d6380dad6c5c66
+
+  //Asynchronous promise example
+  Start(TutorialHub);
+  var Promise := Client.Conversations.AsyncAwaitCreate(
+    procedure (Params: TConversationsParams)
+    begin
+      Params
+        .Inputs('Run a fibonacci function for the first 20 values.')
+        .AgentId(Agent_id)
+        .Store;
+      TutorialHub.JSONRequest := Params.ToFormat();
+    end);
+
+  Promise
+    .&Then<TConversation>(
+      function (Value: TConversation): TConversation
+      begin
+        Result := Value;
+        Display(TutorialHub, Value);
+      end)
+    .&Catch(
+      procedure (E: Exception)
+      begin
+        Display(TutorialHub, E.Message);
+      end);
+```
 
