@@ -488,6 +488,7 @@ ___
 > The string `ReasoningEnglishInstructions` is available in the `MistralAI.Types` unit.
 
 <br>
+
 ___
 
 ## Input Audio for Chat
