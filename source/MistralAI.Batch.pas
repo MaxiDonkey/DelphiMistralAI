@@ -1,4 +1,4 @@
-unit MistralAI.Batch;
+﻿unit MistralAI.Batch;
 
 {-------------------------------------------------------------------------------
 
@@ -12,7 +12,7 @@ interface
 uses
   System.SysUtils, System.Classes, REST.JsonReflect, System.JSON, REST.Json.Types,
   System.NetEncoding, System.Net.Mime, MistralAI.API.Params, MistralAI.API,
-  MistralAI.Async.Support, MistralAI.Types;
+  MistralAI.Async.Support, MistralAI.Types, MistralAI.Async.Promise;
 
 type
   /// <summary>
@@ -34,6 +34,7 @@ type
     /// Returns the instance of <c>TBatchJobListParams</c> for method chaining.
     /// </returns>
     function Page(const Value: Integer): TBatchJobListParams;
+
     /// <summary>
     /// Sets the number of items per page for pagination in the batch job list query.
     /// </summary>
@@ -44,6 +45,7 @@ type
     /// Returns the instance of <c>TBatchJobListParams</c> for method chaining.
     /// </returns>
     function PageSize(const Value: Integer): TBatchJobListParams;
+
     /// <summary>
     /// Filters the batch job list by the name of the model used for processing.
     /// </summary>
@@ -54,6 +56,7 @@ type
     /// Returns the instance of <c>TBatchJobListParams</c> for method chaining.
     /// </returns>
     function Model(const Value: string): TBatchJobListParams;
+
     /// <summary>
     /// Filters the batch job list by custom metadata associated with the batch.
     /// </summary>
@@ -64,6 +67,7 @@ type
     /// Returns the instance of <c>TBatchJobListParams</c> for method chaining.
     /// </returns>
     function Metadata(const Value: string): TBatchJobListParams;
+
     /// <summary>
     /// Filters the batch job list to include only jobs created after the specified timestamp.
     /// </summary>
@@ -74,6 +78,7 @@ type
     /// Returns the instance of <c>TBatchJobListParams</c> for method chaining.
     /// </returns>
     function CreatedAfter(const Value: string): TBatchJobListParams;
+
     /// <summary>
     /// Filters the batch job list to include only jobs created by the current user.
     /// </summary>
@@ -84,6 +89,7 @@ type
     /// Returns the instance of <c>TBatchJobListParams</c> for method chaining.
     /// </returns>
     function CreatedByMe(const Value: Boolean): TBatchJobListParams;
+
     /// <summary>
     /// Filters the batch job list by the current status of the jobs.
     /// </summary>
@@ -110,14 +116,17 @@ type
     /// A list of the batch input file IDs.
     /// </summary>
     function InputFiles(const Value: TArray<string>): TBatchJobParams;
+
     /// <summary>
     /// Currently support <c>/v1/embeddings</c>, <c>/v1/chat/completions</c>, <c>/v1/fim/completions</c>, <c>/v1/moderations</c>, <c>/v1/chat/moderations</c>.
     /// </summary>
     function Endpoint(const Value: TEndPointType): TBatchJobParams;
+
     /// <summary>
     /// Model used for batch job process.
     /// </summary>
     function Model(const Value: string): TBatchJobParams;
+
     /// <summary>
     /// Optional custom metadata for the batch.
     /// </summary>
@@ -128,6 +137,7 @@ type
     /// </para>
     /// </remarks>
     function Metadata(const Value: TJSONObject): TBatchJobParams; overload;
+
     /// <summary>
     /// Optional custom metadata for the batch.
     /// </summary>
@@ -138,6 +148,7 @@ type
     /// </para>
     /// </remarks>
     function Metadata(const Value: TJSONParam): TBatchJobParams; overload;
+
     /// <summary>
     /// Batch generation can take up to 24 hours, although it might finish earlier.
     /// </summary>
@@ -175,6 +186,7 @@ type
     /// A string representing the error message (e.g., "Invalid input file format").
     /// </value>
     property &Message: string read FMessage write FMessage;
+
     /// <summary>
     /// Gets or sets the count of occurrences for this specific error.
     /// </summary>
@@ -191,7 +203,7 @@ type
   /// A batch job contains details about the processing status, input files, model used, metadata, and
   /// the results of the batch operation.
   /// </remarks>
-  TBatchJob = class
+  TBatchJob = class(TJSONFingerprint)
   private
     FId: string;
     FObjet: string;
@@ -228,70 +240,87 @@ type
     /// The unique identifier for the batch job.
     /// </summary>
     property Id: string read FId write FId;
+
     /// <summary>
     /// The name or description of the batch job.
     /// </summary>
     property &Objet: string read FObjet write FObjet;
+
     /// <summary>
     /// An array of file IDs used as input for the batch job.
     /// </summary>
     property InputFiles: TArray<string> read FInputFiles write FInputFiles;
+
     /// <summary>
     /// Custom metadata associated with the batch job.
     /// </summary>
     property Metadata: string read FMetadata write FMetadata;
+
     /// <summary>
     /// The endpoint used for the batch job (e.g., <c>/v1/chat/completions</c>).
     /// </summary>
     property Endpoint: TEndPointType read FEndpoint write FEndpoint;
+
     /// <summary>
     /// The model used for processing the batch job.
     /// </summary>
     property Model: string read FModel write FModel;
+
     /// <summary>
     /// The file ID of the output file containing the results of the batch job.
     /// </summary>
     property OutputFile: string read FOutputFile write FOutputFile;
+
     /// <summary>
     /// The file ID of the error file containing details of any errors during processing.
     /// </summary>
     property ErrorFile: string read FErrorFile write FErrorFile;
+
     /// <summary>
     /// An array of error details, including messages and counts, for the batch job.
     /// </summary>
     property Errors: TArray<TBatchJobListDataError> read FErrors write FErrors;
+
     /// <summary>
     /// The current status of the batch job (e.g., <c>QUEUED</c>, <c>RUNNING</c>, <c>SUCCESS</c>, <c>FAILED</c>).
     /// </summary>
     property Status: TBatchStatus read FStatus write FStatus;
+
     /// <summary>
     /// The timestamp (in Unix time) when the batch job was created.
     /// </summary>
     property CreatedAt: Int64 read FCreatedAt write FCreatedAt;
+
     /// <summary>
     /// The total number of requests in the batch job.
     /// </summary>
     property TotalRequests: Int64 read FTotalRequests write FTotalRequests;
+
      /// <summary>
     /// The number of requests that have been completed so far.
     /// </summary>
     property CompletedRequests: Int64 read FCompletedRequests write FCompletedRequests;
+
     /// <summary>
     /// The number of requests that succeeded during batch processing.
     /// </summary>
     property SucceededRequests: Int64 read FSucceededRequests write FSucceededRequests;
+
     /// <summary>
     /// The number of requests that failed during batch processing.
     /// </summary>
     property FailedRequests: Int64 read FFailedRequests write FFailedRequests;
+
     /// <summary>
     /// The timestamp (in Unix time) when the batch job started processing.
     /// </summary>
     property StartedAt: Int64 read FStartedAt write FStartedAt;
+
     /// <summary>
     /// The timestamp (in Unix time) when the batch job completed processing.
     /// </summary>
     property CompletedAt: Int64 read FCompletedAt write FCompletedAt;
+
     /// <summary>
     /// Frees the memory allocated for the batch job, including associated error details.
     /// </summary>
@@ -305,7 +334,7 @@ type
   /// This class contains a list of batch jobs along with metadata about the collection,
   /// such as the total number of jobs and the object type.
   /// </remarks>
-  TBatchJobList = class
+  TBatchJobList = class(TJSONFingerprint)
   private
     FData: TArray<TBatchJob>;
     FObject: string;
@@ -315,14 +344,17 @@ type
     /// An array of batch jobs included in the list.
     /// </summary>
     property Data: TArray<TBatchJob> read FData write FData;
+
     /// <summary>
     /// The object type for the batch job list (e.g., <c>"batch_job_list"</c>).
     /// </summary>
     property &Object: string read FObject write FObject;
+
     /// <summary>
     /// The total number of batch jobs available in the list.
     /// </summary>
     property Total: Int64 read FTotal write FTotal;
+
     /// <summary>
     /// Frees the memory allocated for the batch job list, including associated batch jobs.
     /// </summary>
@@ -335,7 +367,17 @@ type
   /// <remarks>
   /// Used when performing asynchronous operations that return a <c>TBatchJob</c> instance.
   /// </remarks>
-  TAsynBatchJob = TAsyncCallBack<TBatchJob>;
+  TAsynBatchJob = TAsyncCallback<TBatchJob>;
+
+  /// <summary>
+  /// Defines a promise‐style callback record for asynchronous batch‐job operations.
+  /// </summary>
+  /// <remarks>
+  /// An alias of <c>TPromiseCallBack&lt;TBatchJob&gt;</c> that provides fields
+  /// for OnStart, OnSuccess, OnError, and OnCancellation handlers, and resolves
+  /// with a <see cref="TBatchJob"/> instance when the operation completes.
+  /// </remarks>
+  TPromiseBatchJob = TPromiseCallback<TBatchJob>;
 
   /// <summary>
   /// Asynchronous callback parameters for operations returning a single <c>TBatchJobList</c>.
@@ -343,7 +385,17 @@ type
   /// <remarks>
   /// Used when performing asynchronous operations that return a <c>TBatchJobList</c> instance.
   /// </remarks>
-  TAsynBatchJobList = TAsyncCallBack<TBatchJobList>;
+  TAsynBatchJobList = TAsyncCallback<TBatchJobList>;
+
+  /// <summary>
+  /// Defines a promise‐style callback record for asynchronous batch‐job‐list operations.
+  /// </summary>
+  /// <remarks>
+  /// An alias of <c>TPromiseCallBack&lt;TBatchJobList&gt;</c> that provides fields
+  /// for OnStart, OnSuccess, OnError, and OnCancellation handlers, and resolves
+  /// with a <see cref="TBatchJobList"/> instance when the operation completes.
+  /// </remarks>
+  TPromiseBatchJobList = TPromiseCallback<TBatchJobList>;
 
   /// <summary>
   /// Provides methods for interacting with the batch job routes in the MistralAI API.
@@ -354,12 +406,100 @@ type
   /// </remarks>
   TBatchRoute = class(TMistralAIAPIRoute)
     /// <summary>
+    /// Asynchronously creates a new batch job using the supplied parameter procedure
+    /// and returns a promise that resolves to the resulting <see cref="TBatchJob"/>.
+    /// </summary>
+    /// <param name="ParamProc">
+    /// A procedure that configures the <see cref="TBatchJobParams"/> instance with
+    /// the desired input files, model, endpoint, metadata, and timeout settings.
+    /// </param>
+    /// <param name="Callbacks">
+    /// An optional function that returns a <see cref="TPromiseBatchJob"/> callback record
+    /// (containing OnStart, OnSuccess, OnError, etc.). Pass <c>nil</c> to omit custom Callbacks.
+    /// </param>
+    /// <returns>
+    /// A <see cref="TPromise&lt;TBatchJob&gt;"/> that completes with the created batch job
+    /// once the asynchronous operation finishes successfully.
+    /// </returns>
+    function AsyncAwaitCreateJob(const ParamProc: TProc<TBatchJobParams>;
+      const Callbacks: TFunc<TPromiseBatchJob> = nil): TPromise<TBatchJob>;
+
+    /// <summary>
+    /// Asynchronously retrieves all batch jobs and returns a promise that resolves
+    /// to a <see cref="TBatchJobList"/> containing the collection of jobs.
+    /// </summary>
+    /// <param name="Callbacks">
+    /// An optional function that returns a <see cref="TPromiseBatchJobList"/> callback record
+    /// (containing OnStart, OnSuccess, OnError, etc.). Pass <c>nil</c> to use default handling.
+    /// </param>
+    /// <returns>
+    /// A <see cref="TPromise&lt;TBatchJobList&gt;"/> that completes with the batch job list
+    /// once the asynchro
+    function AsyncAwaitList(
+      const Callbacks: TFunc<TPromiseBatchJobList> = nil): TPromise<TBatchJobList>; overload;
+
+    /// <summary>
+    /// Asynchronously retrieves a filtered list of batch jobs according to the specified parameters
+    /// and returns a promise that resolves to the resulting <see cref="TBatchJobList"/>.
+    /// </summary>
+    /// <param name="ParamProc">
+    /// A procedure that configures the <see cref="TBatchJobListParams"/> instance with filters
+    /// such as page, page size, model, metadata, status, creation date, and ownership.
+    /// </param>
+    /// <param name="Callbacks">
+    /// An optional function that returns a <see cref="TPromiseBatchJobList"/> callback record
+    /// (including OnStart, OnSuccess, OnError, etc.). Pass <c>nil</c> to omit custom Callbacks.
+    /// </param>
+    /// <returns>
+    /// A <see cref="TPromise&lt;TBatchJobList&gt;"/> that completes with the filtered batch job list
+    /// once the asynchronous operation finishes successfully.
+    /// </returns>
+    function AsyncAwaitList(const ParamProc: TProc<TBatchJobListParams>;
+      const Callbacks: TFunc<TPromiseBatchJobList> = nil): TPromise<TBatchJobList>; overload;
+
+    /// <summary>
+    /// Asynchronously retrieves the details of a specific batch job by its identifier
+    /// and returns a promise that resolves to the corresponding <see cref="TBatchJob"/>.
+    /// </summary>
+    /// <param name="BatchId">
+    /// The unique identifier of the batch job to retrieve.
+    /// </param>
+    /// <param name="Callbacks">
+    /// An optional function that returns a <see cref="TPromiseBatchJob"/> callback record
+    /// (including OnStart, OnSuccess, OnError, etc.). Pass <c>nil</c> to use default handling.
+    /// </param>
+    /// <returns>
+    /// A <see cref="TPromise&lt;TBatchJob&gt;"/> that completes with the requested batch job
+    /// once the asynchronous operation finishes successfully.
+    /// </returns>
+    function AsyncAwaitRetrieve(const BatchId: string;
+      const Callbacks: TFunc<TPromiseBatchJob> = nil): TPromise<TBatchJob>;
+
+    /// <summary>
+    /// Asynchronously cancels a batch job identified by the given ID
+    /// and returns a promise that resolves to the updated <see cref="TBatchJob"/>.
+    /// </summary>
+    /// <param name="BatchId">
+    /// The unique identifier of the batch job to cancel.
+    /// </param>
+    /// <param name="Callbacks">
+    /// An optional function that returns a <see cref="TPromiseBatchJob"/> callback record
+    /// (including OnStart, OnSuccess, OnError, etc.). Pass <c>nil</c> to use default handling.
+    /// </param>
+    /// <returns>
+    /// A <see cref="TPromise&lt;TBatchJob&gt;"/> that completes with the canceled batch job
+    /// once the asynchronous cancel operation finishes successfully.
+    /// </returns>
+    function AsyncAwaitCancel(const BatchId: string;
+      const Callbacks: TFunc<TPromiseBatchJob> = nil): TPromise<TBatchJob>;
+
+    /// <summary>
     /// Asynchronously creates a new batch job.
     /// </summary>
     /// <param name="ParamProc">
     /// A procedure to configure the parameters for the batch job using a <c>TBatchJobParams</c> instance.
     /// </param>
-    /// <param name="CallBacks">
+    /// <param name="Callbacks">
     /// A function to handle the asynchronous callback, returning a <c>TAsynBatchJob</c>.
     /// </param>
     /// <remarks>
@@ -397,11 +537,13 @@ type
     ///   end);
     /// </code>
     /// </remarks>
-    procedure AsyncCreateJob(ParamProc: TProc<TBatchJobParams>; CallBacks: TFunc<TAsynBatchJob>);
-     /// <summary>
+    procedure AsyncCreateJob(const ParamProc: TProc<TBatchJobParams>;
+      const Callbacks: TFunc<TAsynBatchJob>);
+
+    /// <summary>
     /// Asynchronously retrieves a list of batch jobs.
     /// </summary>
-    /// <param name="CallBacks">
+    /// <param name="Callbacks">
     /// A function to handle the asynchronous callback, returning a <c>TAsynBatchJobList</c>.
     /// </param>
     /// <remarks>
@@ -434,14 +576,15 @@ type
     ///   end);
     /// </code>
     /// </remarks>
-    procedure AsyncList(CallBacks: TFunc<TAsynBatchJobList>); overload;
+    procedure AsyncList(const Callbacks: TFunc<TAsynBatchJobList>); overload;
+
     /// <summary>
     /// Asynchronously retrieves a filtered list of batch jobs.
     /// </summary>
     /// <param name="ParamProc">
     /// A procedure to configure the filter parameters using a <c>TBatchJobListParams</c> instance.
     /// </param>
-    /// <param name="CallBacks">
+    /// <param name="Callbacks">
     /// A function to handle the asynchronous callback, returning a <c>TAsynBatchJobList</c>.
     /// </param>
     /// <remarks>
@@ -479,14 +622,16 @@ type
     ///   end);
     /// </code>
     /// </remarks>
-    procedure AsyncList(ParamProc: TProc<TBatchJobListParams>; CallBacks: TFunc<TAsynBatchJobList>); overload;
+    procedure AsyncList(const ParamProc: TProc<TBatchJobListParams>;
+      const Callbacks: TFunc<TAsynBatchJobList>); overload;
+
     /// <summary>
     /// Asynchronously retrieves the details of a specific batch job.
     /// </summary>
     /// <param name="BatchId">
     /// The unique identifier of the batch job to retrieve.
     /// </param>
-    /// <param name="CallBacks">
+    /// <param name="Callbacks">
     /// A function to handle the asynchronous callback, returning a <c>TAsynBatchJob</c>.
     /// </param>
     /// <remarks>
@@ -519,14 +664,16 @@ type
     ///   end);
     /// </code>
     /// </remarks>
-    procedure AsyncRetrieve(const BatchId: string; CallBacks: TFunc<TAsynBatchJob>);
+    procedure AsyncRetrieve(const BatchId: string;
+      const Callbacks: TFunc<TAsynBatchJob>);
+
     /// <summary>
     /// Asynchronously cancels a specific batch job.
     /// </summary>
     /// <param name="BatchId">
     /// The unique identifier of the batch job to cancel.
     /// </param>
-    /// <param name="CallBacks">
+    /// <param name="Callbacks">
     /// A function to handle the asynchronous callback, returning a <c>TAsynBatchJob</c>.
     /// </param>
     /// <remarks>
@@ -559,7 +706,8 @@ type
     ///   end);
     /// </code>
     /// </remarks>
-    procedure AsyncCancel(const BatchId: string; CallBacks: TFunc<TAsynBatchJob>);
+    procedure AsyncCancel(const BatchId: string; const Callbacks: TFunc<TAsynBatchJob>);
+
     /// <summary>
     /// Creates a new batch job.
     /// </summary>
@@ -586,7 +734,8 @@ type
     /// end;
     /// </code>
     /// </remarks>
-    function CreateJob(ParamProc: TProc<TBatchJobParams>): TBatchJob;
+    function CreateJob(const ParamProc: TProc<TBatchJobParams>): TBatchJob;
+
     /// <summary>
     /// Retrieves a list of batch jobs.
     /// </summary>
@@ -607,6 +756,7 @@ type
     /// </code>
     /// </remarks>
     function List: TBatchJobList; overload;
+
     /// <summary>
     /// Retrieves a filtered list of batch jobs.
     /// </summary>
@@ -633,7 +783,8 @@ type
     /// end;
     /// </code>
     /// </remarks>
-    function List(ParamProc: TProc<TBatchJobListParams>): TBatchJobList; overload;
+    function List(const ParamProc: TProc<TBatchJobListParams>): TBatchJobList; overload;
+
     /// <summary>
     /// Retrieves the details of a specific batch job.
     /// </summary>
@@ -657,6 +808,7 @@ type
     /// </code>
     /// </remarks>
     function Retrieve(const BatchId: string): TBatchJob;
+
     /// <summary>
     /// Cancels a specific batch job.
     /// </summary>
@@ -745,10 +897,66 @@ end;
 
 { TBatchRoute }
 
-procedure TBatchRoute.AsyncCancel(const BatchId: string;
-  CallBacks: TFunc<TAsynBatchJob>);
+function TBatchRoute.AsyncAwaitCancel(const BatchId: string;
+  const Callbacks: TFunc<TPromiseBatchJob>): TPromise<TBatchJob>;
 begin
-  with TAsyncCallBackExec<TAsynBatchJob, TBatchJob>.Create(CallBacks) do
+  Result := TAsyncAwaitHelper.WrapAsyncAwait<TBatchJob>(
+    procedure(const CallbackParams: TFunc<TAsynBatchJob>)
+    begin
+      AsyncCancel(BatchId, CallbackParams);
+    end,
+    Callbacks);
+end;
+
+function TBatchRoute.AsyncAwaitCreateJob(
+  const ParamProc: TProc<TBatchJobParams>;
+  const Callbacks: TFunc<TPromiseBatchJob>): TPromise<TBatchJob>;
+begin
+  Result := TAsyncAwaitHelper.WrapAsyncAwait<TBatchJob>(
+    procedure(const CallbackParams: TFunc<TAsynBatchJob>)
+    begin
+      AsyncCreateJob(ParamProc, CallbackParams);
+    end,
+    Callbacks);
+end;
+
+function TBatchRoute.AsyncAwaitList(
+  const Callbacks: TFunc<TPromiseBatchJobList>): TPromise<TBatchJobList>;
+begin
+  Result := TAsyncAwaitHelper.WrapAsyncAwait<TBatchJobList>(
+    procedure(const CallbackParams: TFunc<TAsynBatchJobList>)
+    begin
+      AsyncList(CallbackParams);
+    end,
+    Callbacks);
+end;
+
+function TBatchRoute.AsyncAwaitList(const ParamProc: TProc<TBatchJobListParams>;
+  const Callbacks: TFunc<TPromiseBatchJobList>): TPromise<TBatchJobList>;
+begin
+  Result := TAsyncAwaitHelper.WrapAsyncAwait<TBatchJobList>(
+    procedure(const CallbackParams: TFunc<TAsynBatchJobList>)
+    begin
+      AsyncList(ParamProc, CallbackParams);
+    end,
+    Callbacks);
+end;
+
+function TBatchRoute.AsyncAwaitRetrieve(const BatchId: string;
+  const Callbacks: TFunc<TPromiseBatchJob>): TPromise<TBatchJob>;
+begin
+  Result := TAsyncAwaitHelper.WrapAsyncAwait<TBatchJob>(
+    procedure(const CallbackParams: TFunc<TAsynBatchJob>)
+    begin
+      AsyncRetrieve(BatchId, CallbackParams);
+    end,
+    Callbacks);
+end;
+
+procedure TBatchRoute.AsyncCancel(const BatchId: string;
+  const Callbacks: TFunc<TAsynBatchJob>);
+begin
+  with TAsyncCallBackExec<TAsynBatchJob, TBatchJob>.Create(Callbacks) do
   try
     Sender := Use.Param.Sender;
     OnStart := Use.Param.OnStart;
@@ -764,10 +972,10 @@ begin
   end;
 end;
 
-procedure TBatchRoute.AsyncCreateJob(ParamProc: TProc<TBatchJobParams>;
-  CallBacks: TFunc<TAsynBatchJob>);
+procedure TBatchRoute.AsyncCreateJob(const ParamProc: TProc<TBatchJobParams>;
+  const Callbacks: TFunc<TAsynBatchJob>);
 begin
-  with TAsyncCallBackExec<TAsynBatchJob, TBatchJob>.Create(CallBacks) do
+  with TAsyncCallBackExec<TAsynBatchJob, TBatchJob>.Create(Callbacks) do
   try
     Sender := Use.Param.Sender;
     OnStart := Use.Param.OnStart;
@@ -783,10 +991,10 @@ begin
   end;
 end;
 
-procedure TBatchRoute.AsyncList(ParamProc: TProc<TBatchJobListParams>;
-  CallBacks: TFunc<TAsynBatchJobList>);
+procedure TBatchRoute.AsyncList(const ParamProc: TProc<TBatchJobListParams>;
+  const Callbacks: TFunc<TAsynBatchJobList>);
 begin
-  with TAsyncCallBackExec<TAsynBatchJobList, TBatchJobList>.Create(CallBacks) do
+  with TAsyncCallBackExec<TAsynBatchJobList, TBatchJobList>.Create(Callbacks) do
   try
     Sender := Use.Param.Sender;
     OnStart := Use.Param.OnStart;
@@ -802,9 +1010,9 @@ begin
   end;
 end;
 
-procedure TBatchRoute.AsyncList(CallBacks: TFunc<TAsynBatchJobList>);
+procedure TBatchRoute.AsyncList(const Callbacks: TFunc<TAsynBatchJobList>);
 begin
-  with TAsyncCallBackExec<TAsynBatchJobList, TBatchJobList>.Create(CallBacks) do
+  with TAsyncCallBackExec<TAsynBatchJobList, TBatchJobList>.Create(Callbacks) do
   try
     Sender := Use.Param.Sender;
     OnStart := Use.Param.OnStart;
@@ -821,9 +1029,9 @@ begin
 end;
 
 procedure TBatchRoute.AsyncRetrieve(const BatchId: string;
-  CallBacks: TFunc<TAsynBatchJob>);
+  const Callbacks: TFunc<TAsynBatchJob>);
 begin
-  with TAsyncCallBackExec<TAsynBatchJob, TBatchJob>.Create(CallBacks) do
+  with TAsyncCallBackExec<TAsynBatchJob, TBatchJob>.Create(Callbacks) do
   try
     Sender := Use.Param.Sender;
     OnStart := Use.Param.OnStart;
@@ -844,7 +1052,7 @@ begin
   Result := API.Post<TBatchJob>(Format('batch/jobs/%s/cancel', [BatchId]));
 end;
 
-function TBatchRoute.CreateJob(ParamProc: TProc<TBatchJobParams>): TBatchJob;
+function TBatchRoute.CreateJob(const ParamProc: TProc<TBatchJobParams>): TBatchJob;
 begin
   Result := API.Post<TBatchJob, TBatchJobParams>('batch/jobs', ParamProc);
 end;
@@ -854,7 +1062,7 @@ begin
   Result := API.Get<TBatchJobList>('batch/jobs');
 end;
 
-function TBatchRoute.List(ParamProc: TProc<TBatchJobListParams>): TBatchJobList;
+function TBatchRoute.List(const ParamProc: TProc<TBatchJobListParams>): TBatchJobList;
 begin
   Result := API.Get<TBatchJobList, TBatchJobListParams>('batch/jobs', ParamProc);
 end;

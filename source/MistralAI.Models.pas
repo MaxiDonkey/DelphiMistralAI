@@ -11,7 +11,8 @@ interface
 
 uses
   System.SysUtils, System.Classes, System.Threading, REST.Json.Types,
-  MistralAI.API.Params, MistralAI.API, MistralAI.Async.Support;
+  MistralAI.API.Params, MistralAI.API, MistralAI.Async.Support,
+  MistralAI.Async.Promise;
 
 type
   /// <summary>
@@ -39,6 +40,7 @@ type
     /// of the model.
     /// </remarks>
     function Name(const Value: string): TModelParams;
+
     /// <summary>
     /// Sets a new description for the fine-tuned model.
     /// </summary>
@@ -87,6 +89,7 @@ type
     /// interactions.
     /// </remarks>
     property CompletionChat: Boolean read FCompletionChat write FCompletionChat;
+
     /// <summary>
     /// Indicates whether the model supports "Fill-in-the-Middle" (FIM) completions.
     /// </summary>
@@ -96,6 +99,7 @@ type
     /// completion, and other scenarios where context-aware suggestions are needed.
     /// </remarks>
     property CompletionFim: Boolean read FCompletionFim write FCompletionFim;
+
     /// <summary>
     /// Indicates whether the model supports function calling.
     /// </summary>
@@ -106,6 +110,7 @@ type
     /// behaviors triggered by user input.
     /// </remarks>
     property FunctionCalling: Boolean read FFunctionCalling write FFunctionCalling;
+
     /// <summary>
     /// Indicates whether the model supports fine-tuning.
     /// </summary>
@@ -115,6 +120,7 @@ type
     /// for customizing the model to better suit particular applications or domains.
     /// </remarks>
     property FineTuning: Boolean read FFineTuning write FFineTuning;
+
     /// <summary>
     /// Indicates whether the model supports vision.
     /// </summary>
@@ -132,7 +138,7 @@ type
   /// interacting with the MistralAI API and retrieving model metadata. It is designed to be
   /// extended by other classes that represent more specialized model types.
   /// </remarks>
-  TCoreModel = class
+  TCoreModel = class(TJSONFingerprint)
   private
     FId: string;
     FObject: string;
@@ -155,6 +161,7 @@ type
     /// actions like updating or deleting the model.
     /// </remarks>
     property Id: string read FId write FId;
+
     /// <summary>
     /// The type of the object, which is always set to "model" for model instances.
     /// </summary>
@@ -163,6 +170,7 @@ type
     /// by the API to differentiate between different types of entities.
     /// </remarks>
     property &Object: string read FObject write FObject;
+
     /// <summary>
     /// The Unix timestamp (in seconds) representing when the model was created.
     /// </summary>
@@ -172,6 +180,7 @@ type
     /// environment.
     /// </remarks>
     property Created: Int64 read FCreated write FCreated;
+
     /// <summary>
     /// The owner of the model, typically represented as a user or organization.
     /// </summary>
@@ -180,6 +189,7 @@ type
     /// permissions and accessibility, especially in shared environments.
     /// </remarks>
     property OwnedBy: string read FOwnedBy write FOwnedBy;
+
     /// <summary>
     /// Represents the capabilities of the model, such as whether it supports fine-tuning or chat-based completion.
     /// </summary>
@@ -189,6 +199,7 @@ type
     /// information is essential for determining the suitability of the model for specific tasks.
     /// </remarks>
     property Capabilities: TCapabilities read FCapabilities write FCapabilities;
+
     /// <summary>
     /// The name of the model, which is used for display and identification purposes.
     /// </summary>
@@ -197,6 +208,7 @@ type
     /// unique and can be modified as needed without affecting the model's functionality.
     /// </remarks>
     property Name: string read FName write FName;
+
     /// <summary>
     /// A detailed description of the model, providing information about its purpose, capabilities, and other relevant details.
     /// </summary>
@@ -206,6 +218,7 @@ type
     /// and communication within teams.
     /// </remarks>
     property Description: string read FDescription write FDescription;
+
     /// <summary>
     /// The maximum context length that the model can handle.
     /// </summary>
@@ -215,6 +228,7 @@ type
     /// as exceeding this limit may result in truncated responses or errors.
     /// </remarks>
     property MaxContextLength: Int64 read FMaxContextLength write FMaxContextLength;
+
     /// <summary>
     /// An array of alternative names or aliases for the model.
     /// </summary>
@@ -224,6 +238,7 @@ type
     /// maintaining consistency and flexibility in model references.
     /// </remarks>
     property Aliases: TArray<string> read FAliases write FAliases;
+
     /// <summary>
     /// Destructor to clean up allocated resources.
     /// </summary>
@@ -265,10 +280,12 @@ type
     /// and support.
     /// </remarks>
     property Deprecation: string read FDeprecation write FDeprecation;
+
     /// <summary>
     /// Value of the default temperature for the model.
     /// </summary>
     property DefaultModelTemperature: Double read FDefaultModelTemperature write FDefaultModelTemperature;
+
     /// <summary>
     /// Type of model, Enum: base, fine-tuned
     /// </summary>
@@ -300,6 +317,7 @@ type
     /// Model uses for fine-tuning
     /// </summary>
     property Root: string read FRoot write FRoot;
+
     /// <summary>
     /// The identifier of the job associated with the fine-tuning process.
     /// </summary>
@@ -310,6 +328,7 @@ type
     /// particularly useful for auditing purposes and for understanding the history of the model.
     /// </remarks>
     property Job: string read FJob write FJob;
+
     /// <summary>
     /// Return True when the model is archived.
     /// </summary>
@@ -327,7 +346,7 @@ type
   /// from the MistralAI API, and it can be helpful for applications that need to display
   /// or manage multiple models at once.
   /// </remarks>
-  TModels = class
+  TModels = class(TJSONFingerprint)
   private
     [JsonNameAttribute('object')]
     FObject: string;
@@ -343,6 +362,7 @@ type
     /// object contains a list of other objects, in this case, models.
     /// </remarks>
     property &Object: string read FObject write FObject;
+
     /// <summary>
     /// An array of `TModel` objects, each representing an individual model.
     /// </summary>
@@ -353,6 +373,7 @@ type
     /// accessing the complete set of models in a structured format.
     /// </remarks>
     property Data: TArray<TModel> read FData write FData;
+
     /// <summary>
     /// Destructor to clean up allocated resources.
     /// </summary>
@@ -390,6 +411,7 @@ type
     /// multiple models or when logging deletion activities for compliance purposes.
     /// </remarks>
     property Id: string read FId write FId;
+
     /// <summary>
     /// The type of the object that was deleted, which is always "model" for model deletions.
     /// </summary>
@@ -399,6 +421,7 @@ type
     /// object type was deleted.
     /// </remarks>
     property &Object: string read FObject write FObject;
+
     /// <summary>
     /// Indicates whether the model was successfully deleted.
     /// </summary>
@@ -437,6 +460,7 @@ type
     /// unintentional changes to other models.
     /// </remarks>
     property Id: string read FId write FId;
+
     /// <summary>
     /// The type of the object, which is always set to "model" for models being archived or unarchived.
     /// </summary>
@@ -446,6 +470,7 @@ type
     /// a model and not another type of entity.
     /// </remarks>
     property &Object: string read FObject write FObject;
+
     /// <summary>
     /// Indicates whether the model is currently archived.
     /// </summary>
@@ -458,6 +483,27 @@ type
   end;
 
   /// <summary>
+  /// Represents an asynchronous callback parameter for retrieving details of a specific model.
+  /// </summary>
+  /// <remarks>
+  /// This type is used when performing asynchronous operations to fetch detailed information
+  /// about a specific model. It allows for handling the response containing the model's metadata
+  /// and capabilities in a non-blocking fashion. This is particularly useful for updating UI elements
+  /// or triggering additional actions based on the model's properties.
+  /// </remarks>
+  TAsynModel = TAsyncCallback<TModel>;
+
+  /// <summary>
+  /// Defines a promise-based asynchronous callback that resolves with a <c>TModel</c> instance.
+  /// </summary>
+  /// <remarks>
+  /// This alias of <c>TPromiseCallBack&lt;TModel&gt;</c> allows consumers to await the
+  /// result of a model-retrieval operation in a promise-style workflow, handling success
+  /// or failure through Callback rather than blocking the calling thread.
+  /// </remarks>
+  TPromiseModel = TPromiseCallback<TModel>;
+
+  /// <summary>
   /// Represents an asynchronous callback parameter for retrieving a list of models.
   /// </summary>
   /// <remarks>
@@ -465,7 +511,17 @@ type
   /// MistralAI environment. It enables the handling of the response containing a collection
   /// of models through a callback mechanism, facilitating non-blocking data retrieval.
   /// </remarks>
-  TAsynModels = TAsyncCallBack<TModels>;
+  TAsynModels = TAsyncCallback<TModels>;
+
+  /// <summary>
+  /// Defines a promise-based asynchronous callback that resolves with a <c>TModels</c> collection.
+  /// </summary>
+  /// <remarks>
+  /// This alias of <c>TPromiseCallBack&lt;TModels&gt;</c> enables a promise-style workflow
+  /// for listing models, allowing consumers to handle the returned collection asynchronously
+  /// without blocking the calling thread.
+  /// </remarks>
+  TPromiseModels = TPromiseCallback<TModels>;
 
   /// <summary>
   /// Represents an asynchronous callback parameter for model deletion operations.
@@ -476,18 +532,17 @@ type
   /// This type is essential for managing deletion results in a non-blocking manner, enabling
   /// efficient UI updates or further processing based on the deletion status.
   /// </remarks>
-  TAsynModelDeletion = TAsyncCallBack<TModelDeletion>;
+  TAsynModelDeletion = TAsyncCallback<TModelDeletion>;
 
   /// <summary>
-  /// Represents an asynchronous callback parameter for retrieving details of a specific model.
+  /// Defines a promise-based asynchronous callback that resolves with a <c>TModelDeletion</c> result.
   /// </summary>
   /// <remarks>
-  /// This type is used when performing asynchronous operations to fetch detailed information
-  /// about a specific model. It allows for handling the response containing the model's metadata
-  /// and capabilities in a non-blocking fashion. This is particularly useful for updating UI elements
-  /// or triggering additional actions based on the model's properties.
+  /// This alias of <c>TPromiseCallBack&lt;TModelDeletion&gt;</c> allows consumers to await
+  /// the result of a model deletion operation using a promise-style API, handling success
+  /// or error scenarios without blocking the calling thread.
   /// </remarks>
-  TAsynModel = TAsyncCallBack<TModel>;
+  TPromiseModelDeletion = TPromiseCallback<TModelDeletion>;
 
   /// <summary>
   /// Represents an asynchronous callback parameter for updating a fine-tuned model.
@@ -498,7 +553,17 @@ type
   /// This is useful for reflecting changes in the user interface or performing further processing
   /// based on the updated model information.
   /// </remarks>
-  TAsynFineTuneModel = TAsyncCallBack<TFineTunedModel>;
+  TAsynFineTuneModel = TAsyncCallback<TFineTunedModel>;
+
+  /// <summary>
+  /// Defines a promise-based asynchronous callback that resolves with a <c>TFineTunedModel</c> instance.
+  /// </summary>
+  /// <remarks>
+  /// This alias of <c>TPromiseCallBack&lt;TFineTunedModel&gt;</c> enables a promise-style workflow
+  /// for retrieving the result of a fine-tune operation, allowing consumers to handle the updated
+  /// model or any errors asynchronously without blocking the calling thread.
+  /// </remarks>
+  TPromiseFineTuneModel = TPromiseCallback<TFineTunedModel>;
 
   /// <summary>
   /// Represents an asynchronous callback parameter for archiving or unarchiving a model.
@@ -508,7 +573,17 @@ type
   /// It allows handling the response, which indicates the status of the operation, in a non-blocking manner.
   /// This type is essential for updating the state of the model in the application without blocking the main thread.
   /// </remarks>
-  TAsynArchivingModel = TAsyncCallBack<TArchivingModel>;
+  TAsynArchivingModel = TAsyncCallback<TArchivingModel>;
+
+  /// <summary>
+  /// Defines a promise-based asynchronous callback that resolves with a <c>TArchivingModel</c> result.
+  /// </summary>
+  /// <remarks>
+  /// This alias of <c>TPromiseCallBack&lt;TArchivingModel&gt;</c> enables a promise-style workflow
+  /// for archiving or unarchiving operations, allowing consumers to handle the archiving status
+  /// asynchronously without blocking the calling thread.
+  /// </remarks>
+  TPromiseArchivingModel = TPromiseCallback<TArchivingModel>;
 
   /// <summary>
   /// The TModelsRoute class provides various methods for managing Large Language Models (LLMs)
@@ -523,9 +598,131 @@ type
   TModelsRoute = class(TMistralAIAPIRoute)
   public
     /// <summary>
+    /// Returns a promise that resolves to the full collection of available models.
+    /// </summary>
+    /// <param name="Callback">
+    /// Optional promise-style Callback for handling success or failure of the list operation.
+    /// </param>
+    /// <returns>
+    /// A <c>TPromise&lt;TModels&gt;</c> that resolves with the <c>TModels</c> instance containing
+    /// the list of all models, or rejects with an exception on error.
+    /// </returns>
+    /// <remarks>
+    /// This method wraps the <see cref="AsyncList"/> callback pattern in a promise-based API,
+    /// simplifying asynchronous model listing by allowing consumers to <c>await</c> the result
+    /// rather than managing Callback directly.
+    /// </remarks>
+    function AsyncAwaitList(
+      const Callback: TFunc<TPromiseModels> = nil): TPromise<TModels>;
+
+    /// <summary>
+    /// Returns a promise that resolves when the specified model has been deleted.
+    /// </summary>
+    /// <param name="ModelId">
+    /// The unique identifier of the model to delete.
+    /// </param>
+    /// <param name="Callback">
+    /// Optional promise-style Callback for handling success or failure of the delete operation.
+    /// </param>
+    /// <returns>
+    /// A <c>TPromise&lt;TModelDeletion&gt;</c> that resolves with the <c>TModelDeletion</c> result
+    /// indicating deletion success, or rejects with an exception on error.
+    /// </returns>
+    /// <remarks>
+    /// This method wraps the <see cref="AsyncDelete"/> callback pattern in a promise-based API,
+    /// allowing consumers to <c>await</c> the deletion result instead of managing Callback directly.
+    /// </remarks>
+    function AsyncAwaitDelete(const ModelId: string;
+      const Callback: TFunc<TPromiseModelDeletion> = nil): TPromise<TModelDeletion>;
+
+    /// <summary>
+    /// Returns a promise that resolves with the details of the specified model.
+    /// </summary>
+    /// <param name="ModelId">
+    /// The unique identifier of the model to retrieve.
+    /// </param>
+    /// <param name="Callback">
+    /// Optional promise-style Callback for handling success or failure of the retrieve operation.
+    /// </param>
+    /// <returns>
+    /// A <c>TPromise&lt;TModel&gt;</c> that resolves with the <c>TModel</c> instance containing
+    /// the model’s metadata, or rejects with an exception on error.
+    /// </returns>
+    /// <remarks>
+    /// This method wraps the <see cref="AsyncRetrieve"/> callback pattern in a promise-based API,
+    /// enabling consumers to <c>await</c> the retrieval result instead of managing Callback directly.
+    /// </remarks>
+    function AsyncAwaitRetrieve(const ModelId: string;
+      const Callback: TFunc<TPromiseModel> = nil): TPromise<TModel>;
+
+    /// <summary>
+    /// Returns a promise that resolves with the updated fine-tuned model.
+    /// </summary>
+    /// <param name="ModelId">
+    /// The unique identifier of the fine-tuned model to update.
+    /// </param>
+    /// <param name="ParamProc">
+    /// A procedure to configure the <c>TModelParams</c> containing the new name or description.
+    /// </param>
+    /// <param name="Callback">
+    /// Optional promise-style Callback for handling success or failure of the update operation.
+    /// </param>
+    /// <returns>
+    /// A <c>TPromise&lt;TFineTunedModel&gt;</c> that resolves with the <c>TFineTunedModel</c>
+    /// instance reflecting the updated model details, or rejects with an exception on error.
+    /// </returns>
+    /// <remarks>
+    /// This method wraps the <see cref="AsyncUpdate"/> callback pattern in a promise-based API,
+    /// allowing consumers to <c>await</c> the update result rather than managing Callback directly.
+    /// </remarks>
+    function AsyncAwaitUpdate(const ModelId: string;
+      const ParamProc: TProc<TModelParams>;
+      const Callback: TFunc<TPromiseFineTuneModel> = nil): TPromise<TFineTunedModel>;
+
+    /// <summary>
+    /// Returns a promise that resolves with the archiving status of the specified model.
+    /// </summary>
+    /// <param name="ModelId">
+    /// The unique identifier of the fine-tuned model to archive.
+    /// </param>
+    /// <param name="Callback">
+    /// Optional promise-style Callback for handling success or failure of the archive operation.
+    /// </param>
+    /// <returns>
+    /// A <c>TPromise&lt;TArchivingModel&gt;</c> that resolves with the <c>TArchivingModel</c>
+    /// result indicating the model’s archived state, or rejects with an exception on error.
+    /// </returns>
+    /// <remarks>
+    /// This method wraps the <see cref="AsyncArchive"/> callback pattern in a promise-based API,
+    /// enabling consumers to <c>await</c> the archiving result instead of managing Callback directly.
+    /// </remarks>
+    function AsyncAwaitArchive(const ModelId: string;
+      const Callback: TFunc<TPromiseArchivingModel> = nil): TPromise<TArchivingModel>;
+
+    /// <summary>
+    /// Returns a promise that resolves with the un-archiving status of the specified model.
+    /// </summary>
+    /// <param name="ModelId">
+    /// The unique identifier of the fine-tuned model to un-archive.
+    /// </param>
+    /// <param name="Callback">
+    /// Optional promise-style Callback for handling success or failure of the un-archive operation.
+    /// </param>
+    /// <returns>
+    /// A <c>TPromise&lt;TArchivingModel&gt;</c> that resolves with the <c>TArchivingModel</c>
+    /// result indicating the model’s active state, or rejects with an exception on error.
+    /// </returns>
+    /// <remarks>
+    /// This method wraps the <see cref="AsyncUnarchive"/> callback pattern in a promise-based API,
+    /// allowing consumers to <c>await</c> the un-archiving result instead of managing Callback directly.
+    /// </remarks>
+    function AsyncAwaitUnarchive(const ModelId: string;
+      const Callback: TFunc<TPromiseArchivingModel> = nil): TPromise<TArchivingModel>;
+
+    /// <summary>
     /// Asynchronously lists the currently available models.
     /// </summary>
-    /// <param name="CallBacks">A callback function that receives the list of models asynchronously.</param>
+    /// <param name="Callback">A callback function that receives the list of models asynchronously.</param>
     /// <remarks>
     /// Use this method to get a list of all models available in the MistralAI environment.
     /// This is useful for obtaining an overview of the models you have access to.
@@ -542,12 +739,13 @@ type
     ///     end);
     /// </code>
     /// </remarks>
-    procedure AsyncList(const CallBacks: TFunc<TAsynModels>);
+    procedure AsyncList(const Callback: TFunc<TAsynModels>);
+
     /// <summary>
     /// Asynchronously deletes a fine-tuned model.
     /// </summary>
     /// <param name="ModelId">The ID of the fine-tuned model to be deleted.</param>
-    /// <param name="CallBacks">A callback function that receives the deletion status asynchronously.</param>
+    /// <param name="Callback">A callback function that receives the deletion status asynchronously.</param>
     /// <remarks>
     /// Deleting a model is a permanent action. Use this method with caution, as it will remove
     /// the model and its metadata from the MistralAI environment.
@@ -564,12 +762,13 @@ type
     ///     end);
     /// </code>
     /// </remarks>
-    procedure AsyncDelete(const ModelId: string; const CallBacks: TFunc<TAsynModelDeletion>);
+    procedure AsyncDelete(const ModelId: string; const Callback: TFunc<TAsynModelDeletion>);
+
     /// <summary>
     /// Asynchronously retrieves the details of a model.
     /// </summary>
     /// <param name="ModelId">The ID of the model to be retrieved.</param>
-    /// <param name="CallBacks">A callback function that receives the model details asynchronously.</param>
+    /// <param name="Callback">A callback function that receives the model details asynchronously.</param>
     /// <remarks>
     /// This method is useful for fetching detailed information about a specific model,
     /// including its metadata, capabilities, and current status.
@@ -586,13 +785,14 @@ type
     ///     end);
     /// </code>
     /// </remarks>
-    procedure AsyncRetrieve(const ModelId: string; const CallBacks: TFunc<TAsynModel>);
+    procedure AsyncRetrieve(const ModelId: string; const Callback: TFunc<TAsynModel>);
+
     /// <summary>
     /// Asynchronously updates the details of a fine-tuned model.
     /// </summary>
     /// <param name="ModelId">The ID of the fine-tuned model to be updated.</param>
     /// <param name="ParamProc">A procedure that specifies the parameters to be updated.</param>
-    /// <param name="CallBacks">A callback function that receives the updated model details asynchronously.</param>
+    /// <param name="Callback">A callback function that receives the updated model details asynchronously.</param>
     /// <remarks>
     /// Use this method to change the name or description of a fine-tuned model. Ensure that the
     /// provided parameters are valid, as incorrect data might result in unexpected behavior.
@@ -613,13 +813,14 @@ type
     ///     end);
     /// </code>
     /// </remarks>
-    procedure AsyncUpdate(const ModelId: string; ParamProc: TProc<TModelParams>;
-      const CallBacks: TFunc<TAsynFineTuneModel>);
+    procedure AsyncUpdate(const ModelId: string; const ParamProc: TProc<TModelParams>;
+      const Callback: TFunc<TAsynFineTuneModel>);
+
     /// <summary>
     /// Asynchronously archives a fine-tuned model.
     /// </summary>
     /// <param name="ModelId">The ID of the fine-tuned model to be archived.</param>
-    /// <param name="CallBacks">A callback function that receives the archiving status asynchronously.</param>
+    /// <param name="Callback">A callback function that receives the archiving status asynchronously.</param>
     /// <remarks>
     /// Archiving a model will make it unavailable for use. This is typically used to manage
     /// storage or to keep the model's state intact while it is not actively in use.
@@ -636,12 +837,13 @@ type
     ///     end);
     /// </code>
     /// </remarks>
-    procedure AsyncArchive(const ModelId: string; const CallBacks: TFunc<TAsynArchivingModel>);
+    procedure AsyncArchive(const ModelId: string; const Callback: TFunc<TAsynArchivingModel>);
+
     /// <summary>
     /// Asynchronously un-archives a fine-tuned model.
     /// </summary>
     /// <param name="ModelId">The ID of the fine-tuned model to be un-archived.</param>
-    /// <param name="CallBacks">A callback function that receives the un-archiving status asynchronously.</param>
+    /// <param name="Callback">A callback function that receives the un-archiving status asynchronously.</param>
     /// <remarks>
     /// Un-archiving a model will restore it to an active state, making it available for use again.
     /// This is typically used for bringing back models that were previously archived.
@@ -658,7 +860,8 @@ type
     ///     end);
     /// </code>
     /// </remarks>
-    procedure AsyncUnarchive(const ModelId: string; const CallBacks: TFunc<TAsynArchivingModel>);
+    procedure AsyncUnarchive(const ModelId: string; const Callback: TFunc<TAsynArchivingModel>);
+
     /// <summary>
     /// Lists the currently available models.
     /// </summary>
@@ -676,6 +879,7 @@ type
     /// </code>
     /// </remarks>
     function List: TModels;
+
     /// <summary>
     /// Deletes a fine-tuned model.
     /// </summary>
@@ -695,6 +899,7 @@ type
     /// </code>
     /// </remarks>
     function Delete(const ModelId: string): TModelDeletion;
+
     /// <summary>
     /// Retrieves the details of a model.
     /// </summary>
@@ -714,6 +919,7 @@ type
     /// </code>
     /// </remarks>
     function Retrieve(const ModelId: string): TModel;
+
     /// <summary>
     /// Updates the details of a fine-tuned model.
     /// </summary>
@@ -739,6 +945,7 @@ type
     /// </code>
     /// </remarks>
     function Update(const ModelId: string; ParamProc: TProc<TModelParams>): TFineTunedModel;
+
     /// <summary>
     /// Archives a fine-tuned model.
     /// </summary>
@@ -758,6 +965,7 @@ type
     /// </code>
     /// </remarks>
     function Archive(const ModelId: string): TArchivingModel;
+
     /// <summary>
     /// Un-archives a fine-tuned model.
     /// </summary>
@@ -796,9 +1004,9 @@ begin
 end;
 
 procedure TModelsRoute.AsyncArchive(const ModelId: string;
-  const CallBacks: TFunc<TAsynArchivingModel>);
+  const Callback: TFunc<TAsynArchivingModel>);
 begin
-  with TAsyncCallBackExec<TAsynArchivingModel, TArchivingModel>.Create(CallBacks) do
+  with TAsyncCallBackExec<TAsynArchivingModel, TArchivingModel>.Create(Callback) do
   try
     Sender := Use.Param.Sender;
     OnStart := Use.Param.OnStart;
@@ -814,10 +1022,77 @@ begin
   end;
 end;
 
-procedure TModelsRoute.AsyncDelete(const ModelId: string;
-  const CallBacks: TFunc<TAsynModelDeletion>);
+function TModelsRoute.AsyncAwaitArchive(const ModelId: string;
+  const Callback: TFunc<TPromiseArchivingModel>): TPromise<TArchivingModel>;
 begin
-  with TAsyncCallBackExec<TAsynModelDeletion, TModelDeletion>.Create(CallBacks) do
+  Result := TAsyncAwaitHelper.WrapAsyncAwait<TArchivingModel>(
+    procedure(const CallbackParams: TFunc<TAsynArchivingModel>)
+    begin
+      AsyncArchive(ModelId, CallbackParams);
+    end,
+    Callback);
+end;
+
+function TModelsRoute.AsyncAwaitDelete(const ModelId: string;
+  const Callback: TFunc<TPromiseModelDeletion>): TPromise<TModelDeletion>;
+begin
+  Result := TAsyncAwaitHelper.WrapAsyncAwait<TModelDeletion>(
+    procedure(const CallbackParams: TFunc<TAsynModelDeletion>)
+    begin
+      AsyncDelete(ModelId, CallbackParams);
+    end,
+    Callback);
+end;
+
+function TModelsRoute.AsyncAwaitList(
+  const Callback: TFunc<TPromiseModels>): TPromise<TModels>;
+begin
+  Result := TAsyncAwaitHelper.WrapAsyncAwait<TModels>(
+    procedure(const CallbackParams: TFunc<TAsynModels>)
+    begin
+      AsyncList(CallbackParams);
+    end,
+    Callback);
+end;
+
+function TModelsRoute.AsyncAwaitRetrieve(const ModelId: string;
+  const Callback: TFunc<TPromiseModel>): TPromise<TModel>;
+begin
+  Result := TAsyncAwaitHelper.WrapAsyncAwait<TModel>(
+    procedure(const CallbackParams: TFunc<TAsynModel>)
+    begin
+      AsyncRetrieve(ModelId, CallbackParams);
+    end,
+    Callback);
+end;
+
+function TModelsRoute.AsyncAwaitUnarchive(const ModelId: string;
+  const Callback: TFunc<TPromiseArchivingModel>): TPromise<TArchivingModel>;
+begin
+  Result := TAsyncAwaitHelper.WrapAsyncAwait<TArchivingModel>(
+    procedure(const CallbackParams: TFunc<TAsynArchivingModel>)
+    begin
+      AsyncUnarchive(ModelId, CallbackParams);
+    end,
+    Callback);
+end;
+
+function TModelsRoute.AsyncAwaitUpdate(const ModelId: string;
+  const ParamProc: TProc<TModelParams>;
+  const Callback: TFunc<TPromiseFineTuneModel>): TPromise<TFineTunedModel>;
+begin
+  Result := TAsyncAwaitHelper.WrapAsyncAwait<TFineTunedModel>(
+    procedure(const CallbackParams: TFunc<TAsynFineTuneModel>)
+    begin
+      AsyncUpdate(ModelId, ParamProc, CallbackParams);
+    end,
+    Callback);
+end;
+
+procedure TModelsRoute.AsyncDelete(const ModelId: string;
+  const Callback: TFunc<TAsynModelDeletion>);
+begin
+  with TAsyncCallBackExec<TAsynModelDeletion, TModelDeletion>.Create(Callback) do
   try
     Sender := Use.Param.Sender;
     OnStart := Use.Param.OnStart;
@@ -833,9 +1108,9 @@ begin
   end;
 end;
 
-procedure TModelsRoute.AsyncList(const CallBacks: TFunc<TAsynModels>);
+procedure TModelsRoute.AsyncList(const Callback: TFunc<TAsynModels>);
 begin
-  with TAsyncCallBackExec<TAsynModels, TModels>.Create(CallBacks) do
+  with TAsyncCallBackExec<TAsynModels, TModels>.Create(Callback) do
   try
     Sender := Use.Param.Sender;
     OnStart := Use.Param.OnStart;
@@ -852,9 +1127,9 @@ begin
 end;
 
 procedure TModelsRoute.AsyncRetrieve(const ModelId: string;
-  const CallBacks: TFunc<TAsynModel>);
+  const Callback: TFunc<TAsynModel>);
 begin
-  with TAsyncCallBackExec<TAsynModel, TModel>.Create(CallBacks) do
+  with TAsyncCallBackExec<TAsynModel, TModel>.Create(Callback) do
   try
     Sender := Use.Param.Sender;
     OnStart := Use.Param.OnStart;
@@ -871,9 +1146,9 @@ begin
 end;
 
 procedure TModelsRoute.AsyncUnarchive(const ModelId: string;
-  const CallBacks: TFunc<TAsynArchivingModel>);
+  const Callback: TFunc<TAsynArchivingModel>);
 begin
-  with TAsyncCallBackExec<TAsynArchivingModel, TArchivingModel>.Create(CallBacks) do
+  with TAsyncCallBackExec<TAsynArchivingModel, TArchivingModel>.Create(Callback) do
   try
     Sender := Use.Param.Sender;
     OnStart := Use.Param.OnStart;
@@ -890,10 +1165,10 @@ begin
 end;
 
 procedure TModelsRoute.AsyncUpdate(const ModelId: string;
-  ParamProc: TProc<TModelParams>;
-  const CallBacks: TFunc<TAsynFineTuneModel>);
+  const ParamProc: TProc<TModelParams>;
+  const Callback: TFunc<TAsynFineTuneModel>);
 begin
-  with TAsyncCallBackExec<TAsynFineTuneModel, TFineTunedModel>.Create(CallBacks) do
+  with TAsyncCallBackExec<TAsynFineTuneModel, TFineTunedModel>.Create(Callback) do
   try
     Sender := Use.Param.Sender;
     OnStart := Use.Param.OnStart;

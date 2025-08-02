@@ -11,7 +11,9 @@ interface
 
 uses
   System.SysUtils, System.Classes, REST.JsonReflect, System.JSON, REST.Json.Types,
-  MistralAI.API.Params;
+  MistralAI.API.Params, MistralAI.Types;
+
+{$SCOPEDENUMS ON}
 
 type
   /// <summary>
@@ -21,31 +23,31 @@ type
     /// <summary>
     /// Not specified, should not be used.
     /// </summary>
-    TYPE_UNSPECIFIED,
+    Type_unspecified,
     /// <summary>
     /// String type.
     /// </summary>
-    stSTRING,
+    &String,
     /// <summary>
     /// Number type.
     /// </summary>
-    stNUMBER,
+    Number,
     /// <summary>
     /// Integer type.
     /// </summary>
-    stINTEGER,
+    &Integer,
     /// <summary>
     /// Boolean type.
     /// </summary>
-    stBOOLEAN,
+    &Boolean,
     /// <summary>
     /// Array type.
     /// </summary>
-    stARRAY,
+    &Array,
     /// <summary>
     /// Object type.
     /// </summary>
-    stOBJECT
+    &Object
   );
 
   /// <summary>
@@ -107,6 +109,7 @@ type
     /// Valid types include <c>string</c>, <c>number</c>, <c>integer</c>, <c>boolean</c>, <c>array</c>, and <c>object</c>.
     /// </remarks>
     function &Type(const Value: TSchemaType): TSchemaParams;
+
     /// <summary>
     /// Specifies the format of the data type.
     /// </summary>
@@ -118,6 +121,7 @@ type
     /// for <c>number</c> types; and <c>byte</c>, <c>binary</c>, <c>date</c>, <c>date-time</c>, <c>password</c> for <c>string</c> types.
     /// </remarks>
     function Format(const Value: string): TSchemaParams;
+
     /// <summary>
     /// Adds a description to the schema.
     /// </summary>
@@ -128,6 +132,7 @@ type
     /// This field supports Markdown syntax for rich text representation.
     /// </remarks>
     function Description(const Value: string): TSchemaParams;
+
     /// <summary>
     /// Specifies whether the schema's value can be null.
     /// </summary>
@@ -138,6 +143,7 @@ type
     /// By default, this is false.
     /// </remarks>
     function Nullable(const Value: Boolean): TSchemaParams;
+
     /// <summary>
     /// Specifies an enumeration of possible values.
     /// </summary>
@@ -148,6 +154,7 @@ type
     /// The schema's type must be <c>string</c> when using enum.
     /// </remarks>
     function Enum(const Value: TArray<string>): TSchemaParams;
+
     /// <summary>
     /// Specifies the maximum number of items allowed in an array schema.
     /// </summary>
@@ -158,6 +165,7 @@ type
     /// of items the array can contain.
     /// </remarks>
     function MaxItems(const Value: string): TSchemaParams;
+
     /// <summary>
     /// Specifies the minimum number of items required in an array schema.
     /// </summary>
@@ -168,6 +176,7 @@ type
     /// of items the array must contain.
     /// </remarks>
     function MinItems(const Value: string): TSchemaParams;
+
     /// <summary>
     /// Adds a property to an object schema.
     /// </summary>
@@ -179,6 +188,7 @@ type
     /// Each property is a key-value pair where the key is the property name and the value is a schema defining the property.
     /// </remarks>
     function Properties(const Key: string; const Value: TSchemaParams): TSchemaParams; overload;
+
     /// <summary>
     /// Adds a property to an object schema using a parameterized procedure to configure the property's schema.
     /// </summary>
@@ -189,6 +199,7 @@ type
     /// This overload allows you to define the property's schema inline using a procedural configuration.
     /// </remarks>
     function Properties(const Key: string; const ParamProc: TProcRef<TSchemaParams>): TSchemaParams; overload;
+
     /// <summary>
     /// Adds multiple properties to an object schema.
     /// </summary>
@@ -198,6 +209,7 @@ type
     /// This overload allows adding multiple properties at once to the object schema.
     /// </remarks>
     function Properties(const Value: TArray<TJSONPair>): TSchemaParams; overload;
+
     /// <summary>
     /// Specifies which properties are required in an object schema.
     /// </summary>
@@ -208,6 +220,7 @@ type
     /// is validated against the schema.
     /// </remarks>
     function Required(const Value: TArray<string>): TSchemaParams;
+
     /// <summary>
     /// Specifies the schema of the items in an array schema.
     /// </summary>
@@ -217,6 +230,7 @@ type
     /// The <c>items</c> keyword is used in array schemas to define the schema of each item in the array.
     /// </remarks>
     function Items(const Value: TSchemaParams): TSchemaParams; overload;
+
     /// <summary>
     /// Specifies the schema of the items in an array schema using a parameterized procedure.
     /// </summary>
@@ -226,11 +240,13 @@ type
     /// This overload allows you to define the items' schema inline using a procedural configuration.
     /// </remarks>
     function Items(const ParamProc: TProcRef<TSchemaParams>): TSchemaParams; overload;
+
     /// <summary>
     /// Creates a new instance of <c>TSchemaParams</c>.
     /// </summary>
     /// <returns>A new <c>TSchemaParams</c> instance.</returns>
     class function New: TSchemaParams; overload;
+
     /// <summary>
     /// Creates and configures a new instance of <c>TSchemaParams</c> using a parameterized procedure.
     /// </summary>
@@ -240,6 +256,81 @@ type
     /// This overload allows you to create and configure the instance inline.
     /// </remarks>
     class function New(const ParamProc: TProcRef<TSchemaParams>): TSchemaParams; overload;
+  end;
+
+  /// <summary>
+  /// Defines a response format and its schema structure for the MistralAI API.
+  /// </summary>
+  /// <remarks>
+  /// <para>This class allows specifying:</para>
+  /// <para>- The name of the response format (Name property).</para>
+  /// <para>- The description of the format (Description property).</para>
+  /// <para>- The JSON schema describing the expected response structure (Schema overload).</para>
+  /// <para>- Enabling strict mode to enforce exact adherence to the schema (Strict property).</para>
+  /// </remarks>
+  TResponseSchemaParams = class(TJSONParam)
+    /// <summary>
+    /// The name of the response format. Must be a-z, A-Z, 0-9, or contain underscores and dashes, with a maximum length of 64.
+    /// </summary>
+    function Name(const Value: string): TResponseSchemaParams;
+
+    /// <summary>
+    /// A description of what the response format is for, used by the model to determine how to respond in the format.
+    /// </summary>
+    function Description(const Value: string): TResponseSchemaParams;
+
+    /// <summary>
+    /// The schema for the response format, described as a JSON Schema object. Learn how to build JSON schemas here.
+    /// </summary>
+    function Schema(const Value: TSchemaParams): TResponseSchemaParams; overload;
+
+    /// <summary>
+    /// The schema for the response format, described as a JSON Schema object. Learn how to build JSON schemas here.
+    /// </summary>
+    function Schema(const Value: string): TResponseSchemaParams; overload;
+
+    /// <summary>
+    /// Whether to enable strict schema adherence when generating the output. If set to true, the model will always
+    /// follow the exact schema defined in the schema field. Only a subset of JSON Schema is supported when strict
+    /// is true.
+    /// </summary>
+    function Strict(const Value: Boolean): TResponseSchemaParams;
+  end;
+
+  /// <summary>
+  /// Configures the expected output format (text, JSON object, or JSON schema) and its parameters for the MistralAI API.
+  /// </summary>
+  /// <remarks>
+  /// <para>This class allows:</para>
+  /// <para>- Selecting the output format type via <c>Type</c> ("text", "json_object", or "json_schema").</para>
+  /// <para>- Specifying the JSON schema to use in JSON mode via <c>JsonSchema</c>.</para>
+  /// </remarks>
+  TResponseFormatParams = class(TJSONParam)
+    /// <summary>
+    /// Enum: "text" "json_object" "json_schema"
+    /// An object specifying the format that the model must output. Setting to { "type": "json_object" }
+    /// enables JSON mode, which guarantees the message the model generates is in JSON. When using JSON
+    /// mode you MUST also instruct the model to produce JSON yourself with a system or a user message.
+    /// </summary>
+    function &Type(const Value: string): TResponseFormatParams; overload;
+
+    /// <summary>
+    /// Enum: "text" "json_object" "json_schema"
+    /// An object specifying the format that the model must output. Setting to { "type": "json_object" }
+    /// enables JSON mode, which guarantees the message the model generates is in JSON. When using JSON
+    /// mode you MUST also instruct the model to produce JSON yourself with a system or a user message.
+    /// </summary>
+    function &Type(const Value: TResponseFormatType): TResponseFormatParams; overload;
+
+    /// <summary>
+    /// The JsonSchema
+    /// </summary>
+    function JsonSchema(const Value: TResponseSchemaParams): TResponseFormatParams;
+
+    class function New(const Value: string): TResponseFormatParams; overload;
+    class function New(const Value: TResponseFormatType): TResponseFormatParams; overload;
+    class function Json_Schema(const Value: string): TJsonObject;
+    class function Json_Oject: TResponseFormatParams;
   end;
 
 implementation
@@ -252,19 +343,19 @@ uses
 function TSchemaTypeHelper.ToString: string;
 begin
   case Self of
-    TYPE_UNSPECIFIED:
+    TSchemaType.Type_unspecified:
       Exit('type_unspecified');
-    stSTRING:
+    TSchemaType.String:
       Exit('string');
-    stNUMBER:
+    TSchemaType.Number:
       Exit('number');
-    stINTEGER:
+    TSchemaType.Integer:
       Exit('integer');
-    stBOOLEAN:
+    TSchemaType.Boolean:
       Exit('boolean');
-    stARRAY:
+    TSchemaType.Array:
       Exit('array');
-    stOBJECT:
+    TSchemaType.Object:
       Exit('object');
   end;
 end;
@@ -377,6 +468,90 @@ end;
 class function TPropertyItem.Add(Key: string; Value: TSchemaType): TJSONPair;
 begin
   Result := TJSONPair.Create(Key, Value.ToString);
+end;
+
+{ TResponseSchemaParams }
+
+function TResponseSchemaParams.Description(const Value: string): TResponseSchemaParams;
+begin
+  Result := TResponseSchemaParams(Add('description', Value));
+end;
+
+function TResponseSchemaParams.Name(const Value: string): TResponseSchemaParams;
+begin
+  Result := TResponseSchemaParams(Add('name', Value));
+end;
+
+function TResponseSchemaParams.Schema(
+  const Value: TSchemaParams): TResponseSchemaParams;
+begin
+  Result := TResponseSchemaParams(Add('schema', Value.Detach));
+end;
+
+function TResponseSchemaParams.Schema(
+  const Value: string): TResponseSchemaParams;
+begin
+  var JSON := TJSONObject.ParseJSONValue(Value.ToLower.Replace(sLineBreak, '').Replace(#10, '').Replace(#13, '')) as TJSONObject;
+  Result := TResponseSchemaParams(Add('schema', JSON));
+end;
+
+function TResponseSchemaParams.Strict(const Value: Boolean): TResponseSchemaParams;
+begin
+  Result := TResponseSchemaParams(Add('strict', Value));
+end;
+
+{ TResponseFormatParams }
+
+class function TResponseFormatParams.New(
+  const Value: string): TResponseFormatParams;
+begin
+  Result := TResponseFormatParams.Create.&Type(Value);
+end;
+
+function TResponseFormatParams.JsonSchema(
+  const Value: TResponseSchemaParams): TResponseFormatParams;
+begin
+  Result := TResponseFormatParams(Add('json_schema', Value.Detach));
+end;
+
+class function TResponseFormatParams.Json_Oject: TResponseFormatParams;
+begin
+  Result := TResponseFormatParams.New(TResponseFormatType.json_object.ToString);
+end;
+
+class function TResponseFormatParams.Json_Schema(
+  const Value: string): TJsonObject;
+begin
+  Result := TJSONObject.Create;
+  try
+    Result.AddPair('type', TResponseFormatType.json_schema.ToString);
+    Result.AddPair('json_schema', TJSONObject.ParseJSONValue(Value));
+  except
+    on E: Exception do
+      begin
+        Result.Free;
+        raise;
+      end;
+  end;
+end;
+
+class function TResponseFormatParams.New(
+  const Value: TResponseFormatType): TResponseFormatParams;
+begin
+  Result := TResponseFormatParams.Create.&Type(Value);
+end;
+
+function TResponseFormatParams.&Type(
+  const Value: string): TResponseFormatParams;
+begin
+  Result := TResponseFormatParams(Add('type', TResponseFormatType.Create(Value).ToString));
+end;
+
+
+function TResponseFormatParams.&Type(
+  const Value: TResponseFormatType): TResponseFormatParams;
+begin
+  Result := TResponseFormatParams(Add('type', Value.ToString));
 end;
 
 end.

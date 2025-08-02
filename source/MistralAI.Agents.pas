@@ -12,8 +12,9 @@ interface
 uses
   System.SysUtils, System.Classes, REST.JsonReflect, System.JSON, System.Threading,
   REST.Json.Types, MistralAI.API.Params, MistralAI.API, MistralAI.Functions.Core,
-  MistralAI.Functions.Tools, MistralAI.Chat, MistralAI.Params.Core,
-  MistralAI.Async.Support, MistralAI.Types;
+  MistralAI.Functions.Tools, MistralAI.Chat, MistralAI.Async.Params,
+  MistralAI.Async.Support, MistralAI.Async.Promise, MistralAI.Types,
+  MistralAI.API.Normalizer;
 
 type
   /// <summary>
@@ -39,6 +40,7 @@ type
     /// An instance of <c>TAgentParams</c> with the <c>MaxTokens</c> parameter set.
     /// </returns>
     function MaxTokens(const Value: Integer): TAgentParams;
+
     /// <summary>
     /// Enables or disables streaming of partial progress.
     /// </summary>
@@ -52,6 +54,7 @@ type
     /// Default is <c>False</c>. When streaming is enabled, partial progress is sent as data-only server-side events.
     /// </remarks>
     function Stream(const Value: Boolean = True): TAgentParams;
+
     /// <summary>
     /// Sets a string token at which to stop text generation.
     /// </summary>
@@ -62,6 +65,7 @@ type
     /// An instance of <c>TAgentParams</c> with the <c>Stop</c> parameter set.
     /// </returns>
     function Stop(const Value: string): TAgentParams; overload;
+
     /// <summary>
     /// Sets an array of string tokens at which to stop text generation.
     /// </summary>
@@ -72,6 +76,7 @@ type
     /// An instance of <c>TAgentParams</c> with the <c>Stop</c> parameter set.
     /// </returns>
     function Stop(const Value: TArray<string>): TAgentParams; overload;
+
     /// <summary>
     /// Sets the seed for random sampling to produce deterministic results.
     /// </summary>
@@ -82,6 +87,7 @@ type
     /// An instance of <c>TAgentParams</c> with the <c>RandomSeed</c> parameter set.
     /// </returns>
     function RandomSeed(const Value: Integer): TAgentParams;
+
     /// <summary>
     /// Sets the messages to generate completions for, encoded as a list of dictionaries with role and content.
     /// </summary>
@@ -92,6 +98,7 @@ type
     /// An instance of <c>TAgentParams</c> with the <c>Messages</c> parameter set.
     /// </returns>
     function Messages(const Value: TArray<TChatMessagePayload>): TAgentParams;
+
     /// <summary>
     /// Specifies the format that the model must output.
     /// </summary>
@@ -105,6 +112,7 @@ type
     /// Default value is { "type": "text" } if <c>ResponseFormat</c> is not called.
     /// </remarks>
     function ResponseFormat(const Value: string = 'json_object'): TAgentParams;
+
     /// <summary>
     /// Sets the list of available tools for the model.
     /// </summary>
@@ -115,6 +123,7 @@ type
     /// An instance of <c>TAgentParams</c> with the <c>Tools</c> parameter set.
     /// </returns>
     function Tools(const Value: TArray<TChatMessageTool>): TAgentParams;
+
     /// <summary>
     /// Specifies if and how functions are called during the conversation.
     /// </summary>
@@ -128,6 +137,7 @@ type
     /// Default is <c>auto</c>. If set to <c>none</c>, the model will not call a function. If set to <c>auto</c>, the model can choose to generate a message or call a function. If set to <c>any</c>, the model is forced to call a function.
     /// </remarks>
     function ToolChoice(const Value: TToolChoice): TAgentParams;  overload;
+
     /// <summary>
     /// Configures how the model interacts when required is on.
     /// </summary>
@@ -138,6 +148,7 @@ type
     /// The updated <c>TChatParams</c> instance.
     /// </returns>
     function ToolChoice(const FunctionName: string): TChatParams; overload;
+
     /// <summary>
     /// Presence_penalty determines how much the model penalizes the repetition of words or phrases
     /// </summary>
@@ -152,6 +163,7 @@ type
     /// making the output more diverse and creative.
     /// </remarks>
     function PresencePenalty(const Value: Double): TAgentParams;
+
     /// <summary>
     /// Frequency_penalty penalizes the repetition of words based on their frequency in the generated text.
     /// </summary>
@@ -166,6 +178,39 @@ type
     /// frequently in the output, promoting diversity and reducing repetition.
     /// </remarks>
     function FrequencyPenalty(const Value: Double): TAgentParams;
+
+    /// <summary>
+    /// Enable users to specify expected results, optimizing response times by leveraging known or
+    /// predictable content.
+    /// </summary>
+    /// <param name="Value">The string prediction content.</param>
+    /// <returns>
+    /// The updated <c>TChatParams</c> instance.
+    /// </returns>
+    /// <remarks>
+    /// This approach is especially effective for updating text documents or code files with minimal
+    /// changes, reducing latency while maintaining high-quality results.
+    /// </remarks>
+    function Prediction(const Value: string): TAgentParams;
+
+    /// <summary>
+    /// Whether to allow the model to run tool calls in parallel.
+    /// </summary>
+    /// <param name="Value">If true then enable parallel mode.</param>
+    /// <returns>
+    /// The updated <c>TChatParams</c> instance.
+    /// </returns>
+    /// <remarks>
+    /// Default: true
+    /// </remarks>
+    function ParallelToolCalls(const Value: Boolean): TAgentParams;
+
+    /// <summary>
+    /// Allows toggling between the reasoning mode and no system prompt.
+    /// When set to reasoning the system prompt for reasoning models will be used.
+    /// </summary>
+    function PromptMode(const Value: string = 'reasoning'): TAgentParams;
+
     /// <summary>
     /// Number of completions to return for each request, input tokens are only billed once.
     /// </summary>
@@ -173,6 +218,7 @@ type
     /// The updated <c>TChatParams</c> instance.
     /// </returns>
     function N(const Value: Integer): TAgentParams;
+
     /// <summary>
     /// Sets the ID of the agent to use for this completion.
     /// </summary>
@@ -193,6 +239,104 @@ type
   /// </remarks>
   TAgentRoute = class(TMistralAIAPIRoute)
   public
+    /// <summary>
+    /// Initiates an asynchronous agent completion request using an awaitable promise.
+    /// </summary>
+    /// <param name="ParamProc">
+    /// A procedure used to configure the parameters for the agent request, including model, prompt, tokens, and tool usage.
+    /// </param>
+    /// <param name="Callbacks">
+    /// (Optional) A function returning a <c>TPromiseChat</c> structure containing callback handlers such as <c>OnSuccess</c>, <c>OnError</c>, and <c>OnStart</c>.
+    /// </param>
+    /// <returns>
+    /// A <c>TPromise&lt;TChat&gt;</c> object that can be awaited to retrieve the resulting chat completion.
+    /// </returns>
+    /// <remarks>
+    /// This method wraps the asynchronous execution of an agent call in a promise, allowing a fluent await-style programming model.
+    /// It is particularly useful in scenarios where chaining or async/await-like behavior is preferred.
+    /// </remarks>
+    function AsyncAwaitCreate(const ParamProc: TProc<TAgentParams>;
+      const Callbacks: TFunc<TPromiseChat> = nil): TPromise<TChat>;
+
+    /// <summary>
+    /// Initiates an asynchronous agent request in streaming mode using an awaitable promise.
+    /// </summary>
+    /// <param name="ParamProc">
+    /// A procedure used to configure the parameters for the agent request, including model settings, messages, and tool configurations.
+    /// </param>
+    /// <param name="Callbacks">
+    /// A function returning a <c>TPromiseChatStream</c> record that defines handlers for progress, success, error, cancellation, and optional sender context.
+    /// </param>
+    /// <returns>
+    /// A <c>TPromise&lt;string&gt;</c> that resolves with the concatenated streamed content when the operation completes successfully.
+    /// </returns>
+    /// <remarks>
+    /// This method wraps an asynchronous streaming request in a promise interface, allowing developers to consume token-by-token progress and still benefit from a final resolved result.
+    /// The collected streamed output is automatically buffered and returned as a single string.
+    /// </remarks>
+    function AsyncAwaitCreateStream(const ParamProc: TProc<TAgentParams>;
+      const Callbacks: TFunc<TPromiseChatStream>): TPromise<string>;
+
+    /// <summary>
+    /// Creates a completion for an agent synchronously.
+    /// </summary>
+    /// <param name="ParamProc">
+    /// A procedure to configure the parameters for the agent request.
+    /// </param>
+    /// <returns>
+    /// An instance of <c>TAgent</c> containing the completion result.
+    /// </returns>
+    /// <exception cref="MistralAIExceptionAPI"> MistralAIExceptionAPI </exception>
+    /// <exception cref="MistralAIExceptionInvalidRequestError"> MistralAIExceptionInvalidRequestError </exception>
+    /// <remarks>
+    /// This function sends a synchronous request to create an agent completion based on the provided parameters.
+    ///
+    /// <code>
+    ///   var Agent := MistralAI.Agent.Create(
+    ///     procedure (Params: TAgentParams)
+    ///     begin
+    ///       // Define agent parameters
+    ///     end);
+    ///   try
+    ///     for var Choice in Agent.Choices do
+    ///       WriteLn(Choice.Message.Content);
+    ///   finally
+    ///     Agent.Free;
+    ///   end;
+    /// </code>
+    /// </remarks>
+    function Create(ParamProc: TProc<TAgentParams>): TChat;
+
+    /// <summary>
+    /// Creates a completion for an agent with a streamed response.
+    /// </summary>
+    /// <param name="ParamProc">
+    /// A procedure to configure the parameters for the agent request.
+    /// </param>
+    /// <param name="Event">
+    /// An event handler to process each streamed response.
+    /// </param>
+    /// <returns>
+    /// <c>True</c> if the streaming was successful; otherwise, <c>False</c>.
+    /// </returns>
+    /// <remarks>
+    /// The <c>Agent</c> object will be <c>nil</c> when all data is received.
+    ///
+    /// <code>
+    ///    MistralAI.Agent.Create(
+    ///     procedure (Params: TAgentParams)
+    ///     begin
+    ///       // Define agent parameters
+    ///     end,
+    ///
+    ///     procedure(var Agent: TAgent; IsDone: Boolean; var Cancel: Boolean)
+    ///     begin
+    ///       // handle displaying
+    ///     end);
+    /// </code>
+    /// </remarks>
+    function CreateStream(ParamProc: TProc<TAgentParams>; Event: TChatEvent): Boolean;
+
     /// <summary>
     /// Initiates an asynchronous request to create an agent completion based on the provided parameters.
     /// </summary>
@@ -227,6 +371,7 @@ type
     /// </code>
     /// </remarks>
     procedure AsyncCreate(ParamProc: TProc<TAgentParams>; CallBacks: TFunc<TAsynChat>);
+
     /// <summary>
     /// Creates an asynchronous streaming agent completion request.
     /// </summary>
@@ -272,64 +417,6 @@ type
     /// </code>
     /// </remarks>
     procedure AsyncCreateStream(ParamProc: TProc<TAgentParams>; CallBacks: TFunc<TAsynChatStream>);
-    /// <summary>
-    /// Creates a completion for an agent synchronously.
-    /// </summary>
-    /// <param name="ParamProc">
-    /// A procedure to configure the parameters for the agent request.
-    /// </param>
-    /// <returns>
-    /// An instance of <c>TAgent</c> containing the completion result.
-    /// </returns>
-    /// <exception cref="MistralAIExceptionAPI"> MistralAIExceptionAPI </exception>
-    /// <exception cref="MistralAIExceptionInvalidRequestError"> MistralAIExceptionInvalidRequestError </exception>
-    /// <remarks>
-    /// This function sends a synchronous request to create an agent completion based on the provided parameters.
-    ///
-    /// <code>
-    ///   var Agent := MistralAI.Agent.Create(
-    ///     procedure (Params: TAgentParams)
-    ///     begin
-    ///       // Define agent parameters
-    ///     end);
-    ///   try
-    ///     for var Choice in Agent.Choices do
-    ///       WriteLn(Choice.Message.Content);
-    ///   finally
-    ///     Agent.Free;
-    ///   end;
-    /// </code>
-    /// </remarks>
-    function Create(ParamProc: TProc<TAgentParams>): TChat;
-    /// <summary>
-    /// Creates a completion for an agent with a streamed response.
-    /// </summary>
-    /// <param name="ParamProc">
-    /// A procedure to configure the parameters for the agent request.
-    /// </param>
-    /// <param name="Event">
-    /// An event handler to process each streamed response.
-    /// </param>
-    /// <returns>
-    /// <c>True</c> if the streaming was successful; otherwise, <c>False</c>.
-    /// </returns>
-    /// <remarks>
-    /// The <c>Agent</c> object will be <c>nil</c> when all data is received.
-    ///
-    /// <code>
-    ///    MistralAI.Agent.Create(
-    ///     procedure (Params: TAgentParams)
-    ///     begin
-    ///       // Define agent parameters
-    ///     end,
-    ///
-    ///     procedure(var Agent: TAgent; IsDone: Boolean; var Cancel: Boolean)
-    ///     begin
-    ///       // handle displaying
-    ///     end);
-    /// </code>
-    /// </remarks>
-    function CreateStream(ParamProc: TProc<TAgentParams>; Event: TChatEvent): Boolean;
   end;
 
 implementation
@@ -368,9 +455,28 @@ begin
   Result := TAgentParams(Add('n', Value));
 end;
 
+function TAgentParams.ParallelToolCalls(const Value: Boolean): TAgentParams;
+begin
+  Result := TAgentParams(Add('parallel_tool_calls', Value));
+end;
+
+function TAgentParams.Prediction(const Value: string): TAgentParams;
+begin
+  Result := TAgentParams(Add('prediction',
+    TJSONObject.Create
+      .AddPair('type', 'content')
+      .AddPair('content', Value)
+  ));
+end;
+
 function TAgentParams.PresencePenalty(const Value: Double): TAgentParams;
 begin
   Result := TAgentParams(Add('presence_penalty', Value));
+end;
+
+function TAgentParams.PromptMode(const Value: string): TAgentParams;
+begin
+  Result := TAgentParams(Add('prompt_mode', Value));
 end;
 
 function TAgentParams.RandomSeed(const Value: Integer): TAgentParams;
@@ -437,6 +543,76 @@ begin
 end;
 
 { TAgentRoute }
+
+function TAgentRoute.AsyncAwaitCreate(const ParamProc: TProc<TAgentParams>;
+  const Callbacks: TFunc<TPromiseChat>): TPromise<TChat>;
+begin
+  Result := TAsyncAwaitHelper.WrapAsyncAwait<TChat>(
+    procedure(const CallbackParams: TFunc<TAsynChat>)
+    begin
+      AsyncCreate(ParamProc, CallbackParams);
+    end,
+    Callbacks);
+end;
+
+function TAgentRoute.AsyncAwaitCreateStream(
+  const ParamProc: TProc<TAgentParams>;
+  const Callbacks: TFunc<TPromiseChatStream>): TPromise<string>;
+begin
+  Result := TPromise<string>.Create(
+    procedure(Resolve: TProc<string>; Reject: TProc<Exception>)
+    var
+      Buffer: string;
+    begin
+      AsyncCreateStream(ParamProc,
+        function : TAsynChatStream
+        begin
+          Result.Sender := Callbacks.Sender;
+
+          Result.OnStart := Callbacks.OnStart;
+
+          Result.OnProgress :=
+            procedure (Sender: TObject; Event: TChat)
+            begin
+              if Assigned(Callbacks.OnProgress) then
+                Callbacks.OnProgress(Sender, Event);
+              Buffer := Buffer + Event.Choices[0].Delta.Content[0].Text;
+            end;
+
+          Result.OnSuccess :=
+            procedure (Sender: TObject)
+            begin
+              Resolve(Buffer);
+            end;
+
+          Result.OnError :=
+            procedure (Sender: TObject; Error: string)
+            begin
+              if Assigned(Callbacks.OnError) then
+                Error := Callbacks.OnError(Sender, Error);
+              Reject(Exception.Create(Error));
+            end;
+
+          Result.OnDoCancel :=
+            function : Boolean
+            begin
+              if Assigned(Callbacks.OnDoCancel) then
+                Result := Callbacks.OnDoCancel()
+              else
+                Result := False;
+            end;
+
+          Result.OnCancellation :=
+            procedure (Sender: TObject)
+            begin
+              var Error := 'aborted';
+              if Assigned(Callbacks.OnCancellation) then
+                Error := Callbacks.OnCancellation(Sender);
+              Reject(Exception.Create(Error));
+            end;
+        end);
+    end);
+end;
 
 procedure TAgentRoute.AsyncCreate(ParamProc: TProc<TAgentParams>;
   CallBacks: TFunc<TAsynChat>);
@@ -611,7 +787,8 @@ begin
 
           if not IsDone then
           try
-            Agent := TJson.JsonToObject<TChat>(Data);
+            Agent := TApiDeserializer.Parse<TChat>(
+                  TJSONNormalizer.Normalize(Data, ['choices', '*', 'delta', 'content']));
           except
             Agent := nil;
           end;

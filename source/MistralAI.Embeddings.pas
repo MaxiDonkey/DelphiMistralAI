@@ -11,7 +11,7 @@ interface
 
 uses
   System.SysUtils, REST.Json.Types, MistralAI.API.Params, MistralAI.API,
-  MistralAI.Async.Support;
+  MistralAI.Async.Support, MistralAI.Async.Promise;
 
 type
   /// <summary>
@@ -34,6 +34,7 @@ type
     /// Use this method to specify the model that will generate the embeddings.
     /// </remarks>
     function Model(const Value: string): TEmbeddingParams;
+
     /// <summary>
     /// Sets the input text for which to generate an embedding.
     /// </summary>
@@ -47,6 +48,7 @@ type
     /// Use this method to specify a single string input for embedding.
     /// </remarks>
     function Input(const Value: string): TEmbeddingParams; overload;
+
     /// <summary>
     /// Sets multiple input texts for which to generate embeddings.
     /// </summary>
@@ -60,6 +62,7 @@ type
     /// Use this method to specify multiple strings as inputs for embeddings.
     /// </remarks>
     function Input(const Value: TArray<string>): TEmbeddingParams; overload;
+
     /// <summary>
     /// Sets the format of the output data.
     /// </summary>
@@ -72,14 +75,18 @@ type
     /// <remarks>
     /// Use this method to specify the output format of the embeddings.
     /// </remarks>
-    function Encoding_format(const Value: string): TEmbeddingParams;
+    function output_dtype(const Value: string): TEmbeddingParams;
+
     /// <summary>
-    /// Initializes a new instance of the <c>TEmbeddingParams</c> class with default values.
+    /// The dimension of the output embeddings.
     /// </summary>
+    /// <param name="Value">
+    /// The vector dimension as an integer.
+    /// </param>
     /// <remarks>
-    /// The default model is set to 'mistral-embed' and encoding format to 'float'.
+    /// only available with the codestral-embed model
     /// </remarks>
-    constructor Create; override;
+    function output_dimension(const Value: Integer): TEmbeddingParams;
   end;
 
   /// <summary>
@@ -99,6 +106,7 @@ type
     /// The number of tokens used in the input text.
     /// </summary>
     property PromptTokens: Int64 read FPrompt_tokens write FPrompt_tokens;
+
     /// <summary>
     /// The total number of tokens consumed during the embedding request.
     /// </summary>
@@ -121,10 +129,12 @@ type
     /// The index of the embedding in the list of embeddings.
     /// </summary>
     property Index: Int64 read FIndex write FIndex;
+
     /// <summary>
     /// The object type, which is always "embedding".
     /// </summary>
     property &Object: string read FObject write FObject;
+
     /// <summary>
     /// The embedding vector, which is a list of floats. The length of the vector depends on the model as listed in the embedding guide.
     /// </summary>
@@ -137,7 +147,7 @@ type
   /// <remarks>
   /// Contains the embeddings, model information, and usage statistics returned by the API.
   /// </remarks>
-  TEmbeddings = class
+  TEmbeddings = class(TJSONFingerprint)
   private
     FId: string;
     FObject: string;
@@ -149,22 +159,27 @@ type
     /// The unique identifier for the embedding response.
     /// </summary>
     property Id: string read FId write FId;
+
     /// <summary>
     /// The object type of the response (e.g., 'list').
     /// </summary>
     property &Object: string read FObject write FObject;
+
     /// <summary>
     /// The list of embedding data for each input.
     /// </summary>
     property Data: TArray<TEmbeddingData> read FData write FData;
+
     /// <summary>
     /// The token usage statistics for the embedding request.
     /// </summary>
     property Usage: TEmbeddingUsage read FUsage write FUsage;
+
     /// <summary>
     /// The model used to generate the embeddings.
     /// </summary>
     property Model: string read FModel write FModel;
+
     destructor Destroy; override;
   end;
 
@@ -174,7 +189,17 @@ type
   /// <remarks>
   /// Used to handle asynchronous responses for embedding operations.
   /// </remarks>
-  TAsyncEmbeddings = TAsyncCallBack<TEmbeddings>;
+  TAsyncEmbeddings = TAsyncCallback<TEmbeddings>;
+
+  /// <summary>
+  /// Defines a promise-style callback wrapper for embedding results.
+  /// </summary>
+  /// <remarks>
+  /// <c>TPromiseEmbeddings</c> is an alias of <c>TPromiseCallBack&lt;TEmbeddings&gt;</c>,
+  /// offering a concise way to handle asynchronous embedding operations that
+  /// yield a <c>TEmbeddings</c> instance once completed.
+  /// </remarks>
+  TPromiseEmbeddings = TPromiseCallback<TEmbeddings>;
 
   /// <summary>
   /// Provides methods for creating embedding requests.
@@ -200,12 +225,31 @@ type
   TEmbeddingsRoute = class(TMistralAIAPIRoute)
   public
     /// <summary>
+    /// Initiates an embedding request and returns a promise that resolves with the embeddings.
+    /// </summary>
+    /// <param name="ParamProc">
+    /// A procedure to configure the <c>TEmbeddingParams</c>, including input texts and model settings.
+    /// </param>
+    /// <param name="Callbacks">
+    /// An optional factory function that provides a <c>TPromiseEmbeddings</c> to handle
+    /// lifecycle Callbacks (OnStart, OnSuccess, OnError) during the asynchronous operation.
+    /// </param>
+    /// <returns>
+    /// A <c>TPromise&lt;TEmbeddings&gt;</c> which will complete with the <c>TEmbeddings</c> result.
+    /// </returns>
+    /// <remarks>
+    /// Use this method to perform non-blocking embedding requests in a promise-style workflow.
+    /// </remarks>
+    function AsyncAwaitCreate(const ParamProc: TProc<TEmbeddingParams>;
+      const Callbacks: TFunc<TPromiseEmbeddings> = nil): TPromise<TEmbeddings>;
+
+    /// <summary>
     /// Initiates an asynchronous embedding request.
     /// </summary>
     /// <param name="ParamProc">
     /// A procedure to set up the embedding parameters.
     /// </param>
-    /// <param name="CallBacks">
+    /// <param name="Callbacks">
     /// A function that returns the asynchronous callback parameters.
     /// </param>
     /// <remarks>
@@ -235,7 +279,8 @@ type
     /// </code>
     /// </remarks>
     procedure AsyncCreate(ParamProc: TProc<TEmbeddingParams>;
-      const CallBacks: TFunc<TAsyncEmbeddings>);
+      const Callbacks: TFunc<TAsyncEmbeddings>);
+
     /// <summary>
     /// Performs a synchronous embedding request and returns the result.
     /// </summary>
@@ -268,17 +313,16 @@ implementation
 
 { TEmbeddingParams }
 
-constructor TEmbeddingParams.Create;
+function TEmbeddingParams.output_dimension(
+  const Value: Integer): TEmbeddingParams;
 begin
-  inherited;
-  Model('mistral-embed');
-  encoding_format('float');
+  Result := TEmbeddingParams(Add('output_dimension', Value));
 end;
 
-function TEmbeddingParams.Encoding_format(
+function TEmbeddingParams.output_dtype(
   const Value: string): TEmbeddingParams;
 begin
-  Result := TEmbeddingParams(Add('encoding_format', Value));
+  Result := TEmbeddingParams(Add('output_dtype', Value));
 end;
 
 function TEmbeddingParams.Input(const Value: string): TEmbeddingParams;
@@ -308,10 +352,22 @@ end;
 
 { TEmbeddingsRoute }
 
-procedure TEmbeddingsRoute.AsyncCreate(ParamProc: TProc<TEmbeddingParams>;
-  const CallBacks: TFunc<TAsyncEmbeddings>);
+function TEmbeddingsRoute.AsyncAwaitCreate(
+  const ParamProc: TProc<TEmbeddingParams>;
+  const Callbacks: TFunc<TPromiseEmbeddings>): TPromise<TEmbeddings>;
 begin
-  with TAsyncCallBackExec<TAsyncEmbeddings, TEmbeddings>.Create(CallBacks) do
+  Result := TAsyncAwaitHelper.WrapAsyncAwait<TEmbeddings>(
+    procedure(const CallbackParams: TFunc<TAsyncEmbeddings>)
+    begin
+      AsyncCreate(ParamProc, CallbackParams);
+    end,
+    Callbacks);
+end;
+
+procedure TEmbeddingsRoute.AsyncCreate(ParamProc: TProc<TEmbeddingParams>;
+  const Callbacks: TFunc<TAsyncEmbeddings>);
+begin
+  with TAsyncCallBackExec<TAsyncEmbeddings, TEmbeddings>.Create(Callbacks) do
   try
     Sender := Use.Param.Sender;
     OnStart := Use.Param.OnStart;

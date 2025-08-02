@@ -1,4 +1,4 @@
-unit MistralAI;
+﻿unit MistralAI;
 
 {-------------------------------------------------------------------------------
 
@@ -11,9 +11,18 @@ interface
 
 uses
   System.SysUtils, System.Classes, MistralAI.API, System.Net.URLClient,
-  MistralAI.Chat, MistralAI.Embeddings, MistralAI.Models, MistralAI.Codestral,
+  MistralAI.Httpx, MistralAI.Chat, MistralAI.Embeddings, MistralAI.Models, MistralAI.Codestral,
   MistralAI.Files, MistralAI.FineTunings, MistralAI.Agents, MistralAI.Classifiers,
-  MistralAI.Functions.Tools, MistralAI.Functions.Core, MistralAI.Batch;
+  MistralAI.Functions.Tools, MistralAI.Functions.Core, MistralAI.Batch, MistralAI.Monitoring,
+  MistralAI.Schema, MistralAI.Conversations.Params, MistralAI.Conversations.Chunks,
+  MistralAI.Conversations, MistralAI.Conversations.Manager, MistralAI.Conversations.EventStreaming,
+  MistralAI.Conversations.Internal, MistralAI.Conversations.Agents, MistralAI.OCR,
+  MistralAI.Async.Parallel, MistralAI.API.Params, MistralAI.HttpClientInterface,
+  MistralAI.Libraries.Main, MistralAI.Libraries.Documents, MistralAI.Libraries.Access,
+  MistralAI.Audio;
+
+const
+  VERSION = 'DelphiMistralAIv1.3.0';
 
 type
   /// <summary>
@@ -40,8 +49,10 @@ type
     function GetAPI: TMistralAIAPI;
     procedure SetToken(const Value: string);
     function GetToken: string;
+    function GetHttpClient: IHttpClientAPI;
     function GetBaseUrl: string;
     procedure SetBaseUrl(const Value: string);
+    function GetVersion: string;
     function GetAgentRoute: TAgentRoute;
     function GetChatRoute: TChatRoute;
     function GetCodestralRoute: TCodestralRoute;
@@ -51,8 +62,37 @@ type
     function GetModelsRoute: TModelsRoute;
     function GetClassifiersRoute: TClassifiersRoute;
     function GetBatchRoute: TBatchRoute;
+    function GetConversationsRoute: TConversationsRoute;
+    function GetConversationsAgentRoute: TConversationsAgentRoute;
+    function GetOcrRoute: TOcrRoute;
+    function GetLibrariesMainRoute: TLibrariesMainRoute;
+    function GetLibrariesDocumentsRoute: TLibrariesDocumentsRoute;
+    function GetLibrariesAccessRoute: TLibrariesAccessRoute;
+    function GetAudioRoute: TAudioRoute;
 
+    /// <summary>
+    /// Gets the current version of the MistralAI library.
+    /// </summary>
+    /// <remarks>
+    /// The <c>Version</c> property provides the semantic version number of the library as a string.
+    /// This can be used for compatibility checks or displaying version information in your application.
+    /// </remarks>
+    /// <returns>
+    /// A string representing the library version.
+    /// </returns>
+    property Version: string read GetVersion;
+
+    /// <summary>
+    /// Provides access to agent completion API.
+    /// An AI agent is an autonomous system using large language models (LLM) to perform tasks based on high-level instructions.
+    /// </summary>
+    /// <returns>
+    /// An instance of TAgentRoute for agent-related operations.
+    /// </returns>
     property Agent: TAgentRoute read GetAgentRoute;
+
+    property Audio: TAudioRoute read GetAudioRoute;
+
     /// <summary>
     /// A batch is composed of a list of API requests. The structure of an individual request includes:
     /// <para>
@@ -66,6 +106,7 @@ type
     /// An instance of GetBatchRoute for batch-related operations.
     /// </returns>
     property Batch: TBatchRoute read GetBatchRoute;
+
     /// <summary>
     /// Provides access to the chat completion API.
     /// Allows for interaction with models fine-tuned for instruction-based dialogue.
@@ -74,6 +115,15 @@ type
     /// An instance of TChatRoute for chat-related operations.
     /// </returns>
     property Chat: TChatRoute read GetChatRoute;
+
+    /// <summary>
+    /// Moderation service, which is powered by the Mistral Moderation model, Ministral 8B 24.10
+    /// </summary>
+    /// <returns>
+    /// An instance of TModelsRoute for model-related operations.
+    /// </returns>
+    property Classifiers: TClassifiersRoute read GetClassifiersRoute;
+
     /// <summary>
     /// Provides access to the Codestral Completion API.
     /// Allows for code design or completion using a template configured to follow specific instructions.
@@ -82,6 +132,38 @@ type
     /// An instance of TCodestralRoute for code completion operations.
     /// </returns>
     property Codestral: TCodestralRoute read GetCodestralRoute;
+
+    /// <summary>
+    /// Provides access to the Conversations API route.
+    /// </summary>
+    /// <remarks>
+    /// This property allows interaction with conversation-specific endpoints, enabling the creation,
+    /// management, and retrieval of conversations that maintain message history and context.
+    /// Use this route to build structured, multi-turn interactions with the AI, where conversational memory is preserved
+    /// across exchanges.
+    /// </remarks>
+    /// <returns>
+    /// An instance of <c>TConversationsRoute</c> for conversation-related operations.
+    /// </returns>
+    property Conversations: TConversationsRoute read GetConversationsRoute;
+
+    /// <summary>
+    /// Provides access to the Conversations Agent API route.
+    /// </summary>
+    /// <remarks>
+    /// This property allows interaction with agent-driven conversation endpoints,
+    /// enabling advanced dialog management, agent handoff, and automated orchestration
+    /// of conversation flows. It is designed to complement the <see cref="Conversations"/>
+    /// route by focusing on agent-related operations such as managing agent context,
+    /// retrieving agent states, or coordinating multiple agents within a single
+    /// conversation.
+    /// </remarks>
+    /// <returns>
+    /// An instance of <c>TConversationsAgentRoute</c> for performing agent-specific
+    /// conversation operations.
+    /// </returns>
+    property ConversationsAgent: TConversationsAgentRoute read GetConversationsAgentRoute;
+
     /// <summary>
     /// Provides access to the embeddings API.
     /// Enables the embedding of sentences or documents.
@@ -90,6 +172,7 @@ type
     /// An instance of TEmbeddingsRoute for embedding operations.
     /// </returns>
     property Embeddings: TEmbeddingsRoute read GetEmbeddingsRoute;
+
     /// <summary>
     /// Provides access to the file management API.
     /// Files can be uploaded and used with features such as fine-tuning.
@@ -98,6 +181,7 @@ type
     /// An instance of TFilesRoute for file-related operations.
     /// </returns>
     property &File: TFilesRoute read GetFilesRoute;
+
     /// <summary>
     /// Provides access to fine-tuning API for user and organization.
     /// Allows managing fine-tuning jobs.
@@ -106,6 +190,77 @@ type
     /// An instance of TFineTuningRoute for fine-tuning operations.
     /// </returns>
     property FineTuning: TFineTuningRoute read GetFineTuningRoute;
+
+    /// <summary>
+    /// Provides access to the Libraries Main API route.
+    /// </summary>
+    /// <remarks>
+    /// This property allows interaction with the document libraries endpoints,
+    /// including creating, listing, retrieving, updating, and deleting document
+    /// libraries. Use this route to manage library metadata and associated
+    /// document collections within the Mistral AI platform.
+    /// <para>
+    /// Example usage:
+    /// <code>
+    ///   var Libraries: TLibrariesMainList;
+    ///   Libraries := MistralAI.LibrariesMain.List;
+    /// </code>
+    /// </para>
+    /// </remarks>
+    /// <returns>
+    /// An instance of <c>TLibrariesMainRoute</c> providing all library-related
+    /// operations.
+    /// </returns>
+    property LibrariesMain: TLibrariesMainRoute read GetLibrariesMainRoute;
+
+    /// <summary>
+    /// Provides access to the Libraries Documents API route.
+    /// </summary>
+    /// <remarks>
+    /// This property allows interaction with the documents stored within a specific library,
+    /// including operations such as listing, uploading, retrieving, updating, deleting, and
+    /// reprocessing documents.
+    /// Use this route to manage the lifecycle and metadata of documents within a library.
+    /// <para>
+    /// Example usage:
+    /// <code>
+    ///   var Docs: TLibrariesDocumentsList;
+    ///   Docs := MistralAI.LibrariesDocuments.List('library_id',
+    ///     procedure(Params: TLibrariesDocumentsUrlParams)
+    ///     begin
+    ///       Params.Limit(20).Order('desc');
+    ///     end
+    ///   );
+    /// </code>
+    /// </para>
+    /// </remarks>
+    /// <returns>
+    /// An instance of <c>TLibrariesDocumentsRoute</c> for performing document-related operations
+    /// within a library.
+    /// </returns>
+    property LibrariesDocuments: TLibrariesDocumentsRoute read GetLibrariesDocumentsRoute;
+
+    /// <summary>
+    /// Provides access to the Libraries Access API route.
+    /// </summary>
+    /// <remarks>
+    /// This property enables interaction with the access control and permission
+    /// management endpoints for libraries within the Mistral AI platform.
+    /// Use this route to manage user and team access to specific libraries,
+    /// including granting or revoking permissions and listing access configurations.
+    /// <para>
+    /// Example usage:
+    /// <code>
+    ///   var AccessList: TLibrariesAccessList;
+    ///   AccessList := MistralAI.LibrariesAccess.List('library_id');
+    /// </code>
+    /// </para>
+    /// </remarks>
+    /// <returns>
+    /// An instance of <c>TLibrariesAccessRoute</c> for managing library access operations.
+    /// </returns>
+    property LibrariesAccess: TLibrariesAccessRoute read GetLibrariesAccessRoute;
+
     /// <summary>
     /// Lists and describes the various models available in the API.
     /// You can refer to the Models documentation to understand what models are available and the differences between them.
@@ -114,13 +269,21 @@ type
     /// An instance of TModelsRoute for model-related operations.
     /// </returns>
     property Models: TModelsRoute read GetModelsRoute;
+
     /// <summary>
-    /// Moderation service, which is powered by the Mistral Moderation model, Ministral 8B 24.10
+    /// Provides access to the Optical Character Recognition (OCR) API route.
     /// </summary>
+    /// <remarks>
+    /// This property allows interaction with OCR-specific endpoints, enabling the
+    /// extraction of text and structured information from images or scanned documents.
+    /// Use this route to perform operations such as document parsing, layout detection,
+    /// and text recognition across multiple page formats or image types.
+    /// </remarks>
     /// <returns>
-    /// An instance of TModelsRoute for model-related operations.
+    /// An instance of <c>TOcrRoute</c> for OCR-related operations.
     /// </returns>
-    property Classifiers: TClassifiersRoute read GetClassifiersRoute;
+    property Ocr: TOcrRoute read GetOcrRoute;
+
     /// <summary>
     /// the main API object used for making requests.
     /// </summary>
@@ -128,6 +291,7 @@ type
     /// An instance of TMistralAIAPI for making API calls.
     /// </returns>
     property API: TMistralAIAPI read GetAPI;
+
     /// Sets or retrieves the API token for authentication.
     /// </summary>
     /// <param name="Value">
@@ -137,6 +301,7 @@ type
     /// The current API token.
     /// </returns>
     property Token: string read GetToken write SetToken;
+
     /// <summary>
     /// Sets or retrieves the base URL for API requests.
     /// Default is https://api.mistral.ai/v1.
@@ -148,13 +313,25 @@ type
     /// The current base URL.
     /// </returns>
     property BaseURL: string read GetBaseUrl write SetBaseUrl;
+
     /// <summary>
-    /// Provides access to agent completion API.
-    /// An AI agent is an autonomous system using large language models (LLM) to perform tasks based on high-level instructions.
+    /// Provides access to the underlying HTTP client used for all API requests.
     /// </summary>
+    /// <remarks>
+    /// The <c>HttpClient</c> property exposes the <see cref="IHttpClientAPI"/> instance
+    /// that handles the low-level HTTP communication with the Mistral AI API.
+    /// This can be useful for customizing request behavior, adding headers,
+    /// configuring timeouts, or implementing logging and monitoring features.
+    /// <para>
+    /// It is recommended to use this property only if you need fine-grained control
+    /// over HTTP requests or responses. For standard operations,
+    /// interact with the higher-level API routes instead.
+    /// </para>
+    /// </remarks>
     /// <returns>
-    /// An instance of TAgentRoute for agent-related operations.
+    /// An <see cref="IHttpClientAPI"/> instance representing the internal HTTP client.
     /// </returns>
+    property HttpClient: IHttpClientAPI read GetHttpClient;
   end;
 
   /// <summary>
@@ -202,11 +379,21 @@ type
     FModelsRoute: TModelsRoute;
     FClassifiersRoute: TClassifiersRoute;
     FBatchRoute: TBatchRoute;
+    FConversationsRoute: TConversationsRoute;
+    FConversationsAgentRoute: TConversationsAgentRoute;
+    FOcrRoute: TOcrRoute;
+    FLibrariesMainRoute: TLibrariesMainRoute;
+    FLibrariesDocumentsRoute: TLibrariesDocumentsRoute;
+    FLibrariesAccessRoute: TLibrariesAccessRoute;
+    FAudioRoute: TAudioRoute;
+
     function GetAPI: TMistralAIAPI;
     function GetToken: string;
     procedure SetToken(const Value: string);
     function GetBaseUrl: string;
     procedure SetBaseUrl(const Value: string);
+    function GetHttpClient: IHttpClientAPI;
+    function GetVersion: string;
     function GetAgentRoute: TAgentRoute;
     function GetChatRoute: TChatRoute;
     function GetCodestralRoute: TCodestralRoute;
@@ -216,6 +403,14 @@ type
     function GetModelsRoute: TModelsRoute;
     function GetClassifiersRoute: TClassifiersRoute;
     function GetBatchRoute: TBatchRoute;
+    function GetConversationsRoute: TConversationsRoute;
+    function GetConversationsAgentRoute: TConversationsAgentRoute;
+    function GetOcrRoute: TOcrRoute;
+    function GetLibrariesMainRoute: TLibrariesMainRoute;
+    function GetLibrariesDocumentsRoute: TLibrariesDocumentsRoute;
+    function GetLibrariesAccessRoute: TLibrariesAccessRoute;
+    function GetAudioRoute: TAudioRoute;
+
   public
     /// <summary>
     /// the main API object used for making requests.
@@ -224,6 +419,7 @@ type
     /// An instance of TMistralAIAPI for making API calls.
     /// </returns>
     property API: TMistralAIAPI read GetAPI;
+
     /// <summary>
     /// Sets or retrieves the API token for authentication.
     /// </summary>
@@ -234,6 +430,7 @@ type
     /// The current API token.
     /// </returns>
     property Token: string read GetToken write SetToken;
+
     /// <summary>
     /// Sets or retrieves the base URL for API requests.
     /// Default is https://api.mistral.ai/v1.
@@ -246,88 +443,107 @@ type
     /// </returns>
     property BaseURL: string read GetBaseUrl write SetBaseUrl;
 
-  public
     /// <summary>
-    /// Provides access to agent completion API.
-    /// An AI agent is an autonomous system using large language models (LLM) to perform tasks based on high-level instructions.
+    /// Provides access to the underlying HTTP client used for all API requests.
     /// </summary>
-    /// <returns>
-    /// An instance of TAgentRoute for agent-related operations.
-    /// </returns>
-    property Agent: TAgentRoute read GetAgentRoute;
-    /// <summary>
-    /// A batch is composed of a list of API requests. The structure of an individual request includes:
+    /// <remarks>
+    /// The <c>HttpClient</c> property exposes the <see cref="IHttpClientAPI"/> instance
+    /// that handles the low-level HTTP communication with the Mistral AI API.
+    /// This can be useful for customizing request behavior, adding headers,
+    /// configuring timeouts, or implementing logging and monitoring features.
     /// <para>
-    /// - A unique custom_id for identifying each request and referencing results after completion
+    /// It is recommended to use this property only if you need fine-grained control
+    /// over HTTP requests or responses. For standard operations,
+    /// interact with the higher-level API routes instead.
     /// </para>
-    /// <para>
-    /// - A body object with message information
-    /// </para>
-    /// </summary>
+    /// </remarks>
     /// <returns>
-    /// An instance of GetBatchRoute for batch-related operations.
+    /// An <see cref="IHttpClientAPI"/> instance representing the internal HTTP client.
     /// </returns>
-    property Batch: TBatchRoute read GetBatchRoute;
-    /// <summary>
-    /// Provides access to the chat completion API.
-    /// Allows for interaction with models fine-tuned for instruction-based dialogue.
-    /// </summary>
-    /// <returns>
-    /// An instance of TChatRoute for chat-related operations.
-    /// </returns>
-    property Chat: TChatRoute read GetChatRoute;
-    /// <summary>
-    /// Provides access to the Codestral Completion API.
-    /// Allows for code design or completion using a template configured to follow specific instructions.
-    /// </summary>
-    /// <returns>
-    /// An instance of TCodestralRoute for code completion operations.
-    /// </returns>
-    property Codestral: TCodestralRoute read GetCodestralRoute;
-    /// <summary>
-    /// Provides access to the embeddings API.
-    /// Enables the embedding of sentences or documents.
-    /// </summary>
-    /// <returns>
-    /// An instance of TEmbeddingsRoute for embedding operations.
-    /// </returns>
-    property Embeddings: TEmbeddingsRoute read GetEmbeddingsRoute;
-    /// <summary>
-    /// Provides access to the file management API.
-    /// Files can be uploaded and used with features such as fine-tuning.
-    /// </summary>
-    /// <returns>
-    /// An instance of TFilesRoute for file-related operations.
-    /// </returns>
-    property &File: TFilesRoute read GetFilesRoute;
-    /// <summary>
-    /// Provides access to fine-tuning API for user and organization.
-    /// Allows managing fine-tuning jobs.
-    /// </summary>
-    /// <returns>
-    /// An instance of TFineTuningRoute for fine-tuning operations.
-    /// </returns>
-    property FineTuning: TFineTuningRoute read GetFineTuningRoute;
-    /// <summary>
-    /// Lists and describes the various models available in the API.
-    /// You can refer to the Models documentation to understand what models are available and the differences between them.
-    /// </summary>
-    /// <returns>
-    /// An instance of TModelsRoute for model-related operations.
-    /// </returns>
-    property Models: TModelsRoute read GetModelsRoute;
-    /// <summary>
-    /// Moderation service, which is powered by the Mistral Moderation model, Ministral 8B 24.10
-    /// </summary>
-    /// <returns>
-    /// An instance of TModelsRoute for model-related operations.
-    /// </returns>
-    property Classifiers: TClassifiersRoute read GetClassifiersRoute;
+    property HttpClient: IHttpClientAPI read GetHttpClient;
   public
     constructor Create; overload;
     constructor Create(const AToken: string; Specs: TSpecs = []); overload;
     destructor Destroy; override;
   end;
+
+  {$REGION 'MistralAI.API.Params'}
+
+  TJSONParam = MistralAI.API.Params.TJSONParam;
+
+  TUrlParam = MistralAI.API.Params.TUrlParam;
+
+  /// <summary>
+  /// Represents a generic key-value parameter manager.
+  /// </summary>
+  /// <remarks>
+  /// This class allows storing and retrieving various types of parameters as key-value pairs.
+  /// It supports basic types (integers, strings, booleans, floating-point numbers), objects,
+  /// as well as arrays of these types.
+  /// </remarks>
+  /// <example>
+  ///   <code>
+  ///     var Params: TParameters;
+  ///     begin
+  ///       Params := TParameters.Create;
+  ///       Params.Add('Limit', 100)
+  ///             .Add('Order', 'Asc')
+  ///             .Add('IsEnabled', True);
+  ///       if Params.Exists('Limit') then
+  ///         ShowMessage(IntToStr(Params.GetInteger('Limit')));
+  ///       Params.Free;
+  ///     end;
+  ///   </code>
+  /// </example>
+  TParameters = MistralAI.API.Params.TParameters;
+
+  {$ENDREGION}
+
+  {$REGION 'MistralAI.Schema'}
+
+  /// <summary>
+  /// Provides helper methods for creating property items in OpenAPI schema definitions.
+  /// </summary>
+  /// <remarks>
+  /// This record simplifies the creation of property entries when building schema objects,
+  /// particularly for object properties in OpenAPI specifications.
+  /// </remarks>
+  TPropertyItem = MistralAI.Schema.TPropertyItem;
+
+  /// <summary>
+  /// Represents the Schema Object in OpenAPI, enabling the definition of input and output data types.
+  /// These types can be objects, primitives, or arrays. This class provides methods to build and
+  /// configure schema definitions as per the OpenAPI 3.0 Specification.
+  /// </summary>
+  /// <remarks>
+  /// The Schema Object allows the definition of input and output data types in the OpenAPI Specification.
+  /// This class provides a fluent interface to construct schema definitions programmatically.
+  /// </remarks>
+  TSchemaParams = MistralAI.Schema.TSchemaParams;
+
+  /// <summary>
+  /// Defines a response format and its schema structure for the MistralAI API.
+  /// </summary>
+  /// <remarks>
+  /// <para>This class allows specifying:</para>
+  /// <para>- The name of the response format (Name property).</para>
+  /// <para>- The description of the format (Description property).</para>
+  /// <para>- The JSON schema describing the expected response structure (Schema overload).</para>
+  /// <para>- Enabling strict mode to enforce exact adherence to the schema (Strict property).</para>
+  /// </remarks>
+  TResponseSchemaParams = MistralAI.Schema.TResponseSchemaParams;
+
+  /// <summary>
+  /// Configures the expected output format (text, JSON object, or JSON schema) and its parameters for the MistralAI API.
+  /// </summary>
+  /// <remarks>
+  /// <para>This class allows:</para>
+  /// <para>- Selecting the output format type via <c>Type</c> ("text", "json_object", or "json_schema").</para>
+  /// <para>- Specifying the JSON schema to use in JSON mode via <c>JsonSchema</c>.</para>
+  /// </remarks>
+  TResponseFormatParams = MistralAI.Schema.TResponseFormatParams;
+
+  {$ENDREGION}
 
   {$REGION 'MistralAI.Chat'}
 
@@ -342,6 +558,8 @@ type
   /// This class can be utilized to construct structured image messages for communication in chat systems.
   /// </example>
   TMessageImageURL = MistralAI.Chat.TMessageImageURL;
+
+  TDocumentUrlParams = MistralAI.Chat.TDocumentUrlParams;
 
   /// <summary>
   /// Represents the content of a message, which can be either text or an image URL.
@@ -423,6 +641,8 @@ type
   /// </remarks>
   TChatParams = MistralAI.Chat.TChatParams;
 
+  TChatContent = MistralAI.Chat.TChatContent;
+
   /// <summary>
   /// Represents the token usage statistics for a chat interaction, including the number of tokens
   /// used in the prompt, the completion, and the total number of tokens consumed.
@@ -484,6 +704,15 @@ type
   TAsynChat = MistralAI.Chat.TAsynChat;
 
   /// <summary>
+  /// Represents a promise-based asynchronous callback for chat completion operations.
+  /// </summary>
+  /// <remarks>
+  /// Alias of <c>TPromiseCallBack&lt;TChat&gt;</c>, this type allows you to await the result
+  /// of a chat completion request and handle it as a <see cref="TChat"/> instance.
+  /// </remarks>
+  TPromiseChat = MistralAI.Chat.TPromiseChat;
+
+  /// <summary>
   /// Manages asynchronous streaming chat callBacks for a chat request using <c>TChat</c> as the response type.
   /// </summary>
   /// <remarks>
@@ -492,6 +721,15 @@ type
   /// This structure is ideal for handling scenarios where the chat response is streamed incrementally, providing real-time updates to the user interface.
   /// </remarks>
   TAsynChatStream = MistralAI.Chat.TAsynChatStream;
+
+  /// <summary>
+  /// Represents a promise-based asynchronous callback for streaming chat completion operations.
+  /// </summary>
+  /// <remarks>
+  /// Alias of <c>TPromiseStreamCallBack&lt;TChat&gt;</c>, this type provides a <see cref="TChat"/> stream
+  /// that can be awaited, delivering partial <see cref="TChat"/> updates as they arrive.
+  /// </remarks>
+  TPromiseChatStream = MistralAI.Chat.TPromiseChatStream;
 
   /// <summary>
   /// Represents a callback procedure used during the reception of responses from a chat request in streaming mode.
@@ -560,6 +798,16 @@ type
   /// Used to handle asynchronous responses for embedding operations.
   /// </remarks>
   TAsyncEmbeddings = MistralAI.Embeddings.TAsyncEmbeddings;
+
+  /// <summary>
+  /// Defines a promise-style callback wrapper for embedding results.
+  /// </summary>
+  /// <remarks>
+  /// <c>TPromiseEmbeddings</c> is an alias of <c>TPromiseCallBack&lt;TEmbeddings&gt;</c>,
+  /// offering a concise way to handle asynchronous embedding operations that
+  /// yield a <c>TEmbeddings</c> instance once completed.
+  /// </remarks>
+  TPromiseEmbeddings = MistralAI.Embeddings.TPromiseEmbeddings;
 
   {$ENDREGION}
 
@@ -682,6 +930,16 @@ type
   TAsynModels = MistralAI.Models.TAsynModels;
 
   /// <summary>
+  /// Defines a promise-based asynchronous callback that resolves with a <c>TModels</c> collection.
+  /// </summary>
+  /// <remarks>
+  /// This alias of <c>TPromiseCallBack&lt;TModels&gt;</c> enables a promise-style workflow
+  /// for listing models, allowing consumers to handle the returned collection asynchronously
+  /// without blocking the calling thread.
+  /// </remarks>
+  TPromiseModels = MistralAI.Models.TPromiseModels;
+
+  /// <summary>
   /// Represents an asynchronous callback parameter for model deletion operations.
   /// </summary>
   /// <remarks>
@@ -691,6 +949,16 @@ type
   /// efficient UI updates or further processing based on the deletion status.
   /// </remarks>
   TAsynModelDeletion = MistralAI.Models.TAsynModelDeletion;
+
+  /// <summary>
+  /// Defines a promise-based asynchronous callback that resolves with a <c>TModelDeletion</c> result.
+  /// </summary>
+  /// <remarks>
+  /// This alias of <c>TPromiseCallBack&lt;TModelDeletion&gt;</c> allows consumers to await
+  /// the result of a model deletion operation using a promise-style API, handling success
+  /// or error scenarios without blocking the calling thread.
+  /// </remarks>
+  TPromiseModelDeletion = MistralAI.Models.TPromiseModelDeletion;
 
   /// <summary>
   /// Represents an asynchronous callback parameter for retrieving details of a specific model.
@@ -704,6 +972,16 @@ type
   TAsynModel = MistralAI.Models.TAsynModel;
 
   /// <summary>
+  /// Defines a promise-based asynchronous callback that resolves with a <c>TModel</c> instance.
+  /// </summary>
+  /// <remarks>
+  /// This alias of <c>TPromiseCallBack&lt;TModel&gt;</c> allows consumers to await the
+  /// result of a model-retrieval operation in a promise-style workflow, handling success
+  /// or failure through callbacks rather than blocking the calling thread.
+  /// </remarks>
+  TPromiseModel = MistralAI.Models.TPromiseModel;
+
+  /// <summary>
   /// Represents an asynchronous callback parameter for updating a fine-tuned model.
   /// </summary>
   /// <remarks>
@@ -715,6 +993,16 @@ type
   TAsynFineTuneModel = MistralAI.Models.TAsynFineTuneModel;
 
   /// <summary>
+  /// Defines a promise-based asynchronous callback that resolves with a <c>TFineTunedModel</c> instance.
+  /// </summary>
+  /// <remarks>
+  /// This alias of <c>TPromiseCallBack&lt;TFineTunedModel&gt;</c> enables a promise-style workflow
+  /// for retrieving the result of a fine-tune operation, allowing consumers to handle the updated
+  /// model or any errors asynchronously without blocking the calling thread.
+  /// </remarks>
+  TPromiseFineTuneModel = MistralAI.Models.TPromiseFineTuneModel;
+
+  /// <summary>
   /// Represents an asynchronous callback parameter for archiving or unarchiving a model.
   /// </summary>
   /// <remarks>
@@ -723,6 +1011,16 @@ type
   /// This type is essential for updating the state of the model in the application without blocking the main thread.
   /// </remarks>
   TAsynArchivingModel = MistralAI.Models.TAsynArchivingModel;
+
+  /// <summary>
+  /// Defines a promise-based asynchronous callback that resolves with a <c>TArchivingModel</c> result.
+  /// </summary>
+  /// <remarks>
+  /// This alias of <c>TPromiseCallBack&lt;TArchivingModel&gt;</c> enables a promise-style workflow
+  /// for archiving or unarchiving operations, allowing consumers to handle the archiving status
+  /// asynchronously without blocking the calling thread.
+  /// </remarks>
+  TPromiseArchivingModel = MistralAI.Models.TPromiseArchivingModel;
 
   {$ENDREGION}
 
@@ -862,14 +1160,42 @@ type
   TAsynListFineTuningJobs = MistralAI.FineTunings.TAsynListFineTuningJobs;
 
   /// <summary>
+  /// Represents a promise‑based asynchronous callback that resolves to a list of fine‑tuning jobs.
+  /// </summary>
+  /// <remarks>
+  /// This is an alias for <c>TPromiseCallback&lt;TListFineTuningJobs&gt;</c>, allowing callers to await
+  /// the result of the <see cref="TFineTuningRoute.List"/> operation in a promise‑style workflow.
+  /// </remarks>
+  TPromiseListFineTuningJobs = MistralAI.FineTunings.TPromiseListFineTuningJobs;
+
+  /// <summary>
   /// Asynchronous callback parameters for fine-tuning job output.
   /// </summary>
   TAsynJobOut = MistralAI.FineTunings.TAsynJobOut;
 
   /// <summary>
+  /// Represents a promise‑based asynchronous callback that resolves to a fine‑tuning job output.
+  /// </summary>
+  /// <remarks>
+  /// This is an alias for <c>TPromiseCallback&lt;TJobOut&gt;</c>, enabling callers to await
+  /// the result of the <see cref="TFineTuningRoute.CreateJob"/> operation in a promise‑style workflow.
+  /// </remarks>
+  TPromiseJobOut = MistralAI.FineTunings.TPromiseJobOut;
+
+  /// <summary>
   /// Asynchronous callback parameters for fine-tuning job progress.
   /// </summary>
   TAsynJobOutProgress = MistralAI.FineTunings.TAsynJobOutProgress;
+
+  /// <summary>
+  /// Represents a promise‑based asynchronous callback that resolves to detailed fine‑tuning job progress.
+  /// </summary>
+  /// <remarks>
+  /// This is an alias for <c>TPromiseCallback&lt;TJobOutProgress&gt;</c>, allowing callers to await
+  /// the result of the <see cref="TFineTuningRoute.Retrieve"/> (or <see cref="TFineTuningRoute.Cancel"/>)
+  /// operation in a promise‑style workflow.
+  /// </remarks>
+  TPromiseJobOutProgress = MistralAI.FineTunings.TPromiseJobOutProgress;
 
   {$ENDREGION}
 
@@ -964,6 +1290,16 @@ type
   TAsynCode = MistralAI.Codestral.TAsynCode;
 
   /// <summary>
+  /// Represents a promise-based asynchronous callback for code completion operations using the Codestral model.
+  /// </summary>
+  /// <remarks>
+  /// This alias of <c>TPromiseCallBack&lt;TCodestral&gt;</c> enables awaiting a <see cref="TCodestral"/> result
+  /// in promise-style flows. Use it when you need to handle success, error, or cancellation events
+  /// for a Codestral completion without blocking the calling thread.
+  /// </remarks>
+  TPromiseCode = MistralAI.Codestral.TPromiseCode;
+
+  /// <summary>
   /// Manages asynchronous streaming chat events for a chat request using <c>TCodestral</c> as the response type.
   /// </summary>
   /// <remarks>
@@ -972,6 +1308,16 @@ type
   /// This structure is ideal for handling scenarios where the chat response is streamed incrementally, providing real-time updates to the user interface.
   /// </remarks>
   TAsynCodeStream = MistralAI.Codestral.TAsynCodeStream;
+
+  /// <summary>
+  /// Represents a promise-based asynchronous streaming callback for code completion operations using the Codestral model.
+  /// </summary>
+  /// <remarks>
+  /// This alias of <c>TPromiseStreamCallBack&lt;TCodestral&gt;</c> enables awaiting both partial results and the final
+  /// <see cref="TCodestral"/> response in a promise-style flow. Use it to handle on-progress updates, successful completion,
+  /// errors, or cancellation for a streaming Codestral completion without blocking the calling thread.
+  /// </remarks>
+  TPromiseCodeStream = MistralAI.Codestral.TPromiseCodeStream;
 
   /// <summary>
   /// Represents a callback procedure used during the reception of responses from a codestral request in streaming mode.
@@ -996,6 +1342,16 @@ type
   /// and the <c>Codestral</c> parameter will be <c>nil</c>.
   /// </remarks>
   TCodestralEvent = MistralAI.Codestral.TCodestralEvent;
+
+  {$ENDREGION}
+
+  {$REGION 'MistralAI.Httpx'}
+
+  /// <summary>
+  /// THttpx provides utility methods for handling HTTP-related tasks such as
+  /// downloading data, encoding it in Base64, and retrieving MIME types.
+  /// </summary>
+  THttpx = MistralAI.Httpx.THttpx;
 
   {$ENDREGION}
 
@@ -1089,7 +1445,15 @@ type
   /// <remarks>
   /// Used when performing asynchronous operations that return a <c>TFile</c> instance.
   /// </remarks>
-  TAsynFile = MistralAI.Files.TAsynFile;
+  TAsyncFile = MistralAI.Files.TAsyncFile;
+
+  /// <summary>
+  /// Promise-based callback parameters for operations returning a single <c>TFile</c>.
+  /// </summary>
+  /// <remarks>
+  /// Use this type when you prefer a promise-style API over traditional callbacks.
+  /// </remarks>
+  TPromiseFile = MistralAI.Files.TPromiseFile;
 
   /// <summary>
   /// Asynchronous callback parameters for operations returning <c>TFiles</c>.
@@ -1097,7 +1461,15 @@ type
   /// <remarks>
   /// Used when performing asynchronous operations that return a <c>TFiles</c> instance.
   /// </remarks>
-  TAsynFiles = MistralAI.Files.TAsynFiles;
+  TAsyncFiles = MistralAI.Files.TAsyncFiles;
+
+  /// <summary>
+  /// Promise-based callback parameters for operations returning a collection of <c>TFile</c> objects.
+  /// </summary>
+  /// <remarks>
+  /// Use this type when you prefer a promise-style API over traditional callbacks for file list operations.
+  /// </remarks>
+  TPromiseFiles = MistralAI.Files.TPromiseFiles;
 
   /// <summary>
   /// Asynchronous callback parameters for file deletion operations.
@@ -1105,7 +1477,15 @@ type
   /// <remarks>
   /// Used when performing asynchronous operations that return a <c>TDeletedResult</c> instance.
   /// </remarks>
-  TAsynFilesDelete = MistralAI.Files.TAsynFilesDelete;
+  TAsyncFilesDelete = MistralAI.Files.TAsyncFilesDelete;
+
+  /// <summary>
+  /// Promise-based callback parameters for operations that delete a file, returning a <c>TDeletedResult</c>.
+  /// </summary>
+  /// <remarks>
+  /// Use this type when you prefer a promise-style API over traditional callbacks for file deletion operations.
+  /// </remarks>
+  TPromiseFilesDelete = MistralAI.Files.TPromiseFilesDelete;
 
   /// <summary>
   /// Asynchronous callback parameters for file download operations.
@@ -1113,7 +1493,93 @@ type
   /// <remarks>
   /// Used when performing asynchronous operations that return a <c>TDownLoadFile</c> instance.
   /// </remarks>
-  TAsynDownLoadFile = MistralAI.Files.TAsynDownLoadFile;
+  TAsyncDownLoadFile = MistralAI.Files.TAsyncDownLoadFile;
+
+  /// <summary>
+  /// Promise-based callback parameters for operations returning a downloaded <c>TDownLoadFile</c>.
+  /// </summary>
+  /// <remarks>
+  /// Use this type when you prefer a promise-style API over traditional callbacks for file download operations.
+  /// </remarks>
+  TPromiseDownLoadFile = MistralAI.Files.TPromiseDownLoadFile;
+
+  /// <summary>
+  /// Represents URL signing parameters for file access requests.
+  /// </summary>
+  /// <remarks>
+  /// Use this class to specify how long a pre-signed URL remains valid.
+  /// The default expiry is 24 hours.
+  /// </remarks>
+  TSignedUrlParams = MistralAI.Files.TSignedUrlParams;
+
+  /// <summary>
+  /// Represents a pre-signed URL returned by the API for temporary file access.
+  /// </summary>
+  /// <remarks>
+  /// This class holds the URL that grants time-limited access to a file resource.
+  /// Use the <see cref="Url"/> property before it expires.
+  /// </remarks>
+  TSignedUrl = MistralAI.Files.TSignedUrl;
+
+  /// <summary>
+  /// Asynchronous callback parameters for operations returning a <c>TSignedUrl</c>.
+  /// </summary>
+  /// <remarks>
+  /// Use this type when performing an asynchronous request to obtain a pre-signed URL.
+  /// Configure its <c>OnSuccess</c> and <c>OnError</c> handlers to handle the result or any errors.
+  /// Example:
+  /// <code>
+  /// MistralAI.File.AsyncGetSignedUrl(
+  ///   'file_id',
+  ///   procedure(Params: TSignedUrlParams)
+  ///   begin
+  ///     Params.Expiry(24);
+  ///   end,
+  ///   function: TAsyncSignedUrl
+  ///   begin
+  ///     Result.OnSuccess :=
+  ///       procedure(Sender: TObject; UrlResult: TSignedUrl)
+  ///       begin
+  ///         // Use UrlResult.Url
+  ///       end;
+  ///     Result.OnError :=
+  ///       procedure(Sender: TObject; ErrorMsg: string)
+  ///       begin
+  ///         // Handle error
+  ///       end;
+  ///   end);
+  /// </code>
+  /// </remarks>
+  TAsyncSignedUrl = MistralAI.Files.TAsyncSignedUrl;
+
+  /// <summary>
+  /// Promise-style callback parameters for operations returning a <c>TSignedUrl</c>.
+  /// </summary>
+  /// <remarks>
+  /// Use this type when you prefer a promise-based API to request a pre-signed URL.
+  /// The returned promise exposes <c>Then</c> for success and <c>Catch</c> for error handling.
+  /// Example:
+  /// <code>
+  /// FilesRoute.AsyncAwaitGetSignedUrl(
+  ///   'file_id',
+  ///   procedure(Params: TSignedUrlParams)
+  ///   begin
+  ///     Params.Expiry(24);
+  ///   end
+  /// ).Then(
+  ///   function(UrlResult: TSignedUrl): TSignedUrl
+  ///   begin
+  ///     // Use UrlResult.Url
+  ///   end
+  /// ).Catch(
+  ///   procedure(E: Exception)
+  ///   begin
+  ///     // Handle error
+  ///   end
+  /// );
+  /// </code>
+  /// </remarks>
+  TPromiseSignedUrl = MistralAI.Files.TPromiseSignedUrl;
 
   {$ENDREGION}
 
@@ -1252,6 +1718,16 @@ type
   /// </remarks>
   TAsynModeration = MistralAI.Classifiers.TAsynModeration;
 
+  /// <summary>
+  /// Defines a promise-style callback wrapper for moderation results.
+  /// </summary>
+  /// <remarks>
+  /// <c>TPromiseModeration</c> is an alias of <c>TPromiseCallBack&lt;TModeration&gt;</c>,
+  /// providing a streamlined way to handle asynchronous moderation operations
+  /// that yield a <c>TModeration</c> instance when completed.
+  /// </remarks>
+  TPromiseModeration = MistralAI.Classifiers.TPromiseModeration;
+
   {$ENDREGION}
 
   {$REGION 'MistralAI.Batch'}
@@ -1310,6 +1786,16 @@ type
   TAsynBatchJob = MistralAI.Batch.TAsynBatchJob;
 
   /// <summary>
+  /// Defines a promise‐style callback record for asynchronous batch‐job operations.
+  /// </summary>
+  /// <remarks>
+  /// An alias of <c>TPromiseCallBack&lt;TBatchJob&gt;</c> that provides fields
+  /// for OnStart, OnSuccess, OnError, and OnCancellation handlers, and resolves
+  /// with a <see cref="TBatchJob"/> instance when the operation completes.
+  /// </remarks>
+  TPromiseBatchJob = MistralAI.Batch.TPromiseBatchJob;
+
+  /// <summary>
   /// Asynchronous callback parameters for operations returning a single <c>TBatchJobList</c>.
   /// </summary>
   /// <remarks>
@@ -1317,9 +1803,734 @@ type
   /// </remarks>
   TAsynBatchJobList = MistralAI.Batch.TAsynBatchJobList;
 
+  /// <summary>
+  /// Defines a promise‐style callback record for asynchronous batch‐job‐list operations.
+  /// </summary>
+  /// <remarks>
+  /// An alias of <c>TPromiseCallBack&lt;TBatchJobList&gt;</c> that provides fields
+  /// for OnStart, OnSuccess, OnError, and OnCancellation handlers, and resolves
+  /// with a <see cref="TBatchJobList"/> instance when the operation completes.
+  /// </remarks>
+  TPromiseBatchJobList = MistralAI.Batch.TPromiseBatchJobList;
+
   {$ENDREGION}
 
+  {$REGION 'MistralAI.Conversations.Params'}
+
+  TEntryParams = MistralAI.Conversations.Params.TEntryParams;
+
+  TContentParams = MistralAI.Conversations.Params.TContentParams;
+
+  TTextChunkParams = MistralAI.Conversations.Params.TTextChunkParams;
+
+  TImageUrlParams = MistralAI.Conversations.Params.TImageUrlParams;
+
+  TImageURLChunkParams = MistralAI.Conversations.Params.TImageURLChunkParams;
+
+  TToolFileChunkParams = MistralAI.Conversations.Params.TToolFileChunkParams;
+
+  TDocumentUrlChunkParams = MistralAI.Conversations.Params.TDocumentUrlChunkParams;
+
+  TMessageInputEntryParams = MistralAI.Conversations.Params.TMessageInputEntryParams;
+
+  TFunctionResultEntryParams = MistralAI.Conversations.Params.TFunctionResultEntryParams;
+
+  TCompletionArgsParams = MistralAI.Conversations.Params.TCompletionArgsParams;
+
+  TConnectorParams = MistralAI.Conversations.Params.TConnectorParams;
+
+  TConnector = MistralAI.Conversations.Params.TConnector;
+
+  TConversationsParams = MistralAI.Conversations.Params.TConversationsParams;
+
+  TConversationsAgentParams = MistralAI.Conversations.Params.TConversationsAgentParams;
+
+  {$ENDREGION}
+
+  {$REGION 'MistralAI.Conversations.Chunks'}
+
+  TImageUrl = MistralAI.Conversations.Chunks.TImageUrl;
+
+  TMessageOutputContentChunksCommon = MistralAI.Conversations.Chunks.TMessageOutputContentChunksCommon;
+
+  TTextChunk = MistralAI.Conversations.Chunks.TTextChunk;
+
+  TImageURLChunk = MistralAI.Conversations.Chunks.TImageURLChunk;
+
+  TToolFileChunk = MistralAI.Conversations.Chunks.TToolFileChunk;
+
+  TDocumentURLChunk = MistralAI.Conversations.Chunks.TDocumentURLChunk;
+
+  TToolReferenceChunk = MistralAI.Conversations.Chunks.TToolReferenceChunk;
+
+  TContentChunk = MistralAI.Conversations.Chunks.TContentChunk;
+
+  TOutputCommon = MistralAI.Conversations.Chunks.TOutputCommon;
+
+  TMessageOutputEntry = MistralAI.Conversations.Chunks.TMessageOutputEntry;
+
+  TToolExecutionEntry = MistralAI.Conversations.Chunks.TToolExecutionEntry;
+
+  TFunctionCallEntry = MistralAI.Conversations.Chunks.TFunctionCallEntry;
+
+  TAgentHandoffEntry = MistralAI.Conversations.Chunks.TAgentHandoffEntry;
+
+  TConversationUsage = MistralAI.Conversations.Chunks.TConversationUsage;
+
+  TConversation = MistralAI.Conversations.Chunks.TConversation;
+
+  TConversationChunk = MistralAI.Conversations.Chunks.TConversationChunk;
+
+  TRetrievedContent = MistralAI.Conversations.Chunks.TRetrievedContent;
+
+  TEntry = MistralAI.Conversations.Chunks.TEntry;
+
+  TRetrievedEntries = MistralAI.Conversations.Chunks.TRetrievedEntries;
+
+  TMessage = MistralAI.Conversations.Chunks.TMessage;
+
+  TRetrieveMessages = MistralAI.Conversations.Chunks.TRetrieveMessages;
+
+  {$ENDREGION}
+
+  {$REGION 'MistralAI.Conversations.Internal'}
+
+  TAsyncConversation = MistralAI.Conversations.Internal.TAsyncConversation;
+
+  TAsyncConversationsEvent = MistralAI.Conversations.Internal.TAsyncConversationsEvent;
+
+  TPromiseConversation = MistralAI.Conversations.Internal.TPromiseConversation;
+
+  TPromiseConversationsEvent = MistralAI.Conversations.Internal.TPromiseConversationsEvent;
+
+  TAsyncConversationsList = MistralAI.Conversations.Internal.TAsyncConversationsList;
+
+  TPromiseConversationsList = MistralAI.Conversations.Internal.TPromiseConversationsList;
+
+  TAsyncConversationsListItem = MistralAI.Conversations.Internal.TAsyncConversationsListItem;
+
+  TPromiseConversationsListItem = MistralAI.Conversations.Internal.TPromiseConversationsListItem;
+
+  TAsyncRetrievedEntries = MistralAI.Conversations.Internal.TAsyncRetrievedEntries;
+
+  TPromiseRetrievedEntries = MistralAI.Conversations.Internal.TPromiseRetrievedEntries;
+
+  TAsyncRetrieveMessages = MistralAI.Conversations.Internal.TAsyncRetrieveMessages;
+
+  TPromiseRetrieveMessages = MistralAI.Conversations.Internal.TPromiseRetrieveMessages;
+
+  {$ENDREGION}
+
+  {$REGION 'MistralAI.Conversations.Manager'}
+
+  TAgentVersionParams = MistralAI.Conversations.Manager.TAgentVersionParams;
+
+  TConversationsListParams = MistralAI.Conversations.Manager.TConversationsListParams;
+
+  TAgentConversation = MistralAI.Conversations.Manager.TAgentConversation;
+
+  TModelConversation = MistralAI.Conversations.Manager.TModelConversation;
+
+  TConversationsListItem = MistralAI.Conversations.Manager.TConversationsListItem;
+
+  TConversationsList = MistralAI.Conversations.Manager.TConversationsList;
+
+  TConversationsAgent = MistralAI.Conversations.Manager.TConversationsAgent;
+
+  TConversationsAgentList = MistralAI.Conversations.Manager.TConversationsAgentList;
+
+  {$ENDREGION}
+
+  {$REGION 'MistralAI.Conversations.EventStreaming'}
+
+  TConversationsEvent = MistralAI.Conversations.EventStreaming.TConversationsEvent;
+
+  {$ENDREGION}
+
+  {$REGION 'MistralAI.Conversations.Agents'}
+
+  TAsyncConversationsAgent = MistralAI.Conversations.Agents.TAsyncConversationsAgent;
+
+  TPromiseConversationsAgent = MistralAI.Conversations.Agents.TPromiseConversationsAgent;
+
+  TAsyncConversationsAgentList = MistralAI.Conversations.Agents.TAsyncConversationsAgentList;
+
+  TPromiseConversationsAgentList = MistralAI.Conversations.Agents.TPromiseConversationsAgentList;
+
+  {$ENDREGION}
+
+  {$REGION 'MistralAI.OCR'}
+
+  TOcrImageUrl = MistralAI.OCR.TOcrImageUrl;
+
+  TOcrDocumentParams = MistralAI.OCR.TOcrDocumentParams;
+
+  TAnnotationFormat = MistralAI.OCR.TAnnotationFormat;
+
+  TOCRFormat = MistralAI.OCR.TOCRFormat;
+
+  TOcrParams = MistralAI.OCR.TOcrParams;
+
+  TOcrPageImage = MistralAI.OCR.TOcrPageImage;
+
+  TOcrPageDimensions = MistralAI.OCR.TOcrPageDimensions;
+
+  TOcrPage = MistralAI.OCR.TOcrPage;
+
+  TUsageInfo = MistralAI.OCR.TUsageInfo;
+
+  TOcr = MistralAI.OCR.TOcr;
+
+  TAsyncOcr = MistralAI.OCR.TAsyncOcr;
+
+  TPromiseOcr = MistralAI.OCR.TPromiseOcr;
+
+  {$ENDREGION}
+
+  {$REGION 'MistralAI.Async.Parallel'}
+
+  /// <summary>
+  /// Represents the parameters used for configuring a chat request bundle.
+  /// </summary>
+  /// <remarks>
+  /// This class extends <c>TParameters</c> and provides specific methods for setting chat-related
+  /// parameters, such as prompts, model selection, and reasoning effort.
+  /// It is used to structure and pass multiple requests efficiently in parallel processing.
+  /// </remarks>
+  TBundleParams = MistralAI.Async.Parallel.TBundleParams;
+
+  /// <summary>
+  /// Represents an item in a bundle of chat prompts and responses.
+  /// </summary>
+  /// <remarks>
+  /// This class stores information about a single chat request, including its index,
+  /// associated prompt, generated response, and related chat object.
+  /// It is used within a <c>TBundleList</c> to manage multiple asynchronous chat requests.
+  /// </remarks>
+  TBundleItem = MistralAI.Async.Parallel.TBundleItem;
+
+  /// <summary>
+  /// Manages a collection of <c>TBundleItem</c> objects.
+  /// </summary>
+  /// <remarks>
+  /// This class provides methods to add, retrieve, and count items in a bundle.
+  /// It is designed to store multiple chat request items processed in parallel.
+  /// The internal storage uses a <c>TObjectList&lt;TBundleItem&gt;</c> with automatic memory management.
+  /// </remarks>
+  TBundleList = MistralAI.Async.Parallel.TBundleList;
+
+  /// <summary>
+  /// Represents an asynchronous callback buffer for handling chat responses.
+  /// </summary>
+  /// <remarks>
+  /// This class is a specialized type used to manage asynchronous operations
+  /// related to chat request processing. It inherits from <c>TAsynCallBack&lt;TBundleList&gt;</c>,
+  /// enabling structured handling of callback events.
+  /// </remarks>
+  TAsynBundleList = MistralAI.Async.Parallel.TAsynBundleList;
+
+  /// <summary>
+  /// Represents a promise-based callback for handling a bundle of chat responses.
+  /// </summary>
+  /// <remarks>
+  /// The <c>TPromiseBundleList</c> alias extends <see cref="TPromiseCallBack&lt;TBundleList&gt;"/>
+  /// to provide a promise-style API for parallel chat prompt execution, resolving with a
+  /// <see cref="TBundleList"/> when all responses are complete or rejecting on error.
+  /// </remarks>
+  TPromiseBundleList = MistralAI.Async.Parallel.TPromiseBundleList;
+
+  {$ENDREGION}
+
+  {$REGION 'MistralAI.Libraries.Main'}
+
+  /// <summary>
+  /// Represents the parameters required to create or configure a document library
+  /// within the Mistral AI API.
+  /// </summary>
+  /// <remarks>
+  /// This class provides a fluent interface for defining the main properties of a library,
+  /// such as its name, description, and chunk size for document indexing.
+  /// Instances of this class are typically passed to methods like
+  /// <c>TLibrariesMainRoute.Create</c> to create a new library.
+  /// </remarks>
+  TLibrariesMainParams = MistralAI.Libraries.Main.TLibrariesMainParams;
+
+  /// <summary>
+  /// Represents the parameters required to update the properties of an existing
+  /// document library in the Mistral AI API.
+  /// </summary>
+  /// <remarks>
+  /// This class provides a fluent interface for defining updated values such as
+  /// the library name or description. It is primarily used with the
+  /// <c>TLibrariesMainRoute.Update</c> method to modify an existing library's metadata.
+  /// </remarks>
+  TUpdateLibrariesMainParams = MistralAI.Libraries.Main.TUpdateLibrariesMainParams;
+
+  /// <summary>
+  /// Represents a document library in the Mistral AI API.
+  /// </summary>
+  /// <remarks>
+  /// This class models the metadata of a document library, including its unique
+  /// identifier, name, owner information, creation and update timestamps, as well as
+  /// document statistics such as total size and number of documents.
+  /// Instances of <c>TLibrariesMain</c> are typically returned by calls to
+  /// <c>TLibrariesMainRoute.List</c>, <c>TLibrariesMainRoute.Create</c>,
+  /// <c>TLibrariesMainRoute.Retrieve</c>, or <c>TLibrariesMainRoute.Update</c>.
+  /// </remarks>
+  TLibrariesMain = MistralAI.Libraries.Main.TLibrariesMain;
+
+  /// <summary>
+  /// Represents a list of document libraries retrieved from the Mistral AI API.
+  /// </summary>
+  /// <remarks>
+  /// This class encapsulates an array of <c>TLibrariesMain</c> objects, each representing
+  /// a single document library and its metadata (e.g., ID, name, description, and statistics).
+  /// It is typically returned by calls such as <c>TLibrariesMainRoute.List</c> to enumerate
+  /// all existing libraries.
+  /// </remarks>
+  TLibrariesMainList = MistralAI.Libraries.Main.TLibrariesMainList;
+
+  /// <summary>
+  /// Represents an asynchronous callback handler for operations that return
+  /// a <c>TLibrariesMainList</c> instance.
+  /// </summary>
+  /// <remarks>
+  /// This type alias specializes <c>TAsyncCallback</c> with <c>TLibrariesMainList</c>
+  /// as the result type. It is typically used for non-blocking calls such as
+  /// <c>TLibrariesMainRoute.AsyncList</c> to retrieve all libraries.
+  /// <para>
+  /// Assign event handlers like <c>OnStart</c>, <c>OnSuccess</c>, and <c>OnError</c>
+  /// to respond to the different stages of the asynchronous operation.
+  /// </para>
+  /// </remarks>
+  TAsyncLibrariesMainList = MistralAI.Libraries.Main.TAsyncLibrariesMainList;
+
+  /// <summary>
+  /// Represents a promise-based asynchronous handler for operations that return
+  /// a <c>TLibrariesMainList</c> instance.
+  /// </summary>
+  /// <remarks>
+  /// This type alias specializes <c>TPromiseCallback</c> with <c>TLibrariesMainList</c>
+  /// as the result type. It is typically used with promise-oriented workflows,
+  /// such as <c>TLibrariesMainRoute.AsyncAwaitList</c>, to retrieve all libraries.
+  /// <para>
+  /// This type allows attaching <c>OnSuccess</c> and <c>OnError</c> handlers in a
+  /// chained style, making asynchronous code easier to manage compared to
+  /// traditional callback patterns.
+  /// </para>
+  /// </remarks>
+  TPromiseLibrariesMainList = MistralAI.Libraries.Main.TPromiseLibrariesMainList;
+
+  /// <summary>
+  /// Represents an asynchronous callback handler for operations returning a
+  /// <c>TLibrariesMain</c> instance.
+  /// </summary>
+  /// <remarks>
+  /// This type alias specializes <c>TAsyncCallback</c> with <c>TLibrariesMain</c> as the
+  /// result type. It is commonly used in non-blocking API calls such as
+  /// <c>TLibrariesMainRoute.AsyncCreate</c>, <c>AsyncRetrieve</c>, or <c>AsyncUpdate</c>.
+  /// <para>
+  /// Handlers such as <c>OnStart</c>, <c>OnSuccess</c>, and <c>OnError</c> can be assigned
+  /// to respond to the various stages of an asynchronous library operation.
+  /// </para>
+  /// </remarks>
+  TAsyncLibrariesMain = MistralAI.Libraries.Main.TAsyncLibrariesMain;
+
+  /// <summary>
+  /// Represents a promise-based asynchronous handler for operations that return
+  /// a <c>TLibrariesMain</c> instance.
+  /// </summary>
+  /// <remarks>
+  /// This type alias specializes <c>TPromiseCallback</c> with <c>TLibrariesMain</c> as
+  /// the result type. It is typically used with asynchronous workflows that follow a
+  /// promise pattern, such as <c>TLibrariesMainRoute.AsyncAwaitCreate</c> or
+  /// <c>AsyncAwaitUpdate</c>.
+  /// <para>
+  /// Using this type allows you to attach <c>OnSuccess</c> and <c>OnError</c> handlers
+  /// in a chained style, simplifying non-blocking execution and result handling.
+  /// </para>
+  /// </remarks>
+  TPromiseLibrariesMain = MistralAI.Libraries.Main.TPromiseLibrariesMain;
+
+  {$ENDREGION}
+
+  {$REGION 'MistralAI.Libraries.Documents'}
+
+  /// <summary>
+  /// Represents the URL query parameters used when listing documents in a Mistral library.
+  /// </summary>
+  /// <remarks>
+  /// This class provides a fluent interface to configure pagination, sorting, and search options
+  /// for document retrieval via the <c>/v1/libraries/{library_id}/documents</c> endpoint.
+  /// </remarks>
+  TLibrariesDocumentsUrlParams = MistralAI.Libraries.Documents.TLibrariesDocumentsUrlParams;
+
+  /// <summary>
+  /// Represents the multipart/form-data parameters used for uploading documents
+  /// to a Mistral library.
+  /// </summary>
+  /// <remarks>
+  /// This class provides helper methods to add file streams or file paths
+  /// when performing a document upload via the
+  /// <c>/v1/libraries/{library_id}/documents</c> endpoint.
+  /// </remarks>
+  TLibrariesDocumentsUploadParams = MistralAI.Libraries.Documents.TLibrariesDocumentsUploadParams;
+
+  /// <summary>
+  /// Represents the JSON body parameters used for updating the metadata
+  /// of a document within a Mistral library.
+  /// </summary>
+  /// <remarks>
+  /// This class is primarily used to update the name of an existing document
+  /// via the <c>/v1/libraries/{library_id}/documents/{document_id}</c> endpoint.
+  /// </remarks>
+  TLibrariesDocumentsUpdateParams = MistralAI.Libraries.Documents.TLibrariesDocumentsUpdateParams;
+
+  /// <summary>
+  /// Represents the metadata of a document stored in a Mistral library.
+  /// </summary>
+  /// <remarks>
+  /// This class maps the response structure of the
+  /// <c>/v1/libraries/{library_id}/documents</c> endpoint and related document endpoints.
+  /// It contains essential information such as file details, upload metadata,
+  /// processing status, and token usage for the document.
+  /// </remarks>
+  TLibrariesDocuments = MistralAI.Libraries.Documents.TLibrariesDocuments;
+
+  /// <summary>
+  /// Asynchronous callback type for operations returning a <c>TLibrariesDocuments</c> instance.
+  /// </summary>
+  /// <remarks>
+  /// This alias of <c>TAsyncCallback&lt;TLibrariesDocuments&gt;</c> is used for non-blocking
+  /// document operations (e.g., retrieve, upload, update) where callbacks such as
+  /// <c>OnStart</c>, <c>OnSuccess</c>, and <c>OnError</c> can be assigned to handle the result.
+  /// </remarks>
+  TAsyncLibrariesDocuments = MistralAI.Libraries.Documents.TAsyncLibrariesDocuments;
+
+  /// <summary>
+  /// Promise-based callback type for operations returning a <c>TLibrariesDocuments</c> instance.
+  /// </summary>
+  /// <remarks>
+  /// This alias of <c>TPromiseCallback&lt;TLibrariesDocuments&gt;</c> is used for asynchronous
+  /// document operations (e.g., upload, retrieve, update) that follow a promise-style interface.
+  /// It enables chaining of success and error handlers, providing a cleaner, event-driven workflow.
+  /// </remarks>
+  TPromiseLibrariesDocuments = MistralAI.Libraries.Documents.TPromiseLibrariesDocuments;
+
+  /// <summary>
+  /// Represents the response structure when listing documents in a Mistral library.
+  /// </summary>
+  /// <remarks>
+  /// This class encapsulates both the pagination information and the array of document metadata
+  /// (<c>TLibrariesDocuments</c>) returned by the
+  /// <c>/v1/libraries/{library_id}/documents</c> endpoint.
+  /// </remarks>
+  TLibrariesDocumentsList = MistralAI.Libraries.Documents.TLibrariesDocumentsList;
+
+  /// <summary>
+  /// Asynchronous callback type for operations returning a <c>TLibrariesDocumentsList</c> instance.
+  /// </summary>
+  /// <remarks>
+  /// This alias of <c>TAsyncCallback&lt;TLibrariesDocumentsList&gt;</c> is used for non-blocking
+  /// document listing operations. It allows attaching event handlers such as <c>OnStart</c>,
+  /// <c>OnSuccess</c>, and <c>OnError</c> to manage the response lifecycle when retrieving
+  /// paginated lists of documents from a library.
+  /// </remarks>
+  TAsyncLibrariesDocumentsList = MistralAI.Libraries.Documents.TAsyncLibrariesDocumentsList;
+
+  /// <summary>
+  /// Promise-based callback type for operations returning a <c>TLibrariesDocumentsList</c> instance.
+  /// </summary>
+  /// <remarks>
+  /// This alias of <c>TPromiseCallback&lt;TLibrariesDocumentsList&gt;</c> is designed for asynchronous
+  /// document listing operations that follow a promise-style pattern.
+  /// It enables chaining success and error handlers for handling paginated document retrieval results.
+  /// </remarks>
+  TPromiseLibrariesDocumentsList = MistralAI.Libraries.Documents.TPromiseLibrariesDocumentsList;
+
+  /// <summary>
+  /// Represents the response indicating whether a document operation
+  /// (such as delete or reprocess) was successfully completed.
+  /// </summary>
+  /// <remarks>
+  /// This class is used by endpoints like
+  /// <c>/v1/libraries/{library_id}/documents/{document_id}</c> (DELETE)
+  /// and
+  /// <c>/v1/libraries/{library_id}/documents/{document_id}/reprocess</c> (POST),
+  /// where the API returns a flag indicating the operation status.
+  /// </remarks>
+  TLibraryDocumentsProcessed = MistralAI.Libraries.Documents.TLibraryDocumentsProcessed;
+
+  /// <summary>
+  /// Asynchronous callback type for operations returning a <c>TLibraryDocumentsProcessed</c> instance.
+  /// </summary>
+  /// <remarks>
+  /// This alias of <c>TAsyncCallback&lt;TLibraryDocumentsProcessed&gt;</c> is used for non-blocking
+  /// operations such as document deletion or reprocessing, where event handlers
+  /// (<c>OnStart</c>, <c>OnSuccess</c>, <c>OnError</c>) can be attached to monitor the operation's outcome.
+  /// </remarks>
+  TAsyncLibraryDocumentsProcessed = MistralAI.Libraries.Documents.TAsyncLibraryDocumentsProcessed;
+
+  /// <summary>
+  /// Promise-based callback type for operations returning a <c>TLibraryDocumentsProcessed</c> instance.
+  /// </summary>
+  /// <remarks>
+  /// This alias of <c>TPromiseCallback&lt;TLibraryDocumentsProcessed&gt;</c> is used for asynchronous
+  /// operations such as document deletion or reprocessing, following a promise-style interface.
+  /// It allows chaining success and error handlers to handle the final result of the operation.
+  /// </remarks>
+  TPromiseLibraryDocumentsProcessed = MistralAI.Libraries.Documents.TPromiseLibraryDocumentsProcessed;
+
+  /// <summary>
+  /// Represents the extracted text content of a document from a Mistral library.
+  /// </summary>
+  /// <remarks>
+  /// This class maps the response of the
+  /// <c>/v1/libraries/{library_id}/documents/{document_id}/text_content</c> endpoint.
+  /// It contains the raw text extracted by the OCR or document processing pipeline.
+  /// </remarks>
+  TLibraryDocumentsText = MistralAI.Libraries.Documents.TLibraryDocumentsText;
+
+  /// <summary>
+  /// Asynchronous callback type for operations returning a <c>TLibraryDocumentsText</c> instance.
+  /// </summary>
+  /// <remarks>
+  /// This alias of <c>TAsyncCallback&lt;TLibraryDocumentsText&gt;</c> is used for non-blocking
+  /// operations that retrieve the extracted text content of a document.
+  /// Event handlers such as <c>OnStart</c>, <c>OnSuccess</c>, and <c>OnError</c> can be attached
+  /// to monitor the asynchronous text retrieval process.
+  /// </remarks>
+  TAsyncLibraryDocumentsText = MistralAI.Libraries.Documents.TAsyncLibraryDocumentsText;
+
+  /// <summary>
+  /// Promise-based callback type for operations returning a <c>TLibraryDocumentsText</c> instance.
+  /// </summary>
+  /// <remarks>
+  /// This alias of <c>TPromiseCallback&lt;TLibraryDocumentsText&gt;</c> is used for asynchronous
+  /// operations that retrieve the text content of a document.
+  /// It enables a promise-style workflow, allowing chaining of success and error handlers
+  /// to manage the final result of the text extraction process.
+  /// </remarks>
+  TPromiseLibraryDocumentsText = MistralAI.Libraries.Documents.TPromiseLibraryDocumentsText;
+
+  /// <summary>
+  /// Represents the processing status of a document in a Mistral library.
+  /// </summary>
+  /// <remarks>
+  /// This class maps the response of the
+  /// <c>/v1/libraries/{library_id}/documents/{document_id}/status</c> endpoint.
+  /// It provides information about the document's unique identifier and its current processing state.
+  /// </remarks>
+  TLibraryDocumentsStatus = MistralAI.Libraries.Documents.TLibraryDocumentsStatus;
+
+  /// <summary>
+  /// Asynchronous callback type for operations returning a <c>TLibraryDocumentsStatus</c> instance.
+  /// </summary>
+  /// <remarks>
+  /// This alias of <c>TAsyncCallback&lt;TLibraryDocumentsStatus&gt;</c> is used for non-blocking
+  /// operations that check the processing status of a document.
+  /// It allows attaching event handlers (<c>OnStart</c>, <c>OnSuccess</c>, <c>OnError</c>)
+  /// to monitor the status retrieval process.
+  /// </remarks>
+  TAsyncLibraryDocumentsStatus = MistralAI.Libraries.Documents.TAsyncLibraryDocumentsStatus;
+
+  /// <summary>
+  /// Promise-based callback type for operations returning a <c>TLibraryDocumentsStatus</c> instance.
+  /// </summary>
+  /// <remarks>
+  /// This alias of <c>TPromiseCallback&lt;TLibraryDocumentsStatus&gt;</c> is used for asynchronous
+  /// operations that check the processing status of a document, following a promise-style pattern.
+  /// It enables chaining of success and error handlers to handle the final result of the status query.
+  /// </remarks>
+  TPromiseLibraryDocumentsStatus = MistralAI.Libraries.Documents.TPromiseLibraryDocumentsStatus;
+
+  {$ENDREGION}
+
+  {$REGION 'MistralAI.Libraries.Access'}
+
+  /// <summary>
+  /// Represents the parameters required to create or update access levels for a library.
+  /// </summary>
+  /// <remarks>
+  /// The <c>TAccessParams</c> class is used to build the request payload when assigning or modifying
+  /// access levels to a specific entity (user, workspace, or organization) for a library.
+  /// It provides fluent methods for configuring organization ID, access level, and the target entity.
+  /// </remarks>
+  TAccessParams = MistralAI.Libraries.Access.TAccessParams;
+
+  /// <summary>
+  /// Represents the parameters required to delete access levels for a library.
+  /// </summary>
+  /// <remarks>
+  /// The <c>TAccessDeleteParams</c> class is used to build the request payload when
+  /// revoking access rights for a specific entity (user, workspace, or organization)
+  /// associated with a library.
+  /// </remarks>
+  TAccessDeleteParams = MistralAI.Libraries.Access.TAccessDeleteParams;
+
+  /// <summary>
+  /// Represents the access rights of an entity (user, workspace, or organization) to a specific library.
+  /// </summary>
+  /// <remarks>
+  /// The <c>TLibrariesAccess</c> class models the response object for library access queries or updates.
+  /// It contains information about the library, the organization, the entity with which it is shared,
+  /// and the access role granted.
+  /// </remarks>
+  TLibrariesAccess = MistralAI.Libraries.Access.TLibrariesAccess;
+
+  /// <summary>
+  /// Represents an asynchronous callback handler for library access operations.
+  /// </summary>
+  /// <remarks>
+  /// <c>TAsyncLibrariesAccess</c> is a type alias for <c>TAsyncCallback&lt;TLibrariesAccess&gt;</c>.
+  /// It is used to manage non-blocking operations related to a single library access entry,
+  /// providing event hooks such as <c>OnStart</c>, <c>OnSuccess</c>, and <c>OnError</c>.
+  /// </remarks>
+  TAsyncLibrariesAccess = MistralAI.Libraries.Access.TAsyncLibrariesAccess;
+
+  /// <summary>
+  /// Represents a promise-based asynchronous handler for library access operations.
+  /// </summary>
+  /// <remarks>
+  /// <c>TPromiseLibrariesAccess</c> is a type alias for <c>TPromiseCallback&lt;TLibrariesAccess&gt;</c>.
+  /// It is used in asynchronous workflows to retrieve or update a single library access entry,
+  /// resolving with a <c>TLibrariesAccess</c> result when the operation completes successfully,
+  /// or rejecting with an exception if an error occurs.
+  /// </remarks>
+  TPromiseLibrariesAccess = MistralAI.Libraries.Access.TPromiseLibrariesAccess;
+
+  /// <summary>
+  /// Represents a list of access rights for a specific library.
+  /// </summary>
+  /// <remarks>
+  /// The <c>TLibrariesAccessList</c> class models the response when querying all entities that have access
+  /// to a library. It encapsulates an array of <c>TLibrariesAccess</c> objects, each describing the
+  /// access details for a single entity (user, workspace, or organization).
+  /// </remarks>
+  TLibrariesAccessList = MistralAI.Libraries.Access.TLibrariesAccessList;
+
+  /// <summary>
+  /// Represents an asynchronous callback handler for operations returning a list of library access entries.
+  /// </summary>
+  /// <remarks>
+  /// <c>TAsyncLibrariesAccessList</c> is a type alias for <c>TAsyncCallback&lt;TLibrariesAccessList&gt;</c>.
+  /// It is used for non-blocking operations that retrieve all access entries of a specific library,
+  /// providing event hooks such as <c>OnStart</c>, <c>OnSuccess</c>, and <c>OnError</c> to manage the asynchronous workflow.
+  /// </remarks>
+  TAsyncLibrariesAccessList = MistralAI.Libraries.Access.TAsyncLibrariesAccessList;
+
+  /// <summary>
+  /// Represents a promise-based asynchronous handler for operations returning a list of library access entries.
+  /// </summary>
+  /// <remarks>
+  /// <c>TPromiseLibrariesAccessList</c> is a type alias for <c>TPromiseCallback&lt;TLibrariesAccessList&gt;</c>.
+  /// It is used in asynchronous workflows to retrieve all access entries of a specific library,
+  /// resolving with a <c>TLibrariesAccessList</c> when the operation completes successfully,
+  /// or rejecting with an exception if an error occurs.
+  /// </remarks>
+  TPromiseLibrariesAccessList = MistralAI.Libraries.Access.TPromiseLibrariesAccessList;
+
+  {$ENDREGION}
+
+  {$REGION 'MistralAI.Audio'}
+
+  /// <summary>
+  /// Represents the parameter builder for configuring an audio transcription request.
+  /// </summary>
+  /// <remarks>
+  /// Use <c>TAudioTranscriptionParams</c> to set various input fields such as file path or URL, model name,
+  /// language, and timestamp options. The configured instance is submitted to the transcription endpoint to
+  /// obtain speech-to-text results from an audio source.
+  /// </remarks>
+  TAudioTranscriptionParams = MistralAI.Audio.TAudioTranscriptionParams;
+
+  /// <summary>
+  /// Represents the result of an audio transcription request.
+  /// </summary>
+  /// <remarks>
+  /// <c>TAudioTranscription</c> encapsulates the output of a transcription task, including the full transcribed text,
+  /// detected language, model used, timestamped segments, and usage statistics. It is returned as the response
+  /// object from the audio transcription API endpoint.
+  /// </remarks>
+  TAudioTranscription = MistralAI.Audio.TAudioTranscription;
+
+  /// <summary>
+  /// Represents the asynchronous callback structure for audio transcription operations.
+  /// </summary>
+  /// <remarks>
+  /// <c>TAsyncAudioTranscription</c> is a type alias for <c>TAsyncCallback&lt;TAudioTranscription&gt;</c>.
+  /// It allows you to assign lifecycle event handlers such as <c>OnStart</c>, <c>OnSuccess</c>, and <c>OnError</c>
+  /// when performing non-blocking transcription requests.
+  /// This is useful for integrating event-driven logic into your application when working with
+  /// <c>TAudioRoute.AsyncTranscription</c> to process audio asynchronously without blocking the main thread.
+  /// </remarks>
+  TAsyncAudioTranscription = MistralAI.Audio.TAsyncAudioTranscription;
+
+  /// <summary>
+  /// Represents the promise-based interface for audio transcription operations.
+  /// </summary>
+  /// <remarks>
+  /// <c>TPromiseAudioTranscription</c> is a type alias for <c>TPromiseCallback&lt;TAudioTranscription&gt;</c>.
+  /// It provides a structured way to handle asynchronous transcription results using a promise-like API,
+  /// allowing chaining of <c>OnSuccess</c> and <c>OnError</c> handlers.
+  /// This type is typically used with <c>TAudioRoute.AsyncAwaitTranscription</c> for workflows where you want
+  /// to react to the transcription result once it's completed, without relying on event callbacks.
+  /// </remarks>
+  TPromiseAudioTranscription = MistralAI.Audio.TPromiseAudioTranscription;
+
+  {$ENDREGION}
+
+function HttpMonitoring: IRequestMonitor;
+
+function web_search_premium: TConnectorParams;
+function web_search: TConnectorParams;
+function image_generation: TConnectorParams;
+function code_interpreter: TConnectorParams;
+function &function(const Value: IFunctionCore): TConnectorParams; overload;
+function &function(const Value: TToolFunctionParams): TConnectorParams; overload;
+function document_library(const Value: TArray<string>): TConnectorParams;
+
 implementation
+
+function HttpMonitoring: IRequestMonitor;
+begin
+  Result := Monitoring;
+end;
+
+function web_search_premium: TConnectorParams;
+begin
+  Result := TConnector.web_search_premium;
+end;
+
+function web_search: TConnectorParams;
+begin
+  Result := TConnector.web_search;
+end;
+
+function image_generation: TConnectorParams;
+begin
+  Result := TConnector.image_generation;
+end;
+
+function code_interpreter: TConnectorParams;
+begin
+  Result := TConnector.code_interpreter;
+end;
+
+function &function(const Value: IFunctionCore): TConnectorParams;
+begin
+  Result := TConnector.&function(Value);
+end;
+
+function &function(const Value: TToolFunctionParams): TConnectorParams;
+begin
+  Result := TConnector.&function(Value);
+end;
+
+function document_library(const Value: TArray<string>): TConnectorParams;
+begin
+  Result := TConnector.document_library(Value);
+end;
 
 { TMistralAI }
 
@@ -1363,7 +2574,14 @@ begin
   FFineTuningRoute.Free;
   FClassifiersRoute.Free;
   FBatchRoute.Free;
+  FConversationsRoute.Free;
+  FConversationsAgentRoute.Free;
+  FOcrRoute.Free;
   FAPI.Free;
+  FLibrariesMainRoute.Free;
+  FLibrariesDocumentsRoute.Free;
+  FLibrariesAccessRoute.Free;
+  FAudioRoute.Free;
   inherited;
 end;
 
@@ -1377,6 +2595,13 @@ end;
 function TMistralAI.GetAPI: TMistralAIAPI;
 begin
   Result := FAPI;
+end;
+
+function TMistralAI.GetAudioRoute: TAudioRoute;
+begin
+  if not Assigned(FAudioRoute) then
+    FAudioRoute := TAudioRoute.CreateRoute(API);
+  Result := FAudioRoute;
 end;
 
 function TMistralAI.GetBaseUrl: string;
@@ -1413,6 +2638,20 @@ begin
   Result := FCodestralRoute;
 end;
 
+function TMistralAI.GetConversationsAgentRoute: TConversationsAgentRoute;
+begin
+  if not Assigned(FConversationsAgentRoute) then
+    FConversationsAgentRoute := TConversationsAgentRoute.CreateRoute(API);
+  Result := FConversationsAgentRoute;
+end;
+
+function TMistralAI.GetConversationsRoute: TConversationsRoute;
+begin
+  if not Assigned(FConversationsRoute) then
+    FConversationsRoute := TConversationsRoute.CreateRoute(API);
+  Result := FConversationsRoute;
+end;
+
 function TMistralAI.GetEmbeddingsRoute: TEmbeddingsRoute;
 begin
   if not Assigned(FEmbeddingsRoute) then
@@ -1434,6 +2673,32 @@ begin
   Result := FFineTuningRoute;
 end;
 
+function TMistralAI.GetHttpClient: IHttpClientAPI;
+begin
+  Result := API.HttpClient;
+end;
+
+function TMistralAI.GetLibrariesAccessRoute: TLibrariesAccessRoute;
+begin
+  if not Assigned(FLibrariesAccessRoute) then
+    FLibrariesAccessRoute := TLibrariesAccessRoute.CreateRoute(API);
+  Result := FLibrariesAccessRoute;
+end;
+
+function TMistralAI.GetLibrariesDocumentsRoute: TLibrariesDocumentsRoute;
+begin
+  if not Assigned(FLibrariesDocumentsRoute) then
+    FLibrariesDocumentsRoute := TLibrariesDocumentsRoute.CreateRoute(API);
+  Result := FLibrariesDocumentsRoute;
+end;
+
+function TMistralAI.GetLibrariesMainRoute: TLibrariesMainRoute;
+begin
+  if not Assigned(FLibrariesMainRoute) then
+    FLibrariesMainRoute := TLibrariesMainRoute.CreateRoute(API);
+  Result := FLibrariesMainRoute;
+end;
+
 function TMistralAI.GetModelsRoute: TModelsRoute;
 begin
   if not Assigned(FModelsRoute) then
@@ -1441,9 +2706,21 @@ begin
   Result := FModelsRoute;
 end;
 
+function TMistralAI.GetOcrRoute: TOcrRoute;
+begin
+  if not Assigned(FOcrRoute) then
+    FOcrRoute := TOcrRoute.CreateRoute(API);
+  Result := FOcrRoute;
+end;
+
 function TMistralAI.GetToken: string;
 begin
-  Result := FAPI.Token;
+  Result := FAPI.APIKey;
+end;
+
+function TMistralAI.GetVersion: string;
+begin
+  Result := VERSION;
 end;
 
 procedure TMistralAI.SetBaseUrl(const Value: string);
@@ -1453,7 +2730,7 @@ end;
 
 procedure TMistralAI.SetToken(const Value: string);
 begin
-  FAPI.Token := Value;
+  FAPI.APIKey := Value;
 end;
 
 { TMistralAIFactory }

@@ -34,6 +34,14 @@ type
     /// </summary>
     function GetParameters: string;
     /// <summary>
+    /// Retrieves the strict schema adherence switch value.
+    /// </summary>
+    function GetStrict: Boolean;
+    /// <summary>
+    /// Set value to the strict schema adherence switch.
+    /// </summary>
+    procedure SetStrict(const Value: Boolean);
+    /// <summary>
     /// Retrieves the type of the function, typically "function".
     /// </summary>
     function GetType: string;
@@ -69,6 +77,10 @@ type
     /// The type of the tool. Currently, only "function" is supported.
     /// </summary>
     property &Type: string read GetType;
+    /// <summary>
+    /// Retrieves the strict schema adherence switch value.
+    /// </summary>
+    property &Strict: Boolean read GetStrict write SetStrict;
   end;
 
   /// <summary>
@@ -79,6 +91,7 @@ type
   /// </remarks>
   TFunctionCore = class abstract(TinterfacedObject, IFunctionCore)
   protected
+    FStrict: Boolean;
     /// <summary>
     /// Retrieves the description of the function. Derived classes must implement this method.
     /// </summary>
@@ -92,10 +105,19 @@ type
     /// </summary>
     function GetParameters: string; virtual; abstract;
     /// <summary>
+    /// Retrieves the strict schema adherence switch value.
+    /// </summary>
+    function GetStrict: Boolean;
+    /// <summary>
+    /// Set value to the strict schema adherence switch.
+    /// </summary>
+    procedure SetStrict(const Value: Boolean);
+    /// <summary>
     /// Retrieves the type of the function, which is "function" by default.
     /// </summary>
     function GetType: string; virtual;
   public
+    constructor Create(const IsStrict: Boolean = False);
     /// <summary>
     /// Executes the function with the provided arguments and returns the result as a string. Derived classes must implement this method.
     /// </summary>
@@ -128,15 +150,35 @@ type
     /// The type of the tool. Currently, only "function" is supported.
     /// </summary>
     property &Type: string read GetType;
+    /// <summary>
+    /// Retrieves the strict schema adherence switch value.
+    /// </summary>
+    property &Strict: Boolean read GetStrict write SetStrict;
   end;
 
 implementation
 
 { TFunctionCore }
 
+constructor TFunctionCore.Create(const IsStrict: Boolean);
+begin
+  inherited Create;
+  &Strict := IsStrict;
+end;
+
+function TFunctionCore.GetStrict: Boolean;
+begin
+  Result := FStrict;
+end;
+
 function TFunctionCore.GetType: string;
 begin
   Result := 'function';
+end;
+
+procedure TFunctionCore.SetStrict(const Value: Boolean);
+begin
+  FStrict := Value;
 end;
 
 function TFunctionCore.ToJson: TJSONObject;
@@ -161,6 +203,8 @@ begin
       Write('"description": "%s",', [Description]);
       Write('"name": "%s",', [Name]);
       Write('"parameters": %s', [Parameters]);
+      if &Strict then
+        Write(',"strict": %s', [BoolToStr(&Strict, True).ToLower]);
       Result := Format('{%s}', [ToString]);
     finally
       Free;

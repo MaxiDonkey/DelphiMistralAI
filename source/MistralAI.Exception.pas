@@ -1,0 +1,192 @@
+unit MistralAI.Exception;
+
+{-------------------------------------------------------------------------------
+
+      Github repository :  https://github.com/MaxiDonkey/DelphiMistralAI
+      Visit the Github repository for the documentation and use examples
+
+ ------------------------------------------------------------------------------}
+
+interface
+
+uses
+  System.SysUtils, MistralAI.Errors;
+
+type
+  MistralAIException = class(Exception)
+  private
+    FCode: Int64;
+    FMsg: string;
+  public
+    constructor Create(const ACode: Int64; const AError: TErrorCore); reintroduce; overload;
+    constructor Create(const ACode: Int64; const Value: string); reintroduce; overload;
+    property Code: Int64 read FCode write FCode;
+    property Msg: string read FMsg write FMsg;
+  end;
+
+  MistralAIValidationException = class(Exception)
+  private
+    FCode: Int64;
+  protected
+    function DetailItemToStr(const Value: TDetail): string;
+    function LocToStr(const Value: TArray<string>): string;
+    function ToText(const AError: TError422): string;
+    function TypeToStr(const Value: string): string;
+  public
+    constructor Create(const ACode: Int64; const AError: TErrorCore); reintroduce;
+    property Code: Int64 read FCode write FCode;
+  end;
+
+  /// <summary>
+  /// The MistralAIExceptionAPI class represents a generic API-related exception.
+  /// It is thrown when there is an issue with the API configuration or request process,
+  /// such as a missing API token, invalid base URL, or other configuration errors.
+  /// This class serves as a base for more specific API exceptions.
+  /// </summary>
+  MistralAIExceptionAPI = class(Exception);
+
+  /// <summary>
+  /// An EInvalidRequestError indicates that your request was malformed or
+  /// missing some required parameters, such as a token or an input.
+  /// This could be due to a typo, a formatting error, or a logic error in your code.
+  /// </summary>
+  EInvalidRequestError = class(MistralAIException);
+
+  /// <summary>
+  /// A ERateLimitError indicates that you have hit your assigned rate limit.
+  /// This means that you have sent too many tokens or requests in a given period of time,
+  /// and our services have temporarily blocked you from sending more.
+  /// </summary>
+  ERateLimitError = class(MistralAIException);
+
+  /// <summary>
+  /// An EAuthenticationError indicates that your API key or token was invalid,
+  /// expired, or revoked. This could be due to a typo, a formatting error, or a security breach.
+  /// </summary>
+  EAuthenticationError = class(MistralAIException);
+
+  /// <summary>
+  /// This error message indicates that your account is not part of an organization
+  /// </summary>
+  EPermissionError = class(MistralAIException);
+
+  /// <summary>
+  /// This error message indicates that our servers are experiencing high
+  /// traffic and are unable to process your request at the moment
+  /// </summary>
+  ETryAgain = class(MistralAIException);
+
+  EEngineException = class(MistralAIException);
+
+  /// <summary>
+  /// This error occurs when a request to the API can not be processed. This is a client-side error,
+  /// meaning the problem is with the request itself, and not the API.
+  /// </summary>
+  EUnprocessableEntityError = class(MistralAIValidationException);
+
+  /// <summary>
+  /// An EInvalidResponse error occurs when the API response is either empty or not in the expected format.
+  /// This error indicates that the API did not return a valid response that can be processed, possibly due to a server-side issue,
+  /// a malformed request, or unexpected input data.
+  /// </summary>
+  EInvalidResponse = class(MistralAIException);
+
+implementation
+
+uses
+  System.StrUtils;
+
+{ MistralAIException }
+
+constructor MistralAIException.Create(const ACode: Int64; const AError: TErrorCore);
+begin
+  if not Assigned(AError) then
+    begin
+      case ACode of
+        404: Msg := 'The requested resource was not found on this server.';
+        else
+          Msg := 'Unknown error';
+      end;
+      inherited Create(Format('error %d: %s', [ACode, Msg]));
+      Exit;
+    end;
+
+  var Error := AError as TError;
+
+  Code := ACode;
+  if Error.Detail <> EmptyStr then
+    Msg := Error.Detail
+  else
+  if Error.Message <> EmptyStr then
+    Msg := Error.Message;
+  if Error.RequestID <> EmptyStr then
+    Msg := Format('%s for request %s', [Msg, Error.RequestID]);
+
+  inherited Create(Format('error %d: %s', [ACode, Msg]));
+end;
+
+constructor MistralAIException.Create(const ACode: Int64; const Value: string);
+begin
+  Code := ACode;
+  Msg := Value;
+  inherited Create(Format('error %d: %s', [ACode, Msg]));
+end;
+
+{ MistralAIValidationException }
+
+constructor MistralAIValidationException.Create(const ACode: Int64;
+  const AError: TErrorCore);
+begin
+  var Error := AError as TError422;
+  Code := ACode;
+  if Length(Error.Detail) > 0 then
+    inherited Create(Format('error %d: %s ', [ACode, TypeToStr(Error.Detail[0].Msg)]))
+  else
+    {--- WARNING ---
+         Problem with errors generated by Mistral.
+         (Detail & Message: inconsistent. Pending correction)}
+    if Length(Error.Message.Detail) > 0 then
+       inherited Create(
+          Format('error %d: %s '+ sLineBreak +' %s',
+                 [ACode, TypeToStr(Error.&Type), ToText(Error)]) )
+    else
+      inherited Create(Format('error %d: %s ', [ACode, 'Detail not captured']));
+end;
+
+function MistralAIValidationException.DetailItemToStr(
+  const Value: TDetail): string;
+begin
+  Result := Format('   %s (%s) --- %s '+sLineBreak, [LocToStr(Value.Loc), Value.Input, Value.Msg])
+end;
+
+function MistralAIValidationException.LocToStr(
+  const Value: TArray<string>): string;
+begin
+  Result := EmptyStr;
+  for var S in Value do
+    if IndexStr(S, ['body']) = -1 then
+      begin
+        if Result <> EmptyStr then
+          Result := Result + '.' + S else
+          Result := S;
+      end;
+end;
+
+function MistralAIValidationException.ToText(
+  const AError: TError422): string;
+begin
+  Result := EmptyStr;
+  for var Item in AError.Message.Detail do
+    begin
+      if Result <> EmptyStr then
+        Result := Format('%s %s', [Result, DetailItemToStr(Item)]) else
+        Result := DetailItemToStr(Item);
+    end;
+end;
+
+function MistralAIValidationException.TypeToStr(const Value: string): string;
+begin
+  Result := StringReplace(Value, '_', ' ', [rfReplaceAll, rfIgnoreCase]);
+end;
+
+end.

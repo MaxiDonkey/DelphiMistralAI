@@ -45,7 +45,34 @@ uses
   /// <para>If the input is a file path, resolves its MIME type and verifies if it is a supported image format.</para>
   /// <para>Encodes the file content as a Base64 data URI if it is a supported image.</para>
   /// </remarks>
-  function UrlCheck(const Value: string): string;
+  function ImageUrlCheck(const Value: string): string;
+
+  function AudioUrlCheck(const Value: string): string;
+
+  /// <summary>
+  /// Validates a PDF URL or file path and returns a secure link or a Base64-encoded data URI.
+  /// </summary>
+  /// <param name="Value">
+  /// <para>The input string, which can be either:</para>
+  /// <para>- An HTTPS URL (returned unchanged).</para>
+  /// <para>- An HTTP URL (throws an exception).</para>
+  /// <para>- A local file path to a PDF file (returns a Base64 data URI).</para>
+  /// </param>
+  /// <returns>
+  /// <para>If <paramref name="Value"/> starts with “https:”, returns it directly.</para>
+  /// <para>Otherwise, returns a data URI in the form “data:application/pdf;base64,{encoded content}”.</para>
+  /// </returns>
+  /// <exception cref="Exception">
+  /// <para>Thrown when:</para>
+  /// <para>- The URL starts with “http:” (insecure connection).</para>
+  /// <para>- The file path does not point to an existing PDF file or is not a PDF.</para>
+  /// </exception>
+  /// <remarks>
+  /// <para>This function enforces secure connections by rejecting “http:” URLs.</para>
+  /// <para>When given a file path, it uses <see cref="ResolveMimeType"/> to confirm the MIME type is “application/pdf”
+  /// and then calls <see cref="EncodeBase64(FileLocation)"/> to produce the Base64 string.</para>
+  /// </remarks>
+  function PdfUrlCheck(const Value: string): string;
 
   /// <summary>
   /// Converts a byte array into a Base64-encoded string.
@@ -178,7 +205,7 @@ begin
   TMimeTypes.Default.GetFileInfo(FileLocation, Result, LKind);
 end;
 
-function UrlCheck(const Value: string): string;
+function ImageUrlCheck(const Value: string): string;
 begin
   if Value.StartsWith('https:') then
     Exit(Value);
@@ -188,6 +215,34 @@ begin
   var MimeType := ResolveMimeType(Value);
   if IndexStr(MimeType, ['image/png', 'image/jpeg', 'image/gif', 'image/webp']) = -1 then
     raise Exception.Create('Unsupported image format');
+  Result :=  Format('data:%s;base64,%s', [MimeType, EncodeBase64(Value)]);
+end;
+
+function AudioUrlCheck(const Value: string): string;
+begin
+  if Value.StartsWith('https:') then
+    Exit(Value);
+  if Value.StartsWith('http:') then
+    raise Exception.Create('Invalid URL: Secure HTTPS connection required');
+
+  var MimeType := ResolveMimeType(Value);
+  if IndexStr(MimeType, ['audio/mpeg', 'audio/wav', 'audio/x-wav']) = -1 then
+    raise Exception.Create('Unsupported image format');
+
+  Result :=  Format('%s', [EncodeBase64(Value)]);
+//  Result :=  Format('data:%s;base64,%s', [MimeType, EncodeBase64(Value)]);
+end;
+
+function PdfUrlCheck(const Value: string): string;
+begin
+  if Value.StartsWith('https:') then
+    Exit(Value);
+  if Value.StartsWith('http:') then
+    raise Exception.Create('Invalid URL: Secure HTTPS connection required');
+
+  var MimeType := ResolveMimeType(Value);
+  if IndexStr(MimeType, ['application/pdf']) = -1 then
+    raise Exception.Create('Unsupported document format');
   Result :=  Format('data:%s;base64,%s', [MimeType, EncodeBase64(Value)]);
 end;
 

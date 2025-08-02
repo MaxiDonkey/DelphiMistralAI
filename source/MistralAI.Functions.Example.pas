@@ -20,7 +20,7 @@ type
     function GetParameters: string; override;
   public
     function Execute(const Arguments: string): string; override;
-    class function CreateInstance: IFunctionCore;
+    class function CreateInstance(const AStrict: Boolean = false): IFunctionCore;
   end;
 
 implementation
@@ -30,9 +30,9 @@ uses
 
 { TWeatherReportFunction }
 
-class function TWeatherReportFunction.CreateInstance: IFunctionCore;
+class function TWeatherReportFunction.CreateInstance(const AStrict: Boolean = false): IFunctionCore;
 begin
-  Result := TWeatherReportFunction.create;
+  Result := TWeatherReportFunction.create(AStrict);
 end;
 
 function TWeatherReportFunction.Execute(const Arguments: string): string;
@@ -76,7 +76,7 @@ begin
       'paris', 'paris, 75',
       'marseille', 'marseille, 13']) of
       0,1 :
-        AddToReport(JSON, 14, ['rainy', 'low visibility']);
+        AddToReport(JSON, 17, ['rainy', 'low visibility']);
 
       2,3 :
         AddToReport(JSON, 29, ['sunny', 'windy']);
@@ -119,20 +119,20 @@ begin
   var Schema := TSchemaParams.New(
     procedure (var Params: TSchemaParams)
     begin
-      Params.&Type(stOBJECT);
+      Params.&Type(TSchemaType.Object);
       Params.Properties('properties',
         procedure (var Params: TSchemaParams)
         begin
           Params.Properties('location',
             procedure (var Params: TSchemaParams)
             begin
-              Params.&Type(stSTRING);
+              Params.&Type(TSchemaType.String);
               Params.Description('The city and state, e.g. San Francisco, CA');
             end);
           Params.Properties('unit',
             procedure (var Params: TSchemaParams)
             begin
-              Params.&Type(stSTRING);
+              Params.&Type(TSchemaType.String);
               Params.Enum(['celsius', 'fahrenheit']);
             end);
         end);

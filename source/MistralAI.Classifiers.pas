@@ -12,8 +12,8 @@ interface
 uses
   System.SysUtils, System.Classes, REST.JsonReflect, System.JSON, System.Threading,
   REST.Json.Types, System.NetEncoding, MistralAI.API.Params, MistralAI.API,
-  MistralAI.Chat, MistralAI.Functions.Tools, MistralAI.Params.Core,
-  MistralAI.Async.Support, MistralAI.Types;
+  MistralAI.Chat, MistralAI.Functions.Tools, MistralAI.Async.Params,
+  MistralAI.Async.Support, MistralAI.Types, MistralAI.Async.Promise;
 
 type
   /// <summary>
@@ -32,6 +32,7 @@ type
     /// The updated <c>TModerationParams</c> instance.
     /// </returns>
     function Input(const Value: string): TModerationParams; overload;
+
     /// <summary>
     /// Array of text submitted for moderation
     /// </summary>
@@ -39,6 +40,7 @@ type
     /// The updated <c>TModerationParams</c> instance.
     /// </returns>
     function Input(const Value: TArray<string>): TModerationParams; overload;
+
     /// <summary>
     /// Model for guardraile (e.g. mistral-moderation-latest)
     /// </summary>
@@ -65,6 +67,7 @@ type
     /// The updated <c>TModerationChatParams</c> instance.
     /// </returns>
     function Input(const Value: TArray<TChatMessagePayload>): TModerationChatParams;
+
     /// <summary>
     /// Model for guardraile (e.g. mistral-moderation-latest)
     /// </summary>
@@ -103,6 +106,7 @@ type
     /// informational context is generally exempted.
     /// </remarks>
     property Sexual: Boolean read FSexual write FSexual;
+
     /// <summary>
     /// Indicates whether the content expresses prejudice or advocates discrimination.
     /// </summary>
@@ -111,6 +115,7 @@ type
     /// characteristics such as race, ethnicity, religion, gender, sexual orientation, or disability.
     /// </remarks>
     property Hate_and_discrimination: Boolean read FHate_and_discrimination write FHate_and_discrimination;
+
     /// <summary>
     /// Indicates whether the content glorifies, incites, or threatens physical violence.
     /// </summary>
@@ -119,6 +124,7 @@ type
     /// or provides instructions for carrying out violent acts.
     /// </remarks>
     property Violence_and_threats: Boolean read FViolence_and_threats write FViolence_and_threats;
+
     /// <summary>
     /// Indicates whether the content promotes dangerous or illegal activities.
     /// </summary>
@@ -127,6 +133,7 @@ type
     /// and promotion of illegal activities such as fraud or drug trafficking.
     /// </remarks>
     property Dangerous_and_criminal_content: Boolean read FDangerous_and_criminal_content write FDangerous_and_criminal_content;
+
     /// <summary>
     /// Indicates whether the content promotes self-harm or related behaviors.
     /// </summary>
@@ -135,6 +142,7 @@ type
     /// or other self-destructive behaviors.
     /// </remarks>
     property Selfharm: Boolean read FSelfharm write FSelfharm;
+
     /// <summary>
     /// Indicates whether the content contains or elicits medical advice.
     /// </summary>
@@ -142,6 +150,7 @@ type
     /// This applies to detailed or tailored medical advice that is not appropriate for non-expert contexts.
     /// </remarks>
     property Health: Boolean read FHealth write FHealth;
+
     /// <summary>
     /// Indicates whether the content contains or elicits financial advice.
     /// </summary>
@@ -149,6 +158,7 @@ type
     /// This applies to detailed or tailored financial advice that may not align with ethical or legal standards.
     /// </remarks>
     property Financial: Boolean read FFinancial write FFinancial;
+
     /// <summary>
     /// Indicates whether the content contains or elicits legal advice.
     /// </summary>
@@ -156,6 +166,7 @@ type
     /// This applies to detailed or tailored legal advice that should not be provided in a general context.
     /// </remarks>
     property Law: Boolean read FLaw write FLaw;
+
     /// <summary>
     /// Indicates whether the content involves personal identifying information (PII).
     /// </summary>
@@ -193,6 +204,7 @@ type
     /// sexual activities, nudity, or solicitation for sexual purposes.
     /// </remarks>
     property Sexual: Double read FSexual write FSexual;
+
     /// <summary>
     /// Numerical score indicating the likelihood of hateful or discriminatory content.
     /// </summary>
@@ -201,6 +213,7 @@ type
     /// on protected characteristics such as race, ethnicity, religion, gender, or sexual orientation.
     /// </remarks>
     property Hate_and_discrimination: Double read FHate_and_discrimination write FHate_and_discrimination;
+
     /// <summary>
     /// Numerical score indicating the likelihood of violent or threatening content.
     /// </summary>
@@ -209,6 +222,7 @@ type
     /// physical violence or provides instructions for violent acts.
     /// </remarks>
     property Violence_and_threats: Double read FViolence_and_threats write FViolence_and_threats;
+
     /// <summary>
     /// Numerical score indicating the likelihood of dangerous or illegal content.
     /// </summary>
@@ -216,6 +230,7 @@ type
     /// Higher scores suggest a higher probability that the content promotes or provides instructions
     /// for illegal or haza
     property Dangerous_and_criminal_content: Double read FDangerous_and_criminal_content write FDangerous_and_criminal_content;
+
     /// <summary>
     /// Numerical score indicating the likelihood of content promoting self-harm.
     /// </summary>
@@ -224,6 +239,7 @@ type
     /// deliberate self-injury, suicide, or other self-destructive behaviors.
     /// </remarks>
     property Selfharm: Double read FSelfharm write FSelfharm;
+
     /// <summary>
     /// Numerical score indicating the likelihood of content containing medical advice.
     /// </summary>
@@ -232,6 +248,7 @@ type
     /// detailed or tailored medical advice.
     /// </remarks>
     property Health: Double read FHealth write FHealth;
+
     /// <summary>
     /// Numerical score indicating the likelihood of content containing financial advice.
     /// </summary>
@@ -240,6 +257,7 @@ type
     /// detailed or tailored financial advice.
     /// </remarks>
     property Financial: Double read FFinancial write FFinancial;
+
     /// <summary>
     /// Numerical score indicating the likelihood of content containing legal advice.
     /// </summary>
@@ -248,6 +266,7 @@ type
     /// detailed or tailored legal advice.
     /// </remarks>
     property Law: Double read FLaw write FLaw;
+
     /// <summary>
     /// Numerical score indicating the likelihood of content involving personal identifying information (PII).
     /// </summary>
@@ -277,6 +296,7 @@ type
     /// A <c>string</c> representing the name of the category, such as "Sexual" or "Hate_and_discrimination."
     /// </value>
     property Category: string read FCategory write FCategory;
+
     /// <summary>
     /// Gets or sets the numerical score indicating the likelihood of a violation in the category.
     /// </summary>
@@ -284,6 +304,7 @@ type
     /// A <c>Double</c> representing the likelihood score, where higher values indicate a greater likelihood of a violation.
     /// </value>
     property Score: Double read FScore write FScore;
+
     /// <summary>
     /// Creates a new instance of <c>TWarningItem</c> with the specified category and score.
     /// </summary>
@@ -327,6 +348,7 @@ type
     /// along with its likelihood score.
     /// </returns>
     function Warnings: TArray<TWarningItem>;
+
     /// <summary>
     /// Contains the categories indicating whether the content violates specific moderation guardrails.
     /// </summary>
@@ -335,6 +357,7 @@ type
     /// These categories include areas such as sexual content, hate speech, violence, and others.
     /// </remarks>
     property Categories: TModerationCategories read FCategories write FCategories;
+
     /// <summary>
     /// Contains the scores for each moderation category, indicating the likelihood of violations.
     /// </summary>
@@ -343,10 +366,12 @@ type
     /// a greater probability that the content violates the corresponding category.
     /// </remarks>
     property Scores: TModerationScores read FCategory_scores write FCategory_scores;
+
     /// <summary>
     /// Returns true if at least one of the moderation categories is active.
     /// </summary>
     property Warning: Boolean read GetWarning;
+
     /// <summary>
     /// Destructor for the <c>TModerationResult</c> class.
     /// </summary>
@@ -365,7 +390,7 @@ type
   /// including the request ID, the model used for moderation, and the detailed results
   /// for each category and score. It is the main structure returned by the moderation API.
   /// </remarks>
-  TModeration = class
+  TModeration = class(TJSONFingerprint)
   private
     FId: string;
     FModel: string;
@@ -378,6 +403,7 @@ type
     /// This property is useful for tracking or referencing specific moderation operations.
     /// </remarks>
     property Id: string read FId write FId;
+
     /// <summary>
     /// Name of the model used to process the moderation request.
     /// </summary>
@@ -386,6 +412,7 @@ type
     /// "mistral-moderation-latest".
     /// </remarks>
     property Model: string read FModel write FModel;
+
     /// <summary>
     /// Array of detailed moderation results.
     /// </summary>
@@ -394,6 +421,7 @@ type
     /// containing both category flags and likelihood scores.
     /// </remarks>
     property Results: TArray<TModerationResult> read FResults write FResults;
+
     /// <summary>
     /// Destructor for the <c>TModeration</c> class.
     /// </summary>
@@ -405,14 +433,24 @@ type
   end;
 
   /// <summary>
-  /// Manages asynchronous chat callBacks for a chat request using <c>TModeration</c> as the response type.
+  /// Manages asynchronous chat Callbacks for a chat request using <c>TModeration</c> as the response type.
   /// </summary>
   /// <remarks>
   /// The <c>TAsynModeration</c> type extends the <c>TAsynParams&lt;TModeration&gt;</c> record to handle the lifecycle of an asynchronous chat operation.
   /// It provides event handlers that trigger at various stages, such as when the operation starts, completes successfully, or encounters an error.
   /// This structure facilitates non-blocking chat operations and is specifically tailored for scenarios where multiple choices from a chat model are required.
   /// </remarks>
-  TAsynModeration = TAsyncCallBack<TModeration>;
+  TAsynModeration = TAsyncCallback<TModeration>;
+
+  /// <summary>
+  /// Defines a promise-style callback wrapper for moderation results.
+  /// </summary>
+  /// <remarks>
+  /// <c>TPromiseModeration</c> is an alias of <c>TPromiseCallBack&lt;TModeration&gt;</c>,
+  /// providing a streamlined way to handle asynchronous moderation operations
+  /// that yield a <c>TModeration</c> instance when completed.
+  /// </remarks>
+  TPromiseModeration = TPromiseCallback<TModeration>;
 
   /// <summary>
   /// <c>TClassifiersRoute</c> class provides an interface to interact with the MistralAI API for moderation tasks.
@@ -424,17 +462,49 @@ type
   /// </remarks>
   TClassifiersRoute = class(TMistralAIAPIRoute)
     /// <summary>
+    /// Initiates a moderation request and returns a promise that resolves with the result.
+    /// </summary>
+    /// <param name="ParamProc">
+    /// A procedure to configure the <c>TModerationParams</c> for the moderation call.
+    /// </param>
+    /// <param name="Callbacks">
+    /// An optional factory function that provides a <c>TPromiseModeration</c> to handle
+    /// lifecycle events (OnStart, OnSuccess, OnError) during the asynchronous operation.
+    /// </param>
+    /// <returns>
+    /// A <c>TPromise&lt;TModeration&gt;</c> which will complete with the <c>TModeration</c> result.
+    /// </returns>
+    function AsyncAwaitModeration(const ParamProc: TProc<TModerationParams>;
+      const Callbacks: TFunc<TPromiseModeration> = nil): TPromise<TModeration>;
+
+    /// <summary>
+    /// Initiates a chat-based moderation request and returns a promise with the outcome.
+    /// </summary>
+    /// <param name="ParamProc">
+    /// A procedure to configure the <c>TModerationChatParams</c>, including the chat messages to be evaluated.
+    /// </param>
+    /// <param name="Callbacks">
+    /// An optional factory function that supplies a <c>TPromiseModeration</c> for handling
+    /// lifecycle Callbacks (OnStart, OnSuccess, OnError) during the asynchronous operation.
+    /// </param>
+    /// <returns>
+    /// A <c>TPromise&lt;TModeration&gt;</c> that resolves with the <c>TModeration</c> result of the chat evaluation.
+    /// </returns>
+    function AsyncAwaitModerationChat(const ParamProc: TProc<TModerationChatParams>;
+      const Callbacks: TFunc<TPromiseModeration> = nil): TPromise<TModeration>;
+
+    /// <summary>
     /// Submit a text for moderation
     /// </summary>
     /// <param name="ParamProc">
     /// A procedure to configure the <c>TModerationParams</c> parameters.
     /// </param>
-    /// <param name="CallBacks">
+    /// <param name="Callbacks">
     /// A function that returns <c>TAsynModeration</c> to handle the asynchronous result.
     /// </param>
     /// <remarks>
     /// <para>
-    /// The <c>CallBacks</c> function is invoked when the operation completes, either successfully or with an error.
+    /// The <c>Callbacks</c> function is invoked when the operation completes, either successfully or with an error.
     /// </para>
     /// <code>
     /// // WARNING - Move the following line into the main OnCreate
@@ -469,19 +539,21 @@ type
     ///   end);
     /// </code>
     /// </remarks>
-    procedure AsyncModeration(ParamProc: TProc<TModerationParams>; CallBacks: TFunc<TAsynModeration>);
+    procedure AsyncModeration(const ParamProc: TProc<TModerationParams>;
+      const Callbacks: TFunc<TAsynModeration>);
+
     /// <summary>
     /// Submit a text in a chat generation system for moderation.
     /// </summary>
     /// <param name="ParamProc">
     /// A procedure to configure the <c>TModerationChatParams</c> parameters.
     /// </param>
-    /// <param name="CallBacks">
+    /// <param name="Callbacks">
     /// A function that returns <c>TAsynModeration</c> to handle the asynchronous result.
     /// </param>
     /// <remarks>
     /// <para>
-    /// The <c>CallBacks</c> function is invoked when the operation completes, either successfully or with an error.
+    /// The <c>Callbacks</c> function is invoked when the operation completes, either successfully or with an error.
     /// </para>
     /// <code>
     /// // WARNING - Move the following line into the main OnCreate
@@ -516,7 +588,9 @@ type
     ///   end);
     /// </code>
     /// </remarks>
-    procedure AsyncModerationChat(ParamProc: TProc<TModerationChatParams>; CallBacks: TFunc<TAsynModeration>);
+    procedure AsyncModerationChat(const ParamProc: TProc<TModerationChatParams>;
+      const Callbacks: TFunc<TAsynModeration>);
+
     /// <summary>
     /// Submit a text for moderation
     /// </summary>
@@ -542,7 +616,8 @@ type
     /// end;
     /// </code>
     /// </remarks>
-    function Moderation(ParamProc: TProc<TModerationParams>): TModeration;
+    function Moderation(const ParamProc: TProc<TModerationParams>): TModeration;
+
     /// <summary>
     /// Submit a text in a chat generation system for moderation.
     /// </summary>
@@ -568,7 +643,7 @@ type
     /// end;
     /// </code>
     /// </remarks>
-    function ModerationChat(ParamProc: TProc<TModerationChatParams>): TModeration;
+    function ModerationChat(const ParamProc: TProc<TModerationChatParams>): TModeration;
   end;
 
 implementation
@@ -643,10 +718,34 @@ end;
 
 { TClassifiersRoute }
 
-procedure TClassifiersRoute.AsyncModeration(ParamProc: TProc<TModerationParams>;
-  CallBacks: TFunc<TAsynModeration>);
+function TClassifiersRoute.AsyncAwaitModeration(
+  const ParamProc: TProc<TModerationParams>;
+  const Callbacks: TFunc<TPromiseModeration>): TPromise<TModeration>;
 begin
-  with TAsyncCallBackExec<TAsynModeration, TModeration>.Create(CallBacks) do
+  Result := TAsyncAwaitHelper.WrapAsyncAwait<TModeration>(
+    procedure(const CallbackParams: TFunc<TAsynModeration>)
+    begin
+      AsyncModeration(ParamProc, CallbackParams);
+    end,
+    Callbacks);
+end;
+
+function TClassifiersRoute.AsyncAwaitModerationChat(
+  const ParamProc: TProc<TModerationChatParams>;
+  const Callbacks: TFunc<TPromiseModeration>): TPromise<TModeration>;
+begin
+  Result := TAsyncAwaitHelper.WrapAsyncAwait<TModeration>(
+    procedure(const CallbackParams: TFunc<TAsynModeration>)
+    begin
+      AsyncModerationChat(ParamProc, CallbackParams);
+    end,
+    Callbacks);
+end;
+
+procedure TClassifiersRoute.AsyncModeration(const ParamProc: TProc<TModerationParams>;
+  const Callbacks: TFunc<TAsynModeration>);
+begin
+  with TAsyncCallBackExec<TAsynModeration, TModeration>.Create(Callbacks) do
   try
     Sender := Use.Param.Sender;
     OnStart := Use.Param.OnStart;
@@ -663,9 +762,10 @@ begin
 end;
 
 procedure TClassifiersRoute.AsyncModerationChat(
-  ParamProc: TProc<TModerationChatParams>; CallBacks: TFunc<TAsynModeration>);
+  const ParamProc: TProc<TModerationChatParams>;
+  const Callbacks: TFunc<TAsynModeration>);
 begin
-  with TAsyncCallBackExec<TAsynModeration, TModeration>.Create(CallBacks) do
+  with TAsyncCallBackExec<TAsynModeration, TModeration>.Create(Callbacks) do
   try
     Sender := Use.Param.Sender;
     OnStart := Use.Param.OnStart;
@@ -682,13 +782,13 @@ begin
 end;
 
 function TClassifiersRoute.Moderation(
-  ParamProc: TProc<TModerationParams>): TModeration;
+  const ParamProc: TProc<TModerationParams>): TModeration;
 begin
   Result := API.Post<TModeration, TModerationParams>('moderations', ParamProc);
 end;
 
 function TClassifiersRoute.ModerationChat(
-  ParamProc: TProc<TModerationChatParams>): TModeration;
+  const ParamProc: TProc<TModerationChatParams>): TModeration;
 begin
   Result := API.Post<TModeration, TModerationChatParams>('chat/moderations', ParamProc);
 end;

@@ -1,6 +1,16 @@
-unit MistralAI.FineTunings;
+﻿unit MistralAI.FineTunings;
 
 {-------------------------------------------------------------------------------
+
+      Github repository :  https://github.com/MaxiDonkey/DelphiMistralAI
+      Visit the Github repository for the documentation and use examples
+
+-------------------------------------------------------------------------------}
+
+interface
+
+{$REGION 'Dev note'}
+  (*
 
   **Important Notice**
                                                                                                                                                             |
@@ -10,16 +20,13 @@ unit MistralAI.FineTunings;
   Registration is necessary to obtain the API key needed for "job" integration
   (TJobIntegrationsParam).
 
-      Github repository :  https://github.com/MaxiDonkey/DelphiMistralAI
-      Visit the Github repository for the documentation and use examples
-
--------------------------------------------------------------------------------}
-
-interface
+  *)
+{$ENDREGION}
 
 uses
   System.Classes, System.SysUtils, REST.JsonReflect, System.JSON, REST.Json.Types,
-  MistralAI.API.Params, MistralAI.API, MistralAI.Types, MistralAI.Async.Support;
+  MistralAI.API.Params, MistralAI.API, MistralAI.Types, MistralAI.Async.Support,
+  MistralAI.Async.Promise;
 
 type
   /// <summary>
@@ -40,6 +47,7 @@ type
     /// </returns>
     /// <remarks> Default: 0 </remarks>
     function Page(const Value: Int64): TFineTuningJobListParams;
+
     /// <summary>
     /// Sets the number of items to return per page.
     /// </summary>
@@ -51,6 +59,7 @@ type
     /// </returns>
     /// <remarks> Default: 100 </remarks>
     function PageSize(const Value: Int64): TFineTuningJobListParams;
+
     /// <summary>
     /// Filters the fine-tuning jobs by model name.
     /// </summary>
@@ -61,6 +70,7 @@ type
     /// The <see cref="TFineTuningJobListParams"/> instance with the updated model filter.
     /// </returns>
     function Model(const Value: string): TFineTuningJobListParams;
+
     /// <summary>
     /// Filters the fine-tuning jobs by their current status.
     /// </summary>
@@ -71,6 +81,7 @@ type
     /// The <see cref="TFineTuningJobListParams"/> instance with the updated status filter.
     /// </returns>
     function Status(const Value: TFineTuningJobStatus): TFineTuningJobListParams;
+
     /// <summary>
     /// Filters the fine-tuning jobs created after a specific date/time.
     /// </summary>
@@ -81,6 +92,7 @@ type
     /// The <see cref="TFineTuningJobListParams"/> instance with the updated creation date filter.
     /// </returns>
     function CreatedAfter(const Value: string): TFineTuningJobListParams;
+
     /// <summary>
     /// Filters to only include jobs created by the API caller.
     /// </summary>
@@ -92,6 +104,7 @@ type
     /// </returns>
     /// <remarks> Default: false </remarks>
     function CreatedByMe(const Value: Boolean = True): TFineTuningJobListParams;
+
     /// <summary>
     /// Filters the fine-tuning jobs by Weights and Biases project name.
     /// </summary>
@@ -102,6 +115,7 @@ type
     /// The <see cref="TFineTuningJobListParams"/> instance with the updated WandB project filter.
     /// </returns>
     function WandbProject(const Value: string): TFineTuningJobListParams;
+
     /// <summary>
     /// Filters the fine-tuning jobs by Weights and Biases run name.
     /// </summary>
@@ -112,6 +126,7 @@ type
     /// The <see cref="TFineTuningJobListParams"/> instance with the updated WandB run name filter.
     /// </returns>
     function WandbName(const Value: string): TFineTuningJobListParams;
+
     /// <summary>
     /// Filters the fine-tuning jobs by model suffix.
     /// </summary>
@@ -141,6 +156,7 @@ type
     /// Must be greater than or equal to 1. This property is required.
     /// </remarks>
     function TrainingSteps(const Value: Integer): THyperparametersParams;
+
     /// <summary>
     /// The learning rate for the fine-tuning process. It describes how much to adjust the pre-trained model's weights in response to
     /// the estimated error each time the weights are updated during the fine-tuning process.
@@ -149,12 +165,14 @@ type
     /// Must be in the range [1e-8..1]. Default value: 0.0001.
     /// </remarks>
     function LearningRate(const Value: Double): THyperparametersParams;
+
     /// <summary>
     /// (Advanced Usage) Weight decay adds a term to the loss function that is proportional to the sum
     /// of the squared weights. This term reduces the magnitude of the weights and prevents them from
     /// growing too large.
     /// </summary>
     function WeightDecay(const Value: Double): THyperparametersParams;
+
     /// <summary>
     /// (Advanced Usage) A parameter that specifies the percentage of the total training steps at which
     /// the learning rate warm-up phase ends. During this phase, the learning rate gradually increases
@@ -162,18 +180,22 @@ type
     /// improve convergence. Similar to pct_start in mistral-finetune.
     /// </summary>
     function WarmupFraction(const Value: Double): THyperparametersParams;
+
     /// <summary>
     /// Set epochs value
     /// </summary>
     function Epochs(const Value: Double): THyperparametersParams;
+
     /// <summary>
     /// Set fim_ration value
     /// </summary>
     function FimRatio(const Value: Double): THyperparametersParams;
+
     /// <summary>
     /// Set seq_len value
     /// </summary>
     function SeqLen(const Value: Integer): THyperparametersParams;
+
     class function New(const ParamProc: TProcRef<THyperparametersParams>): THyperparametersParams;
   end;
 
@@ -192,24 +214,29 @@ type
     /// Default: "wandb". Currently, only "wandb" (Weights and Biases) is supported. This property is required.
     /// </remarks>
     function &Type(const Value: TFineTuningIntegrationType): TJobIntegrationsParams;
+
     /// <summary>
     /// The name of the project under which the new run will be created.
     /// </summary>
     /// <remarks> This property is required. </remarks>
     function Project(const Value: string): TJobIntegrationsParams;
+
     /// <summary>
     /// A display name to set for the run. If not set, will use the job ID as the name.
     /// </summary>
     function Name(const Value: string): TJobIntegrationsParams;
+
     /// <summary>
     /// The WandB API key to use for authentication.
     /// </summary>
     /// <remarks> This property is required. </remarks>
     function ApiKey(const Value: string): TJobIntegrationsParams;
+
     /// <summary>
     /// A display run name to set for this run.
     /// </summary>
     function RunName(const Value: string): TJobIntegrationsParams;
+
     class function New(const ParamProc: TProcRef<TJobIntegrationsParams>): TJobIntegrationsParams;
   end;
 
@@ -232,6 +259,7 @@ type
     /// The <see cref="TRepositoryParams"/> instance with the updated repository type.
     /// </returns>
     function &Type(const Value: TRepositoryType): TRepositoryParams;
+
     /// <summary>
     /// Sets the name of the repository.
     /// </summary>
@@ -242,6 +270,7 @@ type
     /// The <see cref="TRepositoryParams"/> instance with the updated repository name.
     /// </returns>
     function Name(const Value: string): TRepositoryParams;
+
     /// <summary>
     /// Sets the owner of the repository.
     /// </summary>
@@ -252,6 +281,7 @@ type
     /// The <see cref="TRepositoryParams"/> instance with the updated owner.
     /// </returns>
     function Owner(const Value: string): TRepositoryParams;
+
     /// <summary>
     /// Sets the reference for the repository.
     /// </summary>
@@ -262,6 +292,7 @@ type
     /// The <see cref="TRepositoryParams"/> instance with the updated reference.
     /// </returns>
     function Ref(const Value: string): TRepositoryParams;
+
     /// <summary>
     /// Sets the weight for the repository.
     /// </summary>
@@ -272,6 +303,7 @@ type
     /// The <see cref="TRepositoryParams"/> instance with the updated weight.
     /// </returns>
     function Weight(const Value: Double): TRepositoryParams;
+
     /// <summary>
     /// Sets the token for accessing the repository.
     /// </summary>
@@ -282,6 +314,7 @@ type
     /// The <see cref="TRepositoryParams"/> instance with the updated token.
     /// </returns>
     function Token(const Value: string): TRepositoryParams;
+
     /// <summary>
     /// Creates a new instance of <see cref="TRepositoryParams"/> with configured parameters.
     /// </summary>
@@ -313,6 +346,7 @@ type
     /// </returns>
     /// <remarks> This property is required. </remarks>
     function Model(const Value: string): TFineTuningJobParams;
+
     /// <summary>
     /// Sets the IDs of uploaded files that contain training data.
     /// </summary>
@@ -324,6 +358,7 @@ type
     /// </returns>
     /// <remarks> This property is required. </remarks>
     function TrainingFiles(const Value: TArray<string>): TFineTuningJobParams;
+
     /// <summary>
     /// Sets the IDs of uploaded files that contain validation data.
     /// </summary>
@@ -337,6 +372,7 @@ type
     /// If provided, the data is used to generate validation metrics periodically during fine-tuning.
     /// </remarks>
     function ValidationFiles(const Value: TArray<string>): TFineTuningJobParams;
+
     /// <summary>
     /// Sets the fine-tuning hyperparameter settings used in a fine-tune job.
     /// </summary>
@@ -348,6 +384,7 @@ type
     /// </returns>
     /// <remarks> This property is required. </remarks>
     function Hyperparameters(Value: THyperparametersParams): TFineTuningJobParams; overload;
+
     /// <summary>
     /// Sets the fine-tuning hyperparameter settings used in a fine-tune job.
     /// </summary>
@@ -359,6 +396,7 @@ type
     /// </returns>
     /// <remarks> This property is required. </remarks>
     function Hyperparameters(ParamProc: TProcRef<THyperparametersParams>): TFineTuningJobParams; overload;
+
     /// <summary>
     /// Sets a suffix to be added to the fine-tuned model name.
     /// <para>
@@ -373,6 +411,7 @@ type
     /// The <see cref="TFineTuningJobParams"/> instance with the updated suffix.
     /// </returns>
     function Suffix(const Value: string): TFineTuningJobParams;
+
     /// <summary>
     /// Sets the integrations to enable for the fine-tuning job.
     /// </summary>
@@ -383,6 +422,7 @@ type
     /// The <see cref="TFineTuningJobParams"/> instance with the updated integrations.
     /// </returns>
     function Integrations(const Value: TArray<TJobIntegrationsParams>): TFineTuningJobParams; overload;
+
     /// <summary>
     /// Set the repositories reference .
     /// </summary>
@@ -393,6 +433,7 @@ type
     /// The <see cref="TFineTuningJobParams"/> instance with the updated integrations.
     /// </returns>
     function Repositories(const Value: TArray<TRepositoryParams>): TFineTuningJobParams;
+
     /// <summary>
     /// This field will be required in a future release.
     /// </summary>
@@ -416,7 +457,14 @@ type
     [JsonNameAttribute('training_steps')]
     FTrainingSteps: Int64;
     [JsonNameAttribute('learning_rate')]
-    FLearningRate: Extended;
+    FLearningRate: Double;
+    [JsonNameAttribute('weight_decay')]
+    FWeightDecay: Double;
+    [JsonNameAttribute('warmup_fraction')]
+    FWarmupFraction: Double;
+    FEpochs: Double;
+    [JsonNameAttribute('seq_len')]
+    FSeqLen: Integer;
   public
     /// <summary>
     /// The number of training steps performed.
@@ -425,13 +473,22 @@ type
     /// An integer value greater than or equal to 1. This value is required.
     /// </remarks>
     property TrainingSteps: Int64 read FTrainingSteps write FTrainingSteps;
+
     /// <summary>
     /// The learning rate used during fine-tuning.
     /// </summary>
     /// <remarks>
     /// A value in the range [1e-8 .. 1]. This value is required.
     /// </remarks>
-    property LearningRate: Extended read FLearningRate write FLearningRate;
+    property LearningRate: Double read FLearningRate write FLearningRate;
+
+    property WeightDecay: Double read FWeightDecay write FWeightDecay;
+
+    property WarmupFraction: Double read FWarmupFraction write FWarmupFraction;
+
+    property Epochs: Double read FEpochs write FEpochs;
+
+    property SeqLen: Integer read FSeqLen write FSeqLen;
   end;
 
   /// <summary>
@@ -446,6 +503,9 @@ type
     FType: TFineTuningIntegrationType;
     FProject: string;
     FName: string;
+    [JsonNameAttribute('run_name')]
+    FRunName: string;
+    FUrl: string;
   public
     /// <summary>
     /// The type of integration.
@@ -454,15 +514,21 @@ type
     /// Default: "wandb". Currently, only "wandb" is defined.
     /// </remarks>
     property &Type: TFineTuningIntegrationType read FType write FType;
+
     /// <summary>
     /// The name of the project that the run was created under.
     /// </summary>
     /// <remarks> This value is required. </remarks>
     property Project: string read FProject write FProject;
+
     /// <summary>
     /// The display name set for the run.
     /// </summary>
     property Name: string read FName write FName;
+
+    property RunName: string read FRunName write FRunName;
+
+    property Url: string read FUrl write FUrl;
   end;
 
   /// <summary>
@@ -490,6 +556,7 @@ type
     /// This property is required and determines the type of repository being used, such as "git" or "svn."
     /// </remarks>
     property &Type: TRepositoryType read FType write FType;
+
     /// <summary>
     /// Gets or sets the name of the repository.
     /// </summary>
@@ -497,6 +564,7 @@ type
     /// This property represents the name of the repository as a string.
     /// </remarks>
     property Name: string read FName write FName;
+
     /// <summary>
     /// Gets or sets the owner of the repository.
     /// </summary>
@@ -504,6 +572,7 @@ type
     /// This property specifies the owner of the repository, such as the username or organization name.
     /// </remarks>
     property Owner: string read FOwner write FOwner;
+
     /// <summary>
     /// Gets or sets the reference of the repository.
     /// </summary>
@@ -511,6 +580,7 @@ type
     /// The reference can be a branch name, a tag, or a specific commit hash.
     /// </remarks>
     property Ref: string read FRef write FRef;
+
     /// <summary>
     /// Gets or sets the weight of the repository.
     /// </summary>
@@ -518,6 +588,7 @@ type
     /// The weight is used to indicate the repository's relative importance or contribution in fine-tuning operations.
     /// </remarks>
     property Weight: Double read FWeight write FWeight;
+
     /// <summary>
     /// Gets or sets the commit ID of the repository.
     /// </summary>
@@ -557,6 +628,7 @@ type
     /// This property provides an estimate of how long the job will take to complete.
     /// </remarks>
     property ExpectedDurationSeconds: Int64 read FExpectedDurationSeconds write FExpectedDurationSeconds;
+
     /// <summary>
     /// Gets or sets the total cost of the fine-tuning job.
     /// </summary>
@@ -564,6 +636,7 @@ type
     /// This property reflects the overall monetary cost of the job.
     /// </remarks>
     property Cost: Double read FCost write FCost;
+
     /// <summary>
     /// Gets or sets the currency in which the cost is measured.
     /// </summary>
@@ -571,6 +644,7 @@ type
     /// Examples include "USD" or "EUR."
     /// </remarks>
     property CostCurrency: string read FCostCurrency write FCostCurrency;
+
     /// <summary>
     /// Gets or sets the number of training tokens processed per step during fine-tuning.
     /// </summary>
@@ -578,6 +652,7 @@ type
     /// This value helps analyze the efficiency of token processing in each training step.
     /// </remarks>
     property TrainTokensPerStep: Int64 read FTrainTokensPerStep write FTrainTokensPerStep;
+
     /// <summary>
     /// Gets or sets the total number of training tokens used in the fine-tuning process.
     /// </summary>
@@ -585,6 +660,7 @@ type
     /// This property provides the cumulative count of tokens used for training the model.
     /// </remarks>
     property TrainTokens: Int64 read FTrainTokens write FTrainTokens;
+
     /// <summary>
     /// Gets or sets the total number of data tokens processed in the fine-tuning job.
     /// </summary>
@@ -592,6 +668,7 @@ type
     /// This includes all tokens used in the training and validation datasets.
     /// </remarks>
     property DataTokens: Int64 read FDataTokens write FDataTokens;
+
     /// <summary>
     /// Gets or sets the estimated start time of the fine-tuning job, as a UNIX timestamp.
     /// </summary>
@@ -601,13 +678,27 @@ type
     property EstimatedStartTime: Int64 read FEstimatedStartTime write FEstimatedStartTime;
   end;
 
+  TClassifierTarget = class
+  private
+    FName: string;
+    FLabels: TArray<string>;
+    FWeight: Double;
+    [JsonNameAttribute('loss_function')]
+    FLossFunction: string;
+  public
+    property Name: string read FName write FName;
+    property Labels: TArray<string> read FLabels write FLabels;
+    property Weight: Double read FWeight write FWeight;
+    property LossFunction: string read FLossFunction write FLossFunction;
+  end;
+
   /// <summary>
   /// Represents the output of a fine-tuning job.
   /// </summary>
   /// <remarks>
   /// Contains details about the fine-tuning job, including its status, parameters, and results.
   /// </remarks>
-  TJobOut = class
+  TJobOut = class(TJSONFingerprint)
   private
     FId: string;
     [JsonNameAttribute('auto_start')]
@@ -636,56 +727,68 @@ type
     FTrainedTokens: Int64;
     FRepositories: TArray<TRepository>;
     FMetadata: TDataMetadata;
+    [JsonNameAttribute('classifier_targets')]
+    FClassifierTargets: TArray<TClassifierTarget>;
   public
     /// <summary>
     /// The ID of the job.
     /// </summary>
     /// <remarks> This value is required. </remarks>
     property Id: string read FId write FId;
+
     /// <summary>
     /// The auto_start of the job.
     /// </summary>
     /// <remarks> This value is required. </remarks>
     property AutoStart: Boolean read FAutoStart write FAutoStart;
+
     /// <summary>
     /// The hyperparameters used in the fine-tuning job.
     /// </summary>
     /// <remarks> This value is required. </remarks>
     property Hyperparameters: TJobOutHyperparameters read FHyperparameters write FHyperparameters;
+
     /// <summary>
     /// The name of the model that was fine-tuned.
     /// </summary>
     /// <remarks> This value is required. </remarks>
     property Model: string read FModel write FModel;
+
     /// <summary>
     /// The current status of the fine-tuning job.
     /// </summary>
     /// <remarks> This value is required. </remarks>
     property Status: TFineTuningJobStatus read FStatus write FStatus;
+
     /// <summary>
     /// The type of job (e.g., "FT" for fine-tuning).
     /// </summary>
     /// <remarks> This value is required. </remarks>
     property JobType: string read FJobType write FJobType;
+
     /// <summary>
     /// The UNIX timestamp (in seconds) when the fine-tuning job was created.
     /// </summary>
     /// <remarks> This value is required. </remarks>
     property CreatedAt: Int64 read FCreatedAt write FCreatedAt;
+
     /// <summary>
     /// The UNIX timestamp (in seconds) when the fine-tuning job was last modified.
     /// </summary>
     /// <remarks> This value is required. </remarks>
     property ModifiedAt: Int64 read FModifiedAt write FModifiedAt;
+
     /// <summary>
     /// A list of IDs of uploaded files that contain training data.
     /// </summary>
     /// <remarks> This value is required. </remarks>
     property TrainingFiles: TArray<string> read FTrainingFiles write FTrainingFiles;
+
     //// <summary>
     /// A list of IDs of uploaded files that contain validation data.
     /// </summary>
     property ValidationFiles: TArray<string> read FValidationFiles write FValidationFiles;
+
     /// <summary>
     /// The kind of data object. Default is "job".
     /// </summary>
@@ -693,32 +796,41 @@ type
     /// Currently only "job" is defined.
     /// </remarks>
     property &Object: TFineTuningDataObjectKind read FObject write FObject;
+
     /// <summary>
     /// The name of the fine-tuned model that was created. The value will be null if the fine-tuning job is still running.
     /// </summary>
     property FineTuningModel: string read FFineTuningModel write FFineTuningModel;
+
     /// <summary>
     /// Optional text/code that adds more context for the model. When given a prompt and a suffix
     /// the model will fill what is between them. When suffix is not provided, the model will simply
     /// execute completion starting with prompt.
     /// </summary>
     property Suffix: string read FSuffix write FSuffix;
+
     /// <summary>
     /// A list of integrations enabled for the fine-tuning job.
     /// </summary>
     property Integrations: TArray<TJobOutIntegrations> read FIntegrations write FIntegrations;
+
     /// <summary>
     /// Total number of tokens trained.
     /// </summary>
     property TrainedTokens: Int64 read FTrainedTokens write FTrainedTokens;
+
     /// <summary>
     /// Array of repositories (e.g. repository on GitHub) max <= 20 items
     /// </summary>
     property Repositories: TArray<TRepository> read FRepositories write FRepositories;
+
     /// <summary>
     /// JobMetadataOut
     /// </summary>
     property Metadata: TDataMetadata read FMetadata write FMetadata;
+
+    property ClassifierTargets: TArray<TClassifierTarget> read FClassifierTargets write FClassifierTargets;
+
     /// <summary>
     /// Destructor for TJobOut.
     /// </summary>
@@ -734,7 +846,7 @@ type
   /// <remarks>
   /// Contains an array of fine-tuning job outputs.
   /// </remarks>
-  TListFineTuningJobs = class
+  TListFineTuningJobs = class(TJSONFingerprint)
   private
     FData: TArray<TJobOut>;
     [JsonReflectAttribute(ctString, rtString, TFineTuningObjectKindInterceptor)]
@@ -745,6 +857,7 @@ type
     /// An array of fine-tuning job outputs.
     /// </summary>
     property Data: TArray<TJobOut> read FData write FData;
+
     /// <summary>
     /// The kind of object. Default is "list".
     /// </summary>
@@ -752,10 +865,12 @@ type
     /// Currently only "list" is defined.
     /// </remarks>
     property &Object: TFineTuningObjectKind read FObject write FObject;
+
     /// <summary>
     /// Count of Data
     /// </summary>
     property Total: Int64 read FTotal write FTotal;
+
     /// <summary>
     /// Destructor for TListFineTuningJobs.
     /// </summary>
@@ -778,6 +893,7 @@ type
     /// Status for a fine-tuning job
     /// </summary>
     property Status: TFineTuningJobStatus read FStatus write FStatus;
+
     /// <summary>
     /// Error message
     /// </summary>
@@ -804,6 +920,7 @@ type
     /// This value is required.
     /// </remarks>
     property Name: string read FName write FName;
+
     /// <summary>
     /// The status of the fine-tuning job at the time of the event.
     /// </summary>
@@ -811,6 +928,7 @@ type
     /// Enum values: "QUEUED", "STARTED", "RUNNING", "FAILED", "SUCCESS", "CANCELLED", "CANCELLATION_REQUESTED".
     /// </remarks>
     property Data: TJobOutEventData read FData write FData;
+
     /// <summary>
     /// The UNIX timestamp (in seconds) of the event.
     /// </summary>
@@ -818,6 +936,7 @@ type
     /// This value is required.
     /// </remarks>
     property CreatedAt: int64 read FCreatedAt write FCreatedAt;
+
     destructor Destroy; override;
   end;
 
@@ -830,24 +949,26 @@ type
   TJobOutMetrics = class
   private
     [JsonNameAttribute('train_loss')]
-    FTrainLoss: Extended;
+    FTrainLoss: Double;
     [JsonNameAttribute('valid_loss')]
-    FValidLoss: Extended;
+    FValidLoss: Double;
     [JsonNameAttribute('valid_mean_token_accuracy')]
-    FValidMeanTokenAccuracy: Extended;
+    FValidMeanTokenAccuracy: Double;
   public
     /// <summary>
     /// Training data loss rate.
     /// </summary>
-    property TrainLoss: Extended read FTrainLoss write FTrainLoss;
+    property TrainLoss: Double read FTrainLoss write FTrainLoss;
+
     /// <summary>
     /// Validation data loss rate.
     /// </summary>
-    property ValidLoss: Extended read FValidLoss write FValidLoss;
+    property ValidLoss: Double read FValidLoss write FValidLoss;
+
     /// <summary>
     /// Mean token accuracy on the validation set.
     /// </summary>
-    property ValidMeanTokenAccuracy: Extended read FValidMeanTokenAccuracy write FValidMeanTokenAccuracy;
+    property ValidMeanTokenAccuracy: Double read FValidMeanTokenAccuracy write FValidMeanTokenAccuracy;
   end;
 
   /// <summary>
@@ -871,14 +992,17 @@ type
     /// Use these metrics to assess if the training is progressing as expected (e.g., loss should decrease).
     /// </remarks>
     property Metrics: TJobOutMetrics read FMetrics write FMetrics;
+
     /// <summary>
     /// The step number at which the checkpoint was created.
     /// </summary>
     property StepNumber: Int64 read FStepNumber write FStepNumber;
+
     /// <summary>
     /// The UNIX timestamp (in seconds) when the checkpoint was created.
     /// </summary>
     property CreatedAt: Int64 read FCreatedAt write FCreatedAt;
+
     /// <summary>
     /// Destructor for TJobOutCheckpoints.
     /// </summary>
@@ -906,10 +1030,12 @@ type
     /// The timestamped list of all events is accessible here. Default value is an empty array.
     /// </remarks>
     property Events: TArray<TJobOutEvent> read FEvents write FEvents;
+
     /// <summary>
     /// An array with details of all intermediate checkpoints, including monitoring metrics.
     /// </summary>
     property Checkpoints: TArray<TJobOutCheckpoints> read FCheckpoints write FCheckpoints;
+
     /// <summary>
     /// Destructor for TJobOutProgress.
     /// </summary>
@@ -925,14 +1051,42 @@ type
   TAsynListFineTuningJobs = TAsyncCallBack<TListFineTuningJobs>;
 
   /// <summary>
+  /// Represents a promise‑based asynchronous callback that resolves to a list of fine‑tuning jobs.
+  /// </summary>
+  /// <remarks>
+  /// This is an alias for <c>TPromiseCallback&lt;TListFineTuningJobs&gt;</c>, allowing callers to await
+  /// the result of the <see cref="TFineTuningRoute.List"/> operation in a promise‑style workflow.
+  /// </remarks>
+  TPromiseListFineTuningJobs = TPromiseCallback<TListFineTuningJobs>;
+
+  /// <summary>
   /// Asynchronous callback parameters for fine-tuning job output.
   /// </summary>
   TAsynJobOut = TAsyncCallBack<TJobOut>;
 
   /// <summary>
+  /// Represents a promise‑based asynchronous callback that resolves to a fine‑tuning job output.
+  /// </summary>
+  /// <remarks>
+  /// This is an alias for <c>TPromiseCallback&lt;TJobOut&gt;</c>, enabling callers to await
+  /// the result of the <see cref="TFineTuningRoute.CreateJob"/> operation in a promise‑style workflow.
+  /// </remarks>
+  TPromiseJobOut = TPromiseCallback<TJobOut>;
+
+  /// <summary>
   /// Asynchronous callback parameters for fine-tuning job progress.
   /// </summary>
   TAsynJobOutProgress = TAsyncCallBack<TJobOutProgress>;
+
+  /// <summary>
+  /// Represents a promise‑based asynchronous callback that resolves to detailed fine‑tuning job progress.
+  /// </summary>
+  /// <remarks>
+  /// This is an alias for <c>TPromiseCallback&lt;TJobOutProgress&gt;</c>, allowing callers to await
+  /// the result of the <see cref="TFineTuningRoute.Retrieve"/> (or <see cref="TFineTuningRoute.Cancel"/>)
+  /// operation in a promise‑style workflow.
+  /// </remarks>
+  TPromiseJobOutProgress = TPromiseCallback<TJobOutProgress>;
 
   /// <summary>
   /// Provides methods to interact with fine-tuning jobs in the MistralAI API.
@@ -941,6 +1095,92 @@ type
   /// Includes synchronous and asynchronous methods for listing, creating, retrieving, and cancelling fine-tuning jobs.
   /// </remarks>
   TFineTuningRoute = class(TMistralAIAPIRoute)
+    /// <summary>
+    /// Asynchronously retrieves a paginated list of fine‑tuning jobs.
+    /// </summary>
+    /// <param name="ParamProc">
+    /// A callback to configure the <see cref="TFineTuningJobListParams"/> (e.g. page, page size, filters).
+    /// </param>
+    /// <param name="Callbacks">
+    /// An optional function that returns a promise‑style callback wrapper (<see cref="TPromiseListFineTuningJobs"/>)
+    /// for handling success, error, and cancellation events.
+    /// </param>
+    /// <returns>
+    /// A <see cref="TPromise{TListFineTuningJobs}"/> that resolves to a <see cref="TListFineTuningJobs"/> instance
+    /// containing the retrieved jobs when the API call succeeds.
+    /// </returns>
+    function AsyncAwaitList(ParamProc: TProc<TFineTuningJobListParams>;
+      const Callbacks: TFunc<TPromiseListFineTuningJobs> = nil): TPromise<TListFineTuningJobs>;
+
+    /// <summary>
+    /// Asynchronously creates and starts a new fine‑tuning job.
+    /// </summary>
+    /// <param name="ParamProc">
+    /// A callback to configure the <see cref="TFineTuningJobParams"/>,
+    /// specifying the model, training files, hyperparameters, and other settings.
+    /// </param>
+    /// <param name="Callbacks">
+    /// An optional function that returns a promise‑style callback wrapper (<see cref="TPromiseJobOut"/>)
+    /// for handling success, error, and cancellation events.
+    /// </param>
+    /// <returns>
+    /// A <see cref="TPromise{TJobOut}"/> that resolves to a <see cref="TJobOut"/> instance
+    /// containing details of the created job when the API call succeeds.
+    /// </returns>
+    function AsyncAwaitCreateJob(ParamProc: TProc<TFineTuningJobParams>;
+      const Callbacks: TFunc<TPromiseJobOut> = nil): TPromise<TJobOut>;
+
+    /// <summary>
+    /// Asynchronously retrieves detailed progress for an existing fine‑tuning job.
+    /// </summary>
+    /// <param name="JobId">
+    /// The identifier of the fine‑tuning job to retrieve.
+    /// </param>
+    /// <param name="Callbacks">
+    /// An optional function that returns a promise‑style callback wrapper (<see cref="TPromiseJobOutProgress"/>)
+    /// for handling success, error, and cancellation events.
+    /// </param>
+    /// <returns>
+    /// A <see cref="TPromise{TJobOutProgress}"/> that resolves to a <see cref="TJobOutProgress"/> instance
+    /// containing the job’s current status, events, and checkpoints when the API call succeeds.
+    /// </returns>
+    function AsyncAwaitRetrieve(const JobId: string;
+      const Callbacks: TFunc<TPromiseJobOutProgress> = nil): TPromise<TJobOutProgress>;
+
+    /// <summary>
+    /// Asynchronously requests cancellation of an active fine‑tuning job.
+    /// </summary>
+    /// <param name="JobId">
+    /// The identifier of the fine‑tuning job to cancel.
+    /// </param>
+    /// <param name="Callbacks">
+    /// An optional function that returns a promise‑style callback wrapper (<see cref="TPromiseJobOutProgress"/>)
+    /// for handling success, error, and cancellation confirmation events.
+    /// </param>
+    /// <returns>
+    /// A <see cref="TPromise{TJobOutProgress}"/> that resolves to a <see cref="TJobOutProgress"/> instance
+    /// reflecting the job’s updated status and progress events when the cancellation request completes.
+    /// </returns>
+    function AsyncAwaitCancel(const JobId: string;
+      const Callbacks: TFunc<TPromiseJobOutProgress> = nil): TPromise<TJobOutProgress>;
+
+    /// <summary>
+    /// Asynchronously starts a preconfigured fine‑tuning job.
+    /// </summary>
+    /// <param name="JobId">
+    /// The identifier of the fine‑tuning job to start.
+    /// </param>
+    /// <param name="Callbacks">
+    /// An optional function that returns a promise‑style callback wrapper (<see cref="TPromiseJobOutProgress"/>)
+    /// for handling success, error, and cancellation events.
+    /// </param>
+    /// <returns>
+    /// A <see cref="TPromise{TJobOutProgress}"/> that resolves to a <see cref="TJobOutProgress"/> instance
+    /// containing the job’s updated status, events, and checkpoints when the start request completes.
+    /// </returns>
+    function AsyncAwaitStart(const JobId: string;
+      const Callbacks: TFunc<TPromiseJobOutProgress> = nil): TPromise<TJobOutProgress>;
+
     /// <summary>
     /// Asynchronously retrieves a list of fine-tuning jobs based on the specified parameters.
     /// </summary>
@@ -952,6 +1192,7 @@ type
     /// </param>
     procedure AsyncList(ParamProc: TProc<TFineTuningJobListParams>;
       const CallBacks: TFunc<TAsynListFineTuningJobs>);
+
     /// <summary>
     /// Asynchronously creates and runs a new fine-tuning job.
     /// </summary>
@@ -963,6 +1204,7 @@ type
     /// </param>
     procedure AsyncCreateJob(ParamProc: TProc<TFineTuningJobParams>;
       const CallBacks: TFunc<TAsynJobOut>);
+
     /// <summary>
     /// Asynchronously retrieves detailed information about a specific fine-tuning job.
     /// </summary>
@@ -974,6 +1216,7 @@ type
     /// </param>
     procedure ASyncRetrieve(const JobId: string;
       const CallBacks: TFunc<TAsynJobOutProgress>);
+
     /// <summary>
     /// Asynchronously requests the cancellation of a fine-tuning job.
     /// </summary>
@@ -985,6 +1228,7 @@ type
     /// </param>
     procedure AsyncCancel(const JobId: string;
       const CallBacks: TFunc<TAsynJobOutProgress>);
+
     /// <summary>
     /// Asynchronously start a fine-tuning job.
     /// </summary>
@@ -996,6 +1240,7 @@ type
     /// </param>
     procedure AsyncStart(const JobId: string;
       const CallBacks: TFunc<TAsynJobOutProgress>);
+
     /// <summary>
     /// Retrieves a list of fine-tuning jobs based on the specified parameters.
     /// </summary>
@@ -1006,6 +1251,7 @@ type
     /// A <see cref="TListFineTuningJobs"/> instance containing the list of jobs.
     /// </returns>
     function List(ParamProc: TProc<TFineTuningJobListParams>): TListFineTuningJobs;
+
     /// <summary>
     /// Creates and runs a new fine-tuning job.
     /// </summary>
@@ -1019,6 +1265,7 @@ type
     /// The job is started immediately after creation.
     /// </remarks>
     function CreateJob(ParamProc: TProc<TFineTuningJobParams>): TJobOut;
+
     /// <summary>
     /// Retrieves detailed information about a specific fine-tuning job.
     /// </summary>
@@ -1029,6 +1276,7 @@ type
     /// A <see cref="TJobOutProgress"/> instance containing detailed progress information about the job.
     /// </returns>
     function Retrieve(const JobId: string): TJobOutProgress;
+
     /// <summary>
     /// Requests the cancellation of a fine-tuning job.
     /// </summary>
@@ -1039,6 +1287,7 @@ type
     /// A <see cref="TJobOutProgress"/> instance reflecting the updated status of the job.
     /// </returns>
     function Cancel(const JobId: string): TJobOutProgress;
+
     /// <summary>
     /// Start a fine-tuning job.
     /// </summary>
@@ -1123,10 +1372,69 @@ begin
     Item.Free;
   if Assigned(FMetadata) then
     FMetadata.Free;
+  for var Item in FClassifierTargets do
+    Item.Free;
   inherited;
 end;
 
 { TFineTuningRoute }
+
+function TFineTuningRoute.AsyncAwaitCancel(const JobId: string;
+  const Callbacks: TFunc<TPromiseJobOutProgress>): TPromise<TJobOutProgress>;
+begin
+  Result := TAsyncAwaitHelper.WrapAsyncAwait<TJobOutProgress>(
+    procedure(const CallbackParams: TFunc<TAsynJobOutProgress>)
+    begin
+      AsyncCancel(JobId, CallbackParams);
+    end,
+    Callbacks);
+end;
+
+function TFineTuningRoute.AsyncAwaitCreateJob(
+  ParamProc: TProc<TFineTuningJobParams>;
+  const Callbacks: TFunc<TPromiseJobOut>): TPromise<TJobOut>;
+begin
+  Result := TAsyncAwaitHelper.WrapAsyncAwait<TJobOut>(
+    procedure(const CallbackParams: TFunc<TAsynJobOut>)
+    begin
+      AsyncCreateJob(ParamProc, CallbackParams);
+    end,
+    Callbacks);
+end;
+
+function TFineTuningRoute.AsyncAwaitList(
+  ParamProc: TProc<TFineTuningJobListParams>;
+  const Callbacks: TFunc<TPromiseListFineTuningJobs>): TPromise<TListFineTuningJobs>;
+begin
+  Result := TAsyncAwaitHelper.WrapAsyncAwait<TListFineTuningJobs>(
+    procedure(const CallbackParams: TFunc<TAsynListFineTuningJobs>)
+    begin
+      AsyncList(ParamProc, CallbackParams);
+    end,
+    Callbacks);
+end;
+
+function TFineTuningRoute.AsyncAwaitRetrieve(const JobId: string;
+  const Callbacks: TFunc<TPromiseJobOutProgress>): TPromise<TJobOutProgress>;
+begin
+  Result := TAsyncAwaitHelper.WrapAsyncAwait<TJobOutProgress>(
+    procedure(const CallbackParams: TFunc<TAsynJobOutProgress>)
+    begin
+      AsyncRetrieve(JobId, CallbackParams);
+    end,
+    Callbacks);
+end;
+
+function TFineTuningRoute.AsyncAwaitStart(const JobId: string;
+  const Callbacks: TFunc<TPromiseJobOutProgress>): TPromise<TJobOutProgress>;
+begin
+  Result := TAsyncAwaitHelper.WrapAsyncAwait<TJobOutProgress>(
+    procedure(const CallbackParams: TFunc<TAsynJobOutProgress>)
+    begin
+      AsyncStart(JobId, CallbackParams);
+    end,
+    Callbacks);
+end;
 
 procedure TFineTuningRoute.AsyncCancel(const JobId: string;
   const CallBacks: TFunc<TAsynJobOutProgress>);
@@ -1226,29 +1534,29 @@ end;
 
 function TFineTuningRoute.Cancel(const JobId: string): TJobOutProgress;
 begin
-  Result := API.Post<TJobOutProgress>(Format('fine_tuning/jobs/%s/cancel', [JobId]), True);
+  Result := API.PostEx<TJobOutProgress>(Format('fine_tuning/jobs/%s/cancel', [JobId]));
 end;
 
 function TFineTuningRoute.CreateJob(
   ParamProc: TProc<TFineTuningJobParams>): TJobOut;
 begin
-  Result := API.Post<TJobOut, TFineTuningJobParams>('fine_tuning/jobs', ParamProc, True);
+  Result := API.Post<TJobOut, TFineTuningJobParams>('fine_tuning/jobs', ParamProc);
 end;
 
 function TFineTuningRoute.List(
   ParamProc: TProc<TFineTuningJobListParams>): TListFineTuningJobs;
 begin
-  Result := API.Get<TListFineTuningJobs, TFineTuningJobListParams>('fine_tuning/jobs', ParamProc, True);
+  Result := API.Get<TListFineTuningJobs, TFineTuningJobListParams>('fine_tuning/jobs', ParamProc);
 end;
 
 function TFineTuningRoute.Retrieve(const JobId: string): TJobOutProgress;
 begin
-  Result := API.Get<TJobOutProgress>(Format('fine_tuning/jobs/%s', [JobId]), True);
+  Result := API.GetEx<TJobOutProgress>(Format('fine_tuning/jobs/%s', [JobId]));
 end;
 
 function TFineTuningRoute.Start(const JobId: string): TJobOutProgress;
 begin
-  Result := API.Post<TJobOutProgress>(Format('fine_tuning/jobs/%s/start', [JobId]), True);
+  Result := API.Post<TJobOutProgress>(Format('fine_tuning/jobs/%s/start', [JobId]));
 end;
 
 { TListFineTuningJobs }

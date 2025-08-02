@@ -12,7 +12,7 @@ interface
 uses
   System.Classes, System.SysUtils, REST.JsonReflect, REST.Json.Types, System.Net.Mime,
   System.Threading, MistralAI.API.Params, MistralAI.API, MistralAI.Async.Support,
-  MistralAI.Types;
+  MistralAI.Types, MistralAI.Async.Promise;
 
 type
   /// <summary>
@@ -53,6 +53,7 @@ type
     /// </code>
     /// </remarks>
     function &File(const FileName: string): TUploadParams; overload;
+
     /// <summary>
     /// Adds a file to be uploaded from a stream.
     /// </summary>
@@ -81,6 +82,7 @@ type
     /// </code>
     /// </remarks>
     function &File(const Stream: TStream; const FileName: string): TUploadParams; overload;
+
     /// <summary>
     /// Sets the intended purpose of the uploaded file.
     /// </summary>
@@ -97,6 +99,7 @@ type
     /// </code>
     /// </remarks>
     function Purpose(const Value: string): TUploadParams; overload;
+
     /// <summary>
     /// Sets the intended purpose of the uploaded file.
     /// </summary>
@@ -113,13 +116,14 @@ type
     /// </code>
     /// </remarks>
     function Purpose(const Value: TFilePurpose): TUploadParams; overload;
+
     /// <summary>
     /// Creates a new instance of <c>TUploadParams</c>.
     /// </summary>
     /// <remarks>
     /// Initializes the multipart form data with ownership set to True.
     /// </remarks>
-    constructor Create;  reintroduce;
+    constructor Create; reintroduce;
   end;
 
   /// <summary>
@@ -130,7 +134,6 @@ type
   /// It provides methods to set pagination, filtering, and searching options.
   /// </remarks>
   TListParams = class(TUrlParam)
-  public
     /// <summary>
     /// Sets the intended page in the returned list.
     /// </summary>
@@ -141,6 +144,7 @@ type
     /// The current <c>TListParams</c> instance.
     /// </returns>
     function Page(const Value: Integer): TListParams;
+
     /// <summary>
     /// Sets the intended page size of the returned list.
     /// </summary>
@@ -151,6 +155,7 @@ type
     /// The current <c>TListParams</c> instance.
     /// </returns>
     function PageSize(const Value: Integer): TListParams;
+
     /// <summary>
     /// Sets the intended sample_type of the listed file.
     /// </summary>
@@ -161,6 +166,7 @@ type
     /// The current <c>TListParams</c> instance.
     /// </returns>
     function SampleType(const Value: TArray<TSampleType>): TListParams;
+
     /// <summary>
     /// Sets the intended source of the listed file.
     /// </summary>
@@ -171,6 +177,7 @@ type
     /// The current <c>TListParams</c> instance.
     /// </returns>
     function Source(const Value: TArray<TSourceType>): TListParams;
+
     /// <summary>
     /// Sets the intended search of the listed file.
     /// </summary>
@@ -181,6 +188,7 @@ type
     /// The current <c>TListParams</c> instance.
     /// </returns>
     function Search(const Value: string): TListParams;
+
     /// <summary>
     /// Sets the intended purpose of the listed file.
     /// </summary>
@@ -194,12 +202,35 @@ type
   end;
 
   /// <summary>
+  /// Represents URL signing parameters for file access requests.
+  /// </summary>
+  /// <remarks>
+  /// Use this class to specify how long a pre-signed URL remains valid.
+  /// The default expiry is 24 hours.
+  /// </remarks>
+  TSignedUrlParams = class(TUrlParam)
+    /// <summary>
+    /// Sets the number of hours before the signed URL expires.
+    /// </summary>
+    /// <param name="Value">
+    /// The lifetime of the URL in hours. If not specified, defaults to 24.
+    /// </param>
+    /// <returns>
+    /// The current <c>TSignedUrlParams</c> instance.
+    /// </returns>
+    /// <remarks>
+    /// After the expiry time elapses, the signed URL will no longer grant access.
+    /// </remarks>
+    function Expiry(const Value: Integer): TSignedUrlParams;
+  end;
+
+  /// <summary>
   /// Represents a file in the Mistral AI system.
   /// </summary>
   /// <remarks>
   /// This class contains properties that represent the attributes of a file as returned by the API.
   /// </remarks>
-  TFile = class
+  TFile = class(TJSONFingerprint)
   private
     FBytes: Int64;
     [JsonNameAttribute('created_at')]
@@ -214,14 +245,17 @@ type
     FSampleType: TSampleType;
     [JsonNameAttribute('num_lines')]
     FNumLines: Int64;
+    FMimetype: string;
     [JsonReflectAttribute(ctString, rtString, TSourceTypeInterceptor)]
     FSource: TSourceType;
     FDeleted: Boolean;
+    FSignature: string;
   public
     /// <summary>
     /// The size (in bytes) of the file.
     /// </summary>
     property Bytes: Int64 read FBytes write FBytes;
+
     /// <summary>
     /// The UNIX timestamp (in seconds) when the file was created.
     /// </summary>
@@ -237,38 +271,50 @@ type
     /// </code>
     /// </remarks>
     property CreatedAt: Int64 read FCreated_at write FCreated_at;
+
     /// <summary>
     /// The name of the uploaded file.
     /// </summary>
     property FileName: string read FFilename write FFilename;
+
     /// <summary>
     /// The unique identifier of the file.
     /// </summary>
     property Id: string read FId write FId;
+
     /// <summary>
     /// The object type, which is always 'file'.
     /// </summary>
     property &Object: string read FObject write FObject;
+
     /// <summary>
     /// The intended purpose of the file.
     /// </summary>
     property Purpose: TFilePurpose read FPurpose write FPurpose;
+
     /// <summary>
     /// Enum: "pretrain" "instruct" "batch_request" "batch_result" "batch_error"
     /// </summary>
     property SampleType: TSampleType read FSampleType write FSampleType;
+
     /// <summary>
     /// Num lines returned
     /// </summary>
     property NumLines: Int64 read FNumLines write FNumLines;
+
+    property Mimetype: string read FMimetype write FMimetype;
+
     /// <summary>
     /// Enum: "upload" "repository" "mistral"
     /// </summary>
     property Source: TSourceType read FSource write FSource;
+
     /// <summary>
     /// Indicator when file retrieving only
     /// </summary>
     property Deleted: Boolean read FDeleted write FDeleted;
+
+    property Signature: string read FSignature write FSignature;
   end;
 
   /// <summary>
@@ -294,7 +340,7 @@ type
   /// end;
   /// </code>
   /// </remarks>
-  TFiles = class
+  TFiles = class(TJSONFingerprint)
   private
     FData: TArray<TFile>;
     FObject: string;
@@ -304,14 +350,17 @@ type
     /// An array of <c>TFile</c> objects representing the files.
     /// </summary>
     property Data: TArray<TFile> read FData write FData;
+
     /// <summary>
     /// The object type, which is always 'list'.
     /// </summary>
     property &Object: string read FObject write FObject;
+
     /// <summary>
     /// The total returned
     /// </summary>
     property Total: Int64 read FTotal write FTotal;
+
     /// <summary>
     /// Destroys the <c>TFiles</c> instance and frees associated resources.
     /// </summary>
@@ -327,7 +376,7 @@ type
   /// <remarks>
   /// Contains information about the deletion status and the ID of the deleted file.
   /// </remarks>
-  TDeletedResult = class
+  TDeletedResult = class(TJSONFingerprint)
   private
     [JsonNameAttribute('deleted')]
     FDeleted: Boolean;
@@ -340,10 +389,12 @@ type
     /// Indicates whether the file was successfully deleted.
     /// </summary>
     property Deleted: Boolean read FDeleted write FDeleted;
+
     /// <summary>
     /// The unique identifier of the deleted file.
     /// </summary>
     property Id: string read FId write FId;
+
     /// <summary>
     /// The object type, which is always 'file'.
     /// </summary>
@@ -357,7 +408,7 @@ type
   /// This class encapsulates a downloaded file and provides methods to retrieve its data as a stream
   /// or save it to a file. The file data is expected to be in a base64-encoded format.
   /// </remarks>
-  TDownLoadFile = class
+  TDownLoadFile = class(TJSONFingerprint)
   private
     FData: string;
     FFileName: string;
@@ -372,6 +423,7 @@ type
     /// This property holds the file name specified in the last call to <c>SaveToFile</c>.
     /// </remarks>
     property FileName: string read FFileName write FFileName;
+
     /// <summary>
     /// Retrieves the downloaded file as a <c>TStream</c>.
     /// </summary>
@@ -386,6 +438,7 @@ type
     /// Raises an exception data field is empty.
     /// </exception>
     function GetStream: TStream;
+
     /// <summary>
     /// Saves the gdownloaded file to a file.
     /// </summary>
@@ -399,10 +452,34 @@ type
     /// Raises an exception if the data cannot be decoded or saved.
     /// </exception>
     procedure SaveToFile(const FileName: string; const FailIfExists: Boolean = True);
+
     /// <summary>
     /// File downloaded as base64-encoded data
     /// </summary>
     property Data: string read FData write FData;
+  end;
+
+  /// <summary>
+  /// Represents a pre-signed URL returned by the API for temporary file access.
+  /// </summary>
+  /// <remarks>
+  /// This class holds the URL that grants time-limited access to a file resource.
+  /// Use the <see cref="Url"/> property before it expires.
+  /// </remarks>
+  TSignedUrl = class(TJSONFingerprint)
+  private
+    FUrl: string;
+  public
+    /// <summary>
+    /// Gets or sets the pre-signed URL.
+    /// </summary>
+    /// <value>
+    /// A string containing the URL that allows temporary access to the file.
+    /// </value>
+    /// <remarks>
+    /// The URL is valid for the duration specified when it was created.
+    /// </remarks>
+    property Url: string read FUrl write FUrl;
   end;
 
   /// <summary>
@@ -411,7 +488,15 @@ type
   /// <remarks>
   /// Used when performing asynchronous operations that return a <c>TFile</c> instance.
   /// </remarks>
-  TAsynFile = TAsyncCallBack<TFile>;
+  TAsyncFile = TAsyncCallback<TFile>;
+
+  /// <summary>
+  /// Promise-based callback parameters for operations returning a single <c>TFile</c>.
+  /// </summary>
+  /// <remarks>
+  /// Use this type when you prefer a promise-style API over traditional Callbacks.
+  /// </remarks>
+  TPromiseFile = TPromiseCallback<TFile>;
 
   /// <summary>
   /// Asynchronous callback parameters for operations returning <c>TFiles</c>.
@@ -419,7 +504,15 @@ type
   /// <remarks>
   /// Used when performing asynchronous operations that return a <c>TFiles</c> instance.
   /// </remarks>
-  TAsynFiles = TAsyncCallBack<TFiles>;
+  TAsyncFiles = TAsyncCallback<TFiles>;
+
+  /// <summary>
+  /// Promise-based callback parameters for operations returning a collection of <c>TFile</c> objects.
+  /// </summary>
+  /// <remarks>
+  /// Use this type when you prefer a promise-style API over traditional Callbacks for file list operations.
+  /// </remarks>
+  TPromiseFiles = TPromiseCallback<TFiles>;
 
   /// <summary>
   /// Asynchronous callback parameters for file deletion operations.
@@ -427,7 +520,15 @@ type
   /// <remarks>
   /// Used when performing asynchronous operations that return a <c>TDeletedResult</c> instance.
   /// </remarks>
-  TAsynFilesDelete = TAsyncCallBack<TDeletedResult>;
+  TAsyncFilesDelete = TAsyncCallback<TDeletedResult>;
+
+  /// <summary>
+  /// Promise-based callback parameters for operations that delete a file, returning a <c>TDeletedResult</c>.
+  /// </summary>
+  /// <remarks>
+  /// Use this type when you prefer a promise-style API over traditional Callbacks for file deletion operations.
+  /// </remarks>
+  TPromiseFilesDelete = TPromiseCallback<TDeletedResult>;
 
   /// <summary>
   /// Asynchronous callback parameters for file download operations.
@@ -435,7 +536,75 @@ type
   /// <remarks>
   /// Used when performing asynchronous operations that return a <c>TDownLoadFile</c> instance.
   /// </remarks>
-  TAsynDownLoadFile = TAsyncCallBack<TDownLoadFile>;
+  TAsyncDownLoadFile = TAsyncCallback<TDownLoadFile>;
+
+  /// <summary>
+  /// Promise-based callback parameters for operations returning a downloaded <c>TDownLoadFile</c>.
+  /// </summary>
+  /// <remarks>
+  /// Use this type when you prefer a promise-style API over traditional Callbacks for file download operations.
+  /// </remarks>
+  TPromiseDownLoadFile = TPromiseCallback<TDownLoadFile>;
+
+  /// <summary>
+  /// Asynchronous callback parameters for operations returning a <c>TSignedUrl</c>.
+  /// </summary>
+  /// <remarks>
+  /// Use this type when performing an asynchronous request to obtain a pre-signed URL.
+  /// Configure its <c>OnSuccess</c> and <c>OnError</c> handlers to handle the result or any errors.
+  /// Example:
+  /// <code>
+  /// MistralAI.File.AsyncGetSignedUrl(
+  ///   'file_id',
+  ///   procedure(Params: TSignedUrlParams)
+  ///   begin
+  ///     Params.Expiry(24);
+  ///   end,
+  ///   function: TAsyncSignedUrl
+  ///   begin
+  ///     Result.OnSuccess :=
+  ///       procedure(Sender: TObject; UrlResult: TSignedUrl)
+  ///       begin
+  ///         // Use UrlResult.Url
+  ///       end;
+  ///     Result.OnError :=
+  ///       procedure(Sender: TObject; ErrorMsg: string)
+  ///       begin
+  ///         // Handle error
+  ///       end;
+  ///   end);
+  /// </code>
+  /// </remarks>
+  TAsyncSignedUrl = TAsyncCallback<TSignedUrl>;
+
+  /// <summary>
+  /// Promise-style callback parameters for operations returning a <c>TSignedUrl</c>.
+  /// </summary>
+  /// <remarks>
+  /// Use this type when you prefer a promise-based API to request a pre-signed URL.
+  /// The returned promise exposes <c>Then</c> for success and <c>Catch</c> for error handling.
+  /// Example:
+  /// <code>
+  /// FilesRoute.AsyncAwaitGetSignedUrl(
+  ///   'file_id',
+  ///   procedure(Params: TSignedUrlParams)
+  ///   begin
+  ///     Params.Expiry(24);
+  ///   end
+  /// ).&Then(
+  ///   function(UrlResult: TSignedUrl): TSignedUrl
+  ///   begin
+  ///     // Use UrlResult.Url
+  ///   end
+  /// ).&Catch(
+  ///   procedure(E: Exception)
+  ///   begin
+  ///     // Handle error
+  ///   end
+  /// );
+  /// </code>
+  /// </remarks>
+  TPromiseSignedUrl = TPromiseCallback<TSignedUrl>;
 
   /// <summary>
   /// Provides methods to interact with the Mistral AI Files API.
@@ -461,12 +630,340 @@ type
   /// </remarks>
   TFilesRoute = class(TMistralAIAPIRoute)
     /// <summary>
+    /// Wraps the asynchronous delete operation in a promise-style API.
+    /// </summary>
+    /// <param name="FileId">
+    /// The unique identifier of the file to delete.
+    /// </param>
+    /// <param name="Callbacks">
+    /// Optional function to configure promise-based Callbacks (OnSuccess, OnError, etc.).
+    /// </param>
+    /// <returns>
+    /// A <see cref="TPromise&lt;TDeletedResult&gt;"/> that resolves with the deletion result.
+    /// </returns>
+    /// <remarks>
+    /// Internally calls <see cref="AsyncDelete"/> and wraps its Callbacks into a <see cref="TPromise&lt;TDeletedResult&gt;"/>.
+    /// Use this method when you prefer awaiting a promise rather than handling Callbacks directly.
+    /// </remarks>
+    function AsyncAwaitDelete(const FileId: string;
+      const Callbacks: TFunc<TPromiseFilesDelete> = nil): TPromise<TDeletedResult>;
+
+    /// <summary>
+    /// Wraps the asynchronous download operation in a promise-style API.
+    /// </summary>
+    /// <param name="FileId">
+    /// The unique identifier of the file to download.
+    /// </param>
+    /// <param name="Callbacks">
+    /// Optional function to configure promise-based Callbacks (OnSuccess, OnError, etc.).
+    /// </param>
+    /// <returns>
+    /// A <see cref="TPromise&lt;TDownLoadFile&gt;"/> that resolves with the downloaded file.
+    /// </returns>
+    /// <remarks>
+    /// Internally calls <see cref="AsyncDownload"/> and wraps its Callbacks into a <see cref="TPromise&lt;TDownLoadFile&gt;"/>.
+    /// Use this method when you prefer awaiting a promise rather than handling Callbacks directly.
+    /// </remarks>
+    function AsyncAwaitDownload(const FileId: string;
+      const Callbacks: TFunc<TPromiseDownLoadFile> = nil): TPromise<TDownLoadFile>;
+
+    /// <summary>
+    /// Wraps the asynchronous list operation in a promise-style API.
+    /// </summary>
+    /// <param name="Callbacks">
+    /// Optional function to configure promise-based Callbacks (OnSuccess, OnError, etc.).
+    /// </param>
+    /// <returns>
+    /// A <see cref="TPromise&lt;TFiles&gt;"/> that resolves with the collection of files.
+    /// </returns>
+    /// <remarks>
+    /// Internally calls <see cref="AsyncList"/> and wraps its Callbacks into a <see cref="TPromise&lt;TFiles&gt;"/>.
+    /// Use this method when you prefer awaiting a promise rather than handling Callbacks directly.
+    /// </remarks>
+    function AsyncAwaitList(
+      const Callbacks: TFunc<TPromiseFiles> = nil): TPromise<TFiles>; overload;
+
+    /// <summary>
+    /// Wraps the asynchronous list operation—with custom parameters—in a promise-style API.
+    /// </summary>
+    /// <param name="ParamProc">
+    /// A procedure to configure the <see cref="TListParams"/> (e.g., paging, filtering).
+    /// </param>
+    /// <param name="Callbacks">
+    /// Optional function to configure promise-based Callbacks (OnSuccess, OnError, etc.).
+    /// </param>
+    /// <returns>
+    /// A <see cref="TPromise&lt;TFiles&gt;"/> that resolves with the collection of files matching the specified parameters.
+    /// </returns>
+    /// <remarks>
+    /// Internally calls <see cref="AsyncList"/> with <paramref name="ParamProc"/> and wraps its Callbacks into a <see cref="TPromise&lt;TFiles&gt;"/>.
+    /// Use this overload when you need to customize list parameters before awaiting the result.
+    /// </remarks>
+    function AsyncAwaitList(const ParamProc: TProc<TListParams>;
+      const Callbacks: TFunc<TPromiseFiles> = nil): TPromise<TFiles>; overload;
+
+    /// <summary>
+    /// Wraps the asynchronous retrieve operation in a promise-style API.
+    /// </summary>
+    /// <param name="FileId">
+    /// The unique identifier of the file to retrieve.
+    /// </param>
+    /// <param name="Callbacks">
+    /// Optional function to configure promise-based Callbacks (OnSuccess, OnError, etc.).
+    /// </param>
+    /// <returns>
+    /// A <see cref="TPromise&lt;TFile&gt;"/> that resolves with the retrieved file.
+    /// </returns>
+    /// <remarks>
+    /// Internally calls <see cref="AsyncRetrieve"/> and wraps its Callbacks into a <see cref="TPromise&lt;TFile&gt;"/>.
+    /// Use this method when you prefer awaiting a promise rather than handling Callbacks directly.
+    /// </remarks>
+    function AsyncAwaitRetrieve(const FileId: string;
+      const Callbacks: TFunc<TPromiseFile> = nil): TPromise<TFile>;
+
+    /// <summary>
+    /// Wraps the asynchronous upload operation in a promise-style API.
+    /// </summary>
+    /// <param name="ParamProc">
+    /// A procedure to configure the <see cref="TUploadParams"/> (e.g., file stream, purpose).
+    /// </param>
+    /// <param name="Callbacks">
+    /// Optional function to configure promise-based Callbacks (OnSuccess, OnError, etc.).
+    /// </param>
+    /// <returns>
+    /// A <see cref="TPromise&lt;TFile&gt;"/> that resolves with the uploaded file metadata.
+    /// </returns>
+    /// <remarks>
+    /// Internally calls <see cref="AsyncUpload"/> with <paramref name="ParamProc"/> and wraps its Callbacks into a <see cref="TPromise&lt;TFile&gt;"/>.
+    /// Use this method when you prefer awaiting a promise rather than handling Callbacks directly.
+    /// </remarks>
+    function AsyncAwaitUpload(const ParamProc: TProc<TUploadParams>;
+      const Callbacks: TFunc<TPromiseFile> = nil): TPromise<TFile>;
+
+    /// <summary>
+    /// Wraps the asynchronous get-signed-URL operation in a promise-style API.
+    /// </summary>
+    /// <param name="FileId">
+    /// The unique identifier of the file for which to obtain a signed URL.
+    /// </param>
+    /// <param name="ParamProc">
+    /// A procedure to configure the <c>TSignedUrlParams</c> (e.g., expiry time).
+    /// </param>
+    /// <param name="Callbacks">
+    /// Optional function to configure promise-based Callbacks (<c>OnSuccess</c>, <c>OnError</c>, etc.).
+    /// </param>
+    /// <returns>
+    /// A <c>TPromise&lt;TSignedUrl&gt;</c> that resolves with the pre-signed URL.
+    /// </returns>
+    /// <remarks>
+    /// Internally calls <see cref="ASyncGetSignedUrl"/> and wraps its Callbacks into a promise.
+    /// Use <c>Then</c> to handle success and <c>Catch</c> to handle errors.
+    /// Example:
+    /// <code>
+    /// FilesRoute.AsyncAwaitGetSignedUrl(
+    ///   'file_id',
+    ///   procedure(Params: TSignedUrlParams)
+    ///   begin
+    ///     Params.Expiry(24);
+    ///   end
+    /// ).Then(
+    ///   function(UrlResult: TSignedUrl): TSignedUrl
+    ///   begin
+    ///     // Use UrlResult.Url here
+    ///   end
+    /// ).Catch(
+    ///   procedure(E: Exception)
+    ///   begin
+    ///     // Handle error
+    ///   end
+    /// );
+    /// </code>
+    /// </remarks>
+    function AsyncAwaitGetSignedUrl(const FileId: string;
+      const ParamProc: TProc<TSignedUrlParams>;
+      const Callbacks: TFunc<TPromiseSignedUrl> = nil): TPromise<TSignedUrl>;
+
+    /// <summary>
+    /// Deletes a file.
+    /// </summary>
+    /// <param name="FileId">
+    /// The unique identifier of the file to delete.
+    /// </param>
+    /// <returns>
+    /// A <c>TDeletedResult</c> instance representing the result of the deletion.
+    /// </returns>
+    /// <remarks>
+    /// Example:
+    /// <code>
+    ///   with MistralAI.File.Delete('file_id');
+    ///   try
+    ///     if Deleted then
+    ///       ShowMessage('file deleted');
+    ///   finally
+    ///     Free;
+    ///   end;
+    /// </code>
+    /// </remarks>
+    function Delete(const FileId: string): TDeletedResult;
+
+    /// <summary>
+    /// Download a file.
+    /// </summary>
+    /// <param name="FileId">
+    /// The unique identifier of the file to delete.
+    /// </param>
+    /// <returns>
+    /// A <c>TDownLoadFile</c> instance representing the result of the download.
+    /// </returns>
+    /// <remarks>
+    /// Example:
+    /// <code>
+    ///   with MistralAI.File.Download('file_id');
+    ///   try
+    ///     //do something
+    ///   finally
+    ///     Free;
+    ///   end;
+    /// </code>
+    /// </remarks>
+    function Download(const FileId: string): TDownLoadFile;
+
+    /// <summary>
+    /// Retrieves the list of files belonging to the user's organization.
+    /// </summary>
+    /// <returns>
+    /// A <c>TFiles</c> instance containing the list of files.
+    /// </returns>
+    /// <remarks>
+    /// Example:
+    /// <code>
+    ///   var Files := MistralAI.File.List;
+    ///   try
+    ///     // Process files
+    ///   finally
+    ///     Files.Free;
+    /// end;
+    /// </code>
+    /// </remarks>
+    function List: TFiles; overload;
+
+    /// <summary>
+    /// Retrieves the list of files belonging to the user's organization.
+    /// </summary>
+    /// <param name="ParamProc">
+    /// A procedure used to configure the <c>TListParams</c> for the upload.
+    /// </param>
+    /// <returns>
+    /// A <c>TFiles</c> instance containing the list of files.
+    /// </returns>
+    /// <remarks>
+    /// Example:
+    /// <code>
+    ///   var Files := MistralAI.File.List(
+    ///     procedure (Params: TListParams)
+    ///     begin
+    ///       // Set parameters
+    ///     end);
+    ///   try
+    ///     // Process files
+    ///   finally
+    ///     Files.Free;
+    /// end;
+    /// </code>
+    /// </remarks>
+    function List(const ParamProc: TProc<TListParams>): TFiles; overload;
+
+    /// <summary>
+    /// Retrieves information about a specific file.
+    /// </summary>
+    /// <param name="FileId">
+    /// The unique identifier of the file to retrieve.
+    /// </param>
+    /// <returns>
+    /// A <c>TFile</c> instance containing the file information.
+    /// </returns>
+    /// <remarks>
+    /// Example:
+    /// <code>
+    ///   var FileInfo := MistralAI.File.Retrieve('file_id');
+    ///   try
+    ///     // Process FileInfo
+    ///   finally
+    ///     FileInfo.Free;
+    ///   end;
+    /// </code>
+    /// </remarks>
+    function Retrieve(const FileId: string): TFile;
+
+    /// <summary>
+    /// Uploads a file that can be used across various endpoints.
+    /// </summary>
+    /// <param name="ParamProc">
+    /// A procedure used to configure the <c>TUploadParams</c> for the upload.
+    /// </param>
+    /// <returns>
+    /// A <c>TFile</c> instance representing the uploaded file.
+    /// </returns>
+    /// <remarks>
+    /// The size of individual files can be a maximum of 512 MB. The Fine-tuning API only supports .jsonl files. Please contact support if you need to increase these storage limits.
+    /// Example:
+    /// <code>
+    ///   var UploadedFile := MistralAI.File.Upload(
+    ///     procedure(Params: TUploadParams)
+    ///     begin
+    ///       Params.File('path/to/file.jsonl');
+    ///       Params.Purpose(TFilePurpose.finetune);
+    ///     end);
+    ///   try
+    ///     // Process UploadedFile
+    ///   finally
+    ///     UploadedFile.Free;
+    ///   end;
+    /// </code>
+    /// </remarks>
+    function Upload(const ParamProc: TProc<TUploadParams>): TFile;
+
+    /// <summary>
+    /// Retrieves a pre-signed URL for temporary access to the specified file.
+    /// </summary>
+    /// <param name="FileId">
+    /// The unique identifier of the file to generate a signed URL for.
+    /// </param>
+    /// <param name="ParamProc">
+    /// A procedure to configure the <c>TSignedUrlParams</c> (e.g., expiry time in hours).
+    /// </param>
+    /// <returns>
+    /// A <c>TSignedUrl</c> instance containing the URL that grants time-limited access.
+    /// </returns>
+    /// <remarks>
+    /// Internally invokes the API endpoint <c>files/{FileId}/url</c> with the given parameters.
+    /// Example:
+    /// <code>
+    /// var
+    ///   UrlResult: TSignedUrl;
+    /// begin
+    ///   UrlResult := FilesRoute.GetSignedUrl('file_id',
+    ///     procedure(Params: TSignedUrlParams)
+    ///     begin
+    ///       Params.Expiry(24);
+    ///     end);
+    ///   try
+    ///     // Use UrlResult.Url here
+    ///   finally
+    ///     UrlResult.Free;
+    ///   end;
+    /// end;
+    /// </remarks>
+    function GetSignedUrl(const FileId: string;
+      const ParamProc: TProc<TSignedUrlParams>): TSignedUrl;
+
+    /// <summary>
     /// Asynchronously deletes a file.
     /// </summary>
     /// <param name="FileId">
     /// The unique identifier of the file to delete.
     /// </param>
-    /// <param name="CallBacks">
+    /// <param name="Callbacks">
     /// A function that returns the asynchronous callback parameters.
     /// </param>
     /// <remarks>
@@ -490,14 +987,15 @@ type
     ///   end);
     /// </code>
     /// </remarks>
-    procedure AsyncDelete(const FileId: string; const CallBacks: TFunc<TAsynFilesDelete>);
+    procedure AsyncDelete(const FileId: string; const Callbacks: TFunc<TAsyncFilesDelete>);
+
     /// <summary>
     /// Asynchronously download a file.
     /// </summary>
     /// <param name="FileId">
     /// The unique identifier of the file to download.
     /// </param>
-    /// <param name="CallBacks">
+    /// <param name="Callbacks">
     /// A function that returns the asynchronous callback parameters.
     /// </param>
     /// <remarks>
@@ -521,11 +1019,12 @@ type
     ///   end);
     /// </code>
     /// </remarks>
-    procedure AsyncDownload(const FileId: string; const CallBacks: TFunc<TAsynDownLoadFile>);
+    procedure AsyncDownload(const FileId: string; const Callbacks: TFunc<TAsyncDownLoadFile>);
+
     /// <summary>
     /// Asynchronously retrieves the list of files belonging to the user's organization.
     /// </summary>
-    /// <param name="CallBacks">
+    /// <param name="Callbacks">
     /// A function that returns the asynchronous callback parameters.
     /// </param>
     /// <remarks>
@@ -548,14 +1047,15 @@ type
     ///   end);
     /// </code>
     /// </remarks>
-    procedure AsyncList(CallBacks: TFunc<TAsynFiles>); overload;
+    procedure AsyncList(const Callbacks: TFunc<TAsyncFiles>); overload;
+
     /// <summary>
     /// Asynchronously retrieves the list of files belonging to the user's organization.
     /// </summary>
     /// <param name="ParamProc">
     /// A procedure used to configure the <c>TListParams</c> for the upload.
     /// </param>
-    /// <param name="CallBacks">
+    /// <param name="Callbacks">
     /// A function that returns the asynchronous callback parameters.
     /// </param>
     /// <remarks>
@@ -578,14 +1078,15 @@ type
     ///   end);
     /// </code>
     /// </remarks>
-    procedure AsyncList(ParamProc: TProc<TListParams>; CallBacks: TFunc<TAsynFiles>); overload;
+    procedure AsyncList(const ParamProc: TProc<TListParams>; const Callbacks: TFunc<TAsyncFiles>); overload;
+
     /// <summary>
     /// Asynchronously retrieves information about a specific file.
     /// </summary>
     /// <param name="FileId">
     /// The unique identifier of the file to retrieve.
     /// </param>
-    /// <param name="CallBacks">
+    /// <param name="Callbacks">
     /// A function that returns the asynchronous callback parameters.
     /// </param>
     /// <remarks>
@@ -609,14 +1110,15 @@ type
     ///   end);
     /// </code>
     /// </remarks>
-    procedure AsyncRetrieve(const FileId: string; const CallBacks: TFunc<TAsynFile>);
+    procedure AsyncRetrieve(const FileId: string; const Callbacks: TFunc<TAsyncFile>);
+
     /// <summary>
     /// Asynchronously uploads a file that can be used across various endpoints.
     /// </summary>
     /// <param name="ParamProc">
     /// A procedure used to configure the <c>TUploadParams</c> for the upload.
     /// </param>
-    /// <param name="CallBacks">
+    /// <param name="Callbacks">
     /// A function that returns the asynchronous callback parameters.
     /// </param>
     /// <remarks>
@@ -645,141 +1147,50 @@ type
     ///   end);
     /// </code>
     /// </remarks>
-    procedure ASyncUpload(ParamProc: TProc<TUploadParams>; const CallBacks: TFunc<TAsynFile>);
+    procedure ASyncUpload(const ParamProc: TProc<TUploadParams>; const Callbacks: TFunc<TAsyncFile>);
+
     /// <summary>
-    /// Deletes a file.
+    /// Asynchronously obtains a pre-signed URL for temporary file access.
     /// </summary>
     /// <param name="FileId">
-    /// The unique identifier of the file to delete.
+    /// The unique identifier of the file for which to generate the signed URL.
     /// </param>
-    /// <returns>
-    /// A <c>TDeletedResult</c> instance representing the result of the deletion.
-    /// </returns>
-    /// <remarks>
-    /// Example:
-    /// <code>
-    ///   with MistralAI.File.Delete('file_id');
-    ///   try
-    ///     if Deleted then
-    ///       ShowMessage('file deleted');
-    ///   finally
-    ///     Free;
-    ///   end;
-    /// </code>
-    /// </remarks>
-    function Delete(const FileId: string): TDeletedResult;
-    /// <summary>
-    /// Download a file.
-    /// </summary>
-    /// <param name="FileId">
-    /// The unique identifier of the file to delete.
-    /// </param>
-    /// <returns>
-    /// A <c>TDownLoadFile</c> instance representing the result of the download.
-    /// </returns>
-    /// <remarks>
-    /// Example:
-    /// <code>
-    ///   with MistralAI.File.Download('file_id');
-    ///   try
-    ///     //do something
-    ///   finally
-    ///     Free;
-    ///   end;
-    /// </code>
-    /// </remarks>
-    function Download(const FileId: string): TDownLoadFile;
-    /// <summary>
-    /// Retrieves the list of files belonging to the user's organization.
-    /// </summary>
-    /// <returns>
-    /// A <c>TFiles</c> instance containing the list of files.
-    /// </returns>
-    /// <remarks>
-    /// Example:
-    /// <code>
-    ///   var Files := MistralAI.File.List;
-    ///   try
-    ///     // Process files
-    ///   finally
-    ///     Files.Free;
-    /// end;
-    /// </code>
-    /// </remarks>
-    function List: TFiles; overload;
-    /// <summary>
-    /// Retrieves the list of files belonging to the user's organization.
-    /// </summary>
     /// <param name="ParamProc">
-    /// A procedure used to configure the <c>TListParams</c> for the upload.
+    /// A procedure to configure the <c>TSignedUrlParams</c>, such as the URL expiry time.
     /// </param>
-    /// <returns>
-    /// A <c>TFiles</c> instance containing the list of files.
-    /// </returns>
+    /// <param name="Callbacks">
+    /// A function that returns the asynchronous callback parameters (<c>OnStart</c>, <c>OnSuccess</c>, <c>OnError</c>).
+    /// </param>
     /// <remarks>
+    /// This method invokes <see cref="GetSignedUrl"/> under the hood and delivers the result via the provided Callbacks.
+    /// Use <c>Result.OnSuccess</c> to receive the <c>TSignedUrl</c> instance, or <c>Result.OnError</c> to handle failures.
     /// Example:
     /// <code>
-    ///   var Files := MistralAI.File.List(
-    ///     procedure (Params: TListParams)
-    ///     begin
-    ///       // Set parameters
-    ///     end);
-    ///   try
-    ///     // Process files
-    ///   finally
-    ///     Files.Free;
-    /// end;
+    /// FilesRoute.ASyncGetSignedUrl(
+    ///   'file_id',
+    ///   procedure(Params: TSignedUrlParams)
+    ///   begin
+    ///     Params.Expiry(24);
+    ///   end,
+    ///   function: TAsyncSignedUrl
+    ///   begin
+    ///     Result.OnSuccess :=
+    ///       procedure(Sender: TObject; UrlResult: TSignedUrl)
+    ///       begin
+    ///         // Use UrlResult.Url
+    ///       end;
+    ///     Result.OnError :=
+    ///       procedure(Sender: TObject; ErrorMsg: string)
+    ///       begin
+    ///         // Handle error
+    ///       end;
+    ///   end
+    /// );
     /// </code>
     /// </remarks>
-    function List(ParamProc: TProc<TListParams>): TFiles; overload;
-    /// <summary>
-    /// Retrieves information about a specific file.
-    /// </summary>
-    /// <param name="FileId">
-    /// The unique identifier of the file to retrieve.
-    /// </param>
-    /// <returns>
-    /// A <c>TFile</c> instance containing the file information.
-    /// </returns>
-    /// <remarks>
-    /// Example:
-    /// <code>
-    ///   var FileInfo := MistralAI.File.Retrieve('file_id');
-    ///   try
-    ///     // Process FileInfo
-    ///   finally
-    ///     FileInfo.Free;
-    ///   end;
-    /// </code>
-    /// </remarks>
-    function Retrieve(const FileId: string): TFile;
-    /// <summary>
-    /// Uploads a file that can be used across various endpoints.
-    /// </summary>
-    /// <param name="ParamProc">
-    /// A procedure used to configure the <c>TUploadParams</c> for the upload.
-    /// </param>
-    /// <returns>
-    /// A <c>TFile</c> instance representing the uploaded file.
-    /// </returns>
-    /// <remarks>
-    /// The size of individual files can be a maximum of 512 MB. The Fine-tuning API only supports .jsonl files. Please contact support if you need to increase these storage limits.
-    /// Example:
-    /// <code>
-    ///   var UploadedFile := MistralAI.File.Upload(
-    ///     procedure(Params: TUploadParams)
-    ///     begin
-    ///       Params.File('path/to/file.jsonl');
-    ///       Params.Purpose(TFilePurpose.finetune);
-    ///     end);
-    ///   try
-    ///     // Process UploadedFile
-    ///   finally
-    ///     UploadedFile.Free;
-    ///   end;
-    /// </code>
-    /// </remarks>
-    function Upload(ParamProc: TProc<TUploadParams>): TFile;
+    procedure ASyncGetSignedUrl(const FileId: string;
+      const ParamProc: TProc<TSignedUrlParams>;
+      const Callbacks: TFunc<TAsyncSignedUrl>);
   end;
 
 implementation
@@ -803,7 +1214,7 @@ end;
 function TUploadParams.&File(const Stream: TStream;
   const FileName: string): TUploadParams;
 begin
-  {$IF RTLVersion >= 36.0}
+  {$IF RTLVersion > 35.0}
   AddStream('file', Stream, True, FileName);
   {$ELSE}
   AddStream('file', Stream, FileName);
@@ -824,10 +1235,88 @@ end;
 
 { TFilesRoute }
 
-procedure TFilesRoute.AsyncDelete(const FileId: string;
-  const CallBacks: TFunc<TAsynFilesDelete>);
+function TFilesRoute.AsyncAwaitDelete(const FileId: string;
+  const Callbacks: TFunc<TPromiseFilesDelete>): TPromise<TDeletedResult>;
 begin
-  with TAsyncCallBackExec<TAsynFilesDelete, TDeletedResult>.Create(CallBacks) do
+  Result := TAsyncAwaitHelper.WrapAsyncAwait<TDeletedResult>(
+    procedure(const CallbackParams: TFunc<TAsyncFilesDelete>)
+    begin
+      AsyncDelete(FileId, CallbackParams);
+    end,
+    Callbacks);
+end;
+
+function TFilesRoute.AsyncAwaitDownload(const FileId: string;
+  const Callbacks: TFunc<TPromiseDownLoadFile>): TPromise<TDownLoadFile>;
+begin
+  Result := TAsyncAwaitHelper.WrapAsyncAwait<TDownLoadFile>(
+    procedure(const CallbackParams: TFunc<TAsyncDownLoadFile>)
+    begin
+      AsyncDownload(FileId, CallbackParams);
+    end,
+    Callbacks);
+end;
+
+function TFilesRoute.AsyncAwaitGetSignedUrl(const FileId: string;
+  const ParamProc: TProc<TSignedUrlParams>;
+  const Callbacks: TFunc<TPromiseSignedUrl>): TPromise<TSignedUrl>;
+begin
+  Result := TAsyncAwaitHelper.WrapAsyncAwait<TSignedUrl>(
+    procedure(const CallbackParams: TFunc<TAsyncSignedUrl>)
+    begin
+      ASyncGetSignedUrl(FileId, ParamProc, CallbackParams);
+    end,
+    Callbacks);
+end;
+
+function TFilesRoute.AsyncAwaitList(const ParamProc: TProc<TListParams>;
+  const Callbacks: TFunc<TPromiseFiles>): TPromise<TFiles>;
+begin
+  Result := TAsyncAwaitHelper.WrapAsyncAwait<TFiles>(
+    procedure(const CallbackParams: TFunc<TAsyncFiles>)
+    begin
+      AsyncList(ParamProc, CallbackParams);
+    end,
+    Callbacks);
+end;
+
+function TFilesRoute.AsyncAwaitList(
+  const Callbacks: TFunc<TPromiseFiles>): TPromise<TFiles>;
+begin
+  Result := TAsyncAwaitHelper.WrapAsyncAwait<TFiles>(
+    procedure(const CallbackParams: TFunc<TAsyncFiles>)
+    begin
+      AsyncList(CallbackParams);
+    end,
+    Callbacks);
+end;
+
+function TFilesRoute.AsyncAwaitRetrieve(const FileId: string;
+  const Callbacks: TFunc<TPromiseFile>): TPromise<TFile>;
+begin
+  Result := TAsyncAwaitHelper.WrapAsyncAwait<TFile>(
+    procedure(const CallbackParams: TFunc<TAsyncFile>)
+    begin
+      AsyncRetrieve(FileId, CallbackParams);
+    end,
+    Callbacks);
+end;
+
+function TFilesRoute.AsyncAwaitUpload(const ParamProc: TProc<TUploadParams>;
+  const Callbacks: TFunc<TPromiseFile>): TPromise<TFile>;
+begin
+  Result := TAsyncAwaitHelper.WrapAsyncAwait<TFile>(
+    procedure(const CallbackParams: TFunc<TAsyncFile>)
+    begin
+      AsyncUpload(ParamProc, CallbackParams);
+    end,
+    Callbacks);
+end;
+
+procedure TFilesRoute.AsyncDelete(const FileId: string;
+  const Callbacks: TFunc<TAsyncFilesDelete>);
+begin
+  with TAsyncCallBackExec<TAsyncFilesDelete, TDeletedResult>.Create(Callbacks) do
   try
     Sender := Use.Param.Sender;
     OnStart := Use.Param.OnStart;
@@ -843,9 +1332,10 @@ begin
   end;
 end;
 
-procedure TFilesRoute.AsyncList(ParamProc: TProc<TListParams>; CallBacks: TFunc<TAsynFiles>);
+procedure TFilesRoute.AsyncList(const ParamProc: TProc<TListParams>;
+  const Callbacks: TFunc<TAsyncFiles>);
 begin
-  with TAsyncCallBackExec<TAsynFiles, TFiles>.Create(CallBacks) do
+  with TAsyncCallBackExec<TAsyncFiles, TFiles>.Create(Callbacks) do
   try
     Sender := Use.Param.Sender;
     OnStart := Use.Param.OnStart;
@@ -861,9 +1351,9 @@ begin
   end;
 end;
 
-procedure TFilesRoute.AsyncList(CallBacks: TFunc<TAsynFiles>);
+procedure TFilesRoute.AsyncList(const Callbacks: TFunc<TAsyncFiles>);
 begin
-  with TAsyncCallBackExec<TAsynFiles, TFiles>.Create(CallBacks) do
+  with TAsyncCallBackExec<TAsyncFiles, TFiles>.Create(Callbacks) do
   try
     Sender := Use.Param.Sender;
     OnStart := Use.Param.OnStart;
@@ -880,9 +1370,9 @@ begin
 end;
 
 procedure TFilesRoute.AsyncRetrieve(const FileId: string;
-  const CallBacks: TFunc<TAsynFile>);
+  const Callbacks: TFunc<TAsyncFile>);
 begin
-  with TAsyncCallBackExec<TAsynFile, TFile>.Create(CallBacks) do
+  with TAsyncCallBackExec<TAsyncFile, TFile>.Create(Callbacks) do
   try
     Sender := Use.Param.Sender;
     OnStart := Use.Param.OnStart;
@@ -898,10 +1388,10 @@ begin
   end;
 end;
 
-procedure TFilesRoute.ASyncUpload(ParamProc: TProc<TUploadParams>;
-  const CallBacks: TFunc<TAsynFile>);
+procedure TFilesRoute.ASyncUpload(const ParamProc: TProc<TUploadParams>;
+  const Callbacks: TFunc<TAsyncFile>);
 begin
-  with TAsyncCallBackExec<TAsynFile, TFile>.Create(CallBacks) do
+  with TAsyncCallBackExec<TAsyncFile, TFile>.Create(Callbacks) do
   try
     Sender := Use.Param.Sender;
     OnStart := Use.Param.OnStart;
@@ -918,9 +1408,9 @@ begin
 end;
 
 procedure TFilesRoute.AsyncDownload(const FileId: string;
-  const CallBacks: TFunc<TAsynDownLoadFile>);
+  const Callbacks: TFunc<TAsyncDownLoadFile>);
 begin
-  with TAsyncCallBackExec<TAsynDownLoadFile, TDownLoadFile>.Create(CallBacks) do
+  with TAsyncCallBackExec<TAsyncDownLoadFile, TDownLoadFile>.Create(Callbacks) do
   try
     Sender := Use.Param.Sender;
     OnStart := Use.Param.OnStart;
@@ -930,6 +1420,26 @@ begin
       function: TDownLoadFile
       begin
         Result := Self.Download(FileId);
+      end);
+  finally
+    Free;
+  end;
+end;
+
+procedure TFilesRoute.ASyncGetSignedUrl(const FileId: string;
+  const ParamProc: TProc<TSignedUrlParams>;
+  const Callbacks: TFunc<TAsyncSignedUrl>);
+begin
+  with TAsyncCallBackExec<TAsyncSignedUrl, TSignedUrl>.Create(Callbacks) do
+  try
+    Sender := Use.Param.Sender;
+    OnStart := Use.Param.OnStart;
+    OnSuccess := Use.Param.OnSuccess;
+    OnError := Use.Param.OnError;
+    Run(
+      function: TSignedUrl
+      begin
+        Result := GetSignedUrl(FileId, ParamProc);
       end);
   finally
     Free;
@@ -946,12 +1456,18 @@ begin
   Result := API.GetFile<TDownLoadFile>(Format('files/%s/content', [FileId]));
 end;
 
+function TFilesRoute.GetSignedUrl(const FileId: string;
+  const ParamProc: TProc<TSignedUrlParams>): TSignedUrl;
+begin
+  Result := API.Get<TSignedUrl, TSignedUrlParams>('files/' + FileId + '/url', ParamProc);
+end;
+
 function TFilesRoute.List: TFiles;
 begin
   Result := API.Get<TFiles>('files');
 end;
 
-function TFilesRoute.List(ParamProc: TProc<TListParams>): TFiles;
+function TFilesRoute.List(const ParamProc: TProc<TListParams>): TFiles;
 begin
   Result := API.Get<TFiles, TListParams>('files', ParamProc);
 end;
@@ -961,7 +1477,7 @@ begin
   Result := API.Get<TFile>('files/' + FileId);
 end;
 
-function TFilesRoute.Upload(ParamProc: TProc<TUploadParams>): TFile;
+function TFilesRoute.Upload(const ParamProc: TProc<TUploadParams>): TFile;
 begin
   Result := API.PostForm<TFile, TUploadParams>('files', ParamProc);
 end;
@@ -971,8 +1487,7 @@ end;
 destructor TFiles.Destroy;
 begin
   for var Item in FData do
-    if Assigned(Item) then
-      Item.Free;
+    Item.Free;
   inherited;
 end;
 
@@ -1040,6 +1555,13 @@ begin
   except
     raise;
   end;
+end;
+
+{ TSignedUrlParams }
+
+function TSignedUrlParams.Expiry(const Value: Integer): TSignedUrlParams;
+begin
+  Result := TSignedUrlParams(Add('expiry', Value));
 end;
 
 end.

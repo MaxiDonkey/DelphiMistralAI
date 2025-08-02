@@ -1,4 +1,4 @@
-unit MistralAI.API;
+﻿unit MistralAI.API;
 
 {-------------------------------------------------------------------------------
 
@@ -9,267 +9,567 @@ unit MistralAI.API;
 
 interface
 
+{$REGION 'Dev note'}
+  (*
+    --- NOTE ---
+    The MistralAI.HttpClientInterface unit defines  an IHttpClientAPI  interface, which
+    allows  for decoupling  the specific implementation  of  the HTTP  client used  for
+    web requests. This introduces  an abstraction  that  enhances flexibility, improves
+    testability, and simplifies code maintenance.
+
+    The IHttpClientAPI interface  ensures that  client code can interact  with  the web
+    without  being  dependent  on a specific class, thus  facilitating  the replacement
+    or modification  of the  underlying  HTTP implementation  details without impacting
+    the rest  of  the application. It also  enables  easy mocking  during unit testing,
+    offering the ability to test  HTTP request behaviors in an isolated  and controlled
+    manner.
+
+    This approach adheres to the SOLID principles of dependency inversion, contributing
+    to a robust, modular, and adaptable software architecture.
+  *)
+{$ENDREGION}
+
 uses
-  System.Classes, System.Net.HttpClient, System.Net.URLClient, System.Net.Mime,
-  System.JSON, MistralAI.API.Params, MistralAI.Errors, System.SysUtils;
+  System.SysUtils, System.Classes, System.Net.HttpClient, System.Net.URLClient,
+  System.Net.Mime, System.JSON, System.Generics.Collections,
+  MistralAI.API.Params, MistralAI.Errors, MistralAI.Exception, MistralAI.Monitoring,
+  MistralAI.HttpClientInterface, MistralAI.HttpClientAPI, MistralAI.API.Helper,
+  MistralAI.API.Normalizer;
 
 type
-  MistralAIException = class(Exception)
+  /// <summary>
+  /// Represents the configuration settings for the MistralAI API.
+  /// </summary>
+  /// <remarks>
+  /// This class provides properties and methods to manage the API key, base URL,
+  /// organization identifier, and custom headers for communicating with the MistralAI API.
+  /// It also includes utility methods for building headers and endpoint URLs.
+  /// </remarks>
+  TMistralAISettings = class
+  const
+    URL_BASE = 'https://api.mistral.ai/v1';
+    URL_BASE_CODESTRAL = 'https://codestral.mistral.ai/v1';
   private
-    FCode: Int64;
-    FMsg: string;
-  public
-    constructor Create(const ACode: Int64; const AError: TErrorCore); reintroduce; overload;
-    constructor Create(const ACode: Int64; const Value: string); reintroduce; overload;
-    property Code: Int64 read FCode write FCode;
-    property Msg: string read FMsg write FMsg;
-  end;
-
-  MistralAIValidationException = class(Exception)
-  private
-    FCode: Int64;
-  protected
-    function DetailItemToStr(const Value: TDetail): string;
-    function LocToStr(const Value: TArray<string>): string;
-    function ToText(const AError: TError422): string;
-    function TypeToStr(const Value: string): string;
-  public
-    constructor Create(const ACode: Int64; const AError: TErrorCore); reintroduce;
-    property Code: Int64 read FCode write FCode;
-  end;
-
-  /// <summary>
-  /// The `MistralAIExceptionAPI` class represents a generic API-related exception.
-  /// It is thrown when there is an issue with the API configuration or request process,
-  /// such as a missing API token, invalid base URL, or other configuration errors.
-  /// This class serves as a base for more specific API exceptions.
-  /// </summary>
-  MistralAIExceptionAPI = class(Exception);
-
-  /// <summary>
-  /// An InvalidRequestError indicates that your request was malformed or
-  /// missing some required parameters, such as a token or an input.
-  /// This could be due to a typo, a formatting error, or a logic error in your code.
-  /// </summary>
-  MistralAIExceptionInvalidRequestError = class(MistralAIException);
-
-  /// <summary>
-  /// A `RateLimitError` indicates that you have hit your assigned rate limit.
-  /// This means that you have sent too many tokens or requests in a given period of time,
-  /// and our services have temporarily blocked you from sending more.
-  /// </summary>
-  MistralAIExceptionRateLimitError = class(MistralAIException);
-
-  /// <summary>
-  /// An `AuthenticationError` indicates that your API key or token was invalid,
-  /// expired, or revoked. This could be due to a typo, a formatting error, or a security breach.
-  /// </summary>
-  MistralAIExceptionAuthenticationError = class(MistralAIException);
-
-  /// <summary>
-  /// This error message indicates that your account is not part of an organization
-  /// </summary>
-  MistralAIExceptionPermissionError = class(MistralAIException);
-
-  /// <summary>
-  /// This error message indicates that our servers are experiencing high
-  /// traffic and are unable to process your request at the moment
-  /// </summary>
-  MistralAIExceptionTryAgain = class(MistralAIException);
-
-  /// <summary>
-  /// This error occurs when a request to the API can not be processed. This is a client-side error,
-  /// meaning the problem is with the request itself, and not the API.
-  /// </summary>
-  MistralUnprocessableEntityError = class(MistralAIValidationException);
-
-  /// <summary>
-  /// An `InvalidResponse` error occurs when the API response is either empty or not in the expected format.
-  /// This error indicates that the API did not return a valid response that can be processed, possibly due to a server-side issue,
-  /// a malformed request, or unexpected input data.
-  /// </summary>
-  MistralAIExceptionInvalidResponse = class(MistralAIException);
-
-  TMistralAIAPI = class
-  public
-    const
-      URL_BASE = 'https://api.mistral.ai/v1';
-      URL_BASE_CODESTRAL = 'https://codestral.mistral.ai/v1';
-  private
-    FHTTPClient: THTTPClient;
-    FToken: string;
+    FAPIKey: string;
     FBaseUrl: string;
     FOrganization: string;
     FCustomHeaders: TNetHeaders;
-    procedure SetToken(const Value: string);
+    procedure SetAPIKey(const Value: string);
     procedure SetBaseUrl(const Value: string);
     procedure SetOrganization(const Value: string);
-    procedure RaiseError(Code: Int64; Error: TErrorCore);
-    procedure ParseError(const Code: Int64; const ResponseText: string);
     procedure SetCustomHeaders(const Value: TNetHeaders);
-
-  private
-    function JSONValueAsString(const Value: string): string; overload;
-    function JSONValueAsString(const Value: string; const Field: string): string; overload;
-    function JSONValueAsString(const Value: string; const Field: TArray<string>): string; overload;
-
+    procedure VerifyApiSettings;
+    procedure ResetCustomHeader;
   protected
-    function GetHeaders: TNetHeaders;
-    function GetRequestURL(const Path: string): string;
-    function Get(const Path: string; Response: TStringStream): Integer; overload;
-    function Delete(const Path: string; Response: TStringStream): Integer; overload;
-    function Post(const Path: string; Response: TStringStream): Integer; overload;
-    function Post(const Path: string; Body: TJSONObject; Response: TStringStream; OnReceiveData: TReceiveDataCallback = nil): Integer; overload;
-    function Post(const Path: string; Body: TMultipartFormData; Response: TStringStream): Integer; overload;
-    function Patch(const Path: string; Body: TJSONObject; Response: TStringStream; OnReceiveData: TReceiveDataCallback = nil): Integer; overload;
-    function ParseResponse<T: class, constructor>(const Code: Int64; const ResponseText: string): T;
-    procedure CheckAPI;
+    /// <summary>
+    /// Retrieves the headers required for API requests.
+    /// </summary>
+    /// <returns>
+    /// A list of headers including authorization and optional organization information.
+    /// </returns>
+    function BuildHeaders: TNetHeaders; virtual;
 
-  public
-    function Get<TResult: class, constructor>(const Path: string; const MetadataAsObject: Boolean = False): TResult; overload;
-    function Get<TResult: class, constructor; TParams: TUrlParam>(const Path: string; ParamProc: TProc<TParams>; const MetadataAsObject: Boolean = False): TResult; overload;
-    function GetFile(const Path: string; Response: TStream): Integer; overload;
-    function GetFile<TResult: class, constructor>(const Path: string; const JSONFieldName: string = 'data'): TResult; overload;
-    function Delete<TResult: class, constructor>(const Path: string): TResult; overload;
-    function Post<TParams: TJSONParam>(const Path: string; ParamProc: TProc<TParams>; Response: TStringStream; Event: TReceiveDataCallback): Boolean; overload;
-    function Post<TResult: class, constructor; TParams: TJSONParam>(const Path: string; ParamProc: TProc<TParams>; const MetadataAsObject: Boolean = False): TResult; overload;
-    function Patch<TResult: class, constructor; TParams: TJSONParam>(const Path: string; ParamProc: TProc<TParams>; const MetadataAsObject: Boolean = False): TResult; overload;
-    function Post<TResult: class, constructor>(const Path: string; const MetadataAsObject: Boolean = False): TResult; overload;
-    function PostForm<TResult: class, constructor; TParams: TMultipartFormData, constructor>(const Path: string; ParamProc: TProc<TParams>): TResult; overload;
+    /// <summary>
+    /// Builds headers specific to JSON-based API requests.
+    /// </summary>
+    /// <returns>
+    /// A list of headers including JSON content-type and authorization details.
+    /// </returns>
+    function BuildJsonHeaders: TNetHeaders; virtual;
 
+    /// <summary>
+    /// Constructs the full URL for a specific API endpoint.
+    /// </summary>
+    /// <param name="Endpoint">
+    /// The relative endpoint path (e.g. "models").
+    /// </param>
+    /// <returns>
+    /// The full URL including the base URL and endpoint.
+    /// </returns>
+    function BuildUrl(const Endpoint: string): string; overload; virtual;
+
+    /// <summary>
+    /// Constructs the full URL for a specific API endpoint.
+    /// </summary>
+    /// <param name="Endpoint">
+    /// The relative endpoint path (e.g. "models").
+    /// </param>
+    /// <param name="Parameters">
+    /// e.g. "?param1=val1&param2=val2...."
+    /// </param>
+    /// <returns>
+    /// The full URL including the base URL and endpoint.
+    /// </returns>
+    function BuildUrl(const Endpoint, Parameters: string): string; overload; virtual;
   public
     constructor Create; overload;
-    constructor Create(const AToken: string); overload;
-    destructor Destroy; override;
-    property Token: string read FToken write SetToken;
+
+    /// <summary>
+    /// The API key used for authentication.
+    /// </summary>
+    property APIKey: string read FAPIKey write SetAPIKey;
+
+    /// <summary>
+    /// The base URL for API requests.
+    /// </summary>
     property BaseUrl: string read FBaseUrl write SetBaseUrl;
+
+    /// <summary>
+    /// The organization identifier used for the API.
+    /// </summary>
     property Organization: string read FOrganization write SetOrganization;
-    property Client: THTTPClient read FHTTPClient;
+
+    /// <summary>
+    /// Custom headers to include in API requests.
+    /// </summary>
     property CustomHeaders: TNetHeaders read FCustomHeaders write SetCustomHeaders;
   end;
 
+  /// <summary>
+  /// Handles HTTP requests and responses for the MistralAI API.
+  /// </summary>
+  /// <remarks>
+  /// This class extends <c>TMistralAISettings</c> and provides a mechanism to
+  /// manage HTTP client interactions for the API, including configuration and request execution.
+  /// </remarks>
+  TApiHttpClient = class(TMistralAISettings)
+  private
+    /// <summary>
+    /// The HTTP client interface used for making API calls.
+    /// </summary>
+    FHTTPClient: IHttpClientAPI;
+  public
+    constructor Create;
+
+    /// <summary>
+    /// The HTTP client used to send requests to the API.
+    /// </summary>
+    /// <value>
+    /// An instance of a class implementing <c>IHttpClientAPI</c>.
+    /// </value>
+    property HttpClient: IHttpClientAPI read FHTTPClient;
+  end;
+
+  /// <summary>
+  /// Manages and processes errors from the MistralAI API responses.
+  /// </summary>
+  /// <remarks>
+  /// This class extends <c>TApiHttpClient</c> and provides error-handling capabilities
+  /// by parsing error data and raising appropriate exceptions.
+  /// </remarks>
+  TApiDeserializer = class(TApiHttpClient)
+  class var Metadata: ICustomFieldsPrepare;
+  protected
+    /// <summary>
+    /// Parses the error data from the API response.
+    /// </summary>
+    /// <param name="Code">
+    /// The HTTP status code returned by the API.
+    /// </param>
+    /// <param name="ResponseText">
+    /// The response body containing error details.
+    /// </param>
+    /// <exception cref="MistralAIException">
+    /// Raised if the error response cannot be parsed or contains invalid data.
+    /// </exception>
+    procedure DeserializeErrorData(const Code: Int64; const ResponseText: string); virtual;
+
+    /// <summary>
+    /// Raises an exception corresponding to the API error code.
+    /// </summary>
+    /// <param name="Code">
+    /// The HTTP status code returned by the API.
+    /// </param>
+    /// <param name="Error">
+    /// The deserialized error object containing error details.
+    /// </param>
+    procedure RaiseError(Code: Int64; Error: TErrorCore); virtual;
+
+    /// <summary>
+    /// Deserializes the API response into a strongly typed object.
+    /// </summary>
+    /// <param name="T">
+    /// The type of the object to deserialize into. It must be a class with a parameterless constructor.
+    /// </param>
+    /// <param name="Code">
+    /// The HTTP status code of the API response.
+    /// </param>
+    /// <param name="ResponseText">
+    /// The response body as a JSON string.
+    /// </param>
+    /// <returns>
+    /// A deserialized object of type <c>T</c>.
+    /// </returns>
+    /// <exception cref="MistralAIExceptionInvalidResponse">
+    /// Raised if the response is non-compliant or deserialization fails.
+    /// </exception>
+    function Deserialize<T: class, constructor>(const Code: Int64; const ResponseText: string): T;
+  public
+    class constructor Create;
+
+    /// <summary>
+    /// Deserializes the API response into a strongly typed object.
+    /// </summary>
+    /// <param name="T">
+    /// The type of the object to deserialize into. It must be a class with a parameterless constructor.
+    /// </param>
+    /// <param name="ResponseText">
+    /// The response body as a JSON string.
+    /// </param>
+    /// <returns>
+    /// A deserialized object of type <c>T</c>.
+    /// </returns>
+    /// <exception cref="MistralAIExceptionInvalidResponse">
+    /// Raised if the response is non-compliant or deserialization fails.
+    /// </exception>
+    class function Parse<T: class, constructor>(const Value: string): T;
+  end;
+
+  /// <summary>
+  /// Provides a high-level interface for interacting with the MistralAI API.
+  /// </summary>
+  /// <remarks>
+  /// This class extends <c>TApiDeserializer</c> and includes methods for making HTTP requests to
+  /// the MistralAI API. It supports various HTTP methods, including GET, POST, PATCH, and DELETE,
+  /// as well as handling file uploads and downloads. The API key and other configuration settings
+  /// are inherited from the <c>TMistralAISettings</c> class.
+  /// </remarks>
+  TMistralAIAPI = class(TApiDeserializer)
+  public
+    function Get<TResult: class, constructor>(const Endpoint: string; const Path: TArray<string> = []): TResult; overload;
+    function Get<TResult: class, constructor>(const Endpoint: string; const ListFieldName: string): TResult; overload;
+    function Get<TResult: class, constructor; TParams: TUrlParam>(const Endpoint: string; ParamProc: TProc<TParams>; const ListFieldName: string = ''): TResult; overload;
+    function GetEx<TResult: class, constructor>(const Endpoint: string): TResult; overload;
+    function GetFile(const Endpoint: string; Response: TStream): Integer; overload;
+    function GetFile<TResult: class, constructor>(const Endpoint: string; const JSONFieldName: string = 'data'): TResult; overload;
+    function Delete<TResult: class, constructor>(const Endpoint: string): TResult; overload;
+    function Delete<TResult: class, constructor; TParams: TJSONParam>(const Endpoint: string; ParamProc: TProc<TParams>): TResult; overload;
+    function DeleteEx<TResult: class, constructor>(const Endpoint: string): TResult; overload;
+    function Post(const Endpoint: string; Body: TJSONObject; Response: TStringStream; OnReceiveData: TReceiveDataCallback = nil): Integer; overload;
+    function Post<TParams: TJSONParam>(const Endpoint: string; ParamProc: TProc<TParams>; Response: TStringStream; Event: TReceiveDataCallback): Boolean; overload;
+    function Post<TResult: class, constructor; TParams: TJSONParam>(const Endpoint: string; ParamProc: TProc<TParams>; const Path: TArray<string> = []): TResult; overload;
+    function Post<TResult: class, constructor>(const Endpoint: string): TResult; overload;
+    function PostEx<TResult: class, constructor>(const Endpoint: string): TResult; overload;
+    function Patch<TResult: class, constructor; TParams: TJSONParam>(const Endpoint: string; ParamProc: TProc<TParams>): TResult;
+    function PatchFromUrl<TResult: class, constructor; TParams: TUrlParam>(const Endpoint: string; ParamProc: TProc<TParams>): TResult;
+    function PostForm<TResult: class, constructor; TParams: TMultipartFormData, constructor>(const Endpoint: string; ParamProc: TProc<TParams>): TResult;
+    function Put<TResult: class, constructor; TParams: TJSONParam>(const Endpoint: string; ParamProc: TProc<TParams>): TResult;
+
+    /// <summary>
+    /// Initializes a new instance of the <c>TMistralAIAPI</c> class with an API key.
+    /// </summary>
+    /// <param name="AAPIKey">
+    /// The API key used for authenticating requests to the MistralAI API.
+    /// </param>
+    constructor Create(const AAPIKey: string); overload;
+  end;
+
+  /// <summary>
+  /// Represents a specific route or logical grouping for the MistralAI API.
+  /// </summary>
+  /// <remarks>
+  /// This class allows associating a <c>TMistralAIAPI</c> instance with specific routes or
+  /// endpoints, providing an organized way to manage API functionality.
+  /// </remarks>
   TMistralAIAPIRoute = class
   private
+    /// <summary>
+    /// The MistralAI API instance associated with this route.
+    /// </summary>
     FAPI: TMistralAIAPI;
     procedure SetAPI(const Value: TMistralAIAPI);
+  protected
+    procedure HeaderCustomize; virtual;
   public
+    /// <summary>
+    /// The MistralAI API instance associated with this route.
+    /// </summary>
     property API: TMistralAIAPI read FAPI write SetAPI;
+
+    /// <summary>
+    /// Initializes a new instance of the <c>TMistralAIRoute</c> class with the given API instance.
+    /// </summary>
+    /// <param name="AAPI">
+    /// The <c>TMistralAIAPI</c> instance to associate with the route.
+    /// </param>
     constructor CreateRoute(AAPI: TMistralAIAPI); reintroduce;
   end;
+
+var
+  MetadataAsObject: Boolean = False;
 
 implementation
 
 uses
   System.StrUtils, REST.Json, MistralAI.NetEncoding.Base64;
 
-const
-  JSONFieldsToString : TArray<string> = ['"metadata": {'];
-
-constructor TMistralAIAPI.Create;
-begin
-  inherited;
-  FHTTPClient := THTTPClient.Create;
-  FToken := EmptyStr;
-  FBaseUrl := URL_BASE;
-end;
-
-constructor TMistralAIAPI.Create(const AToken: string);
+constructor TMistralAIAPI.Create(const AAPIKey: string);
 begin
   Create;
-  Token := AToken;
+  APIKey := AAPIKey;
 end;
 
-destructor TMistralAIAPI.Destroy;
+function TMistralAIAPI.Delete<TResult, TParams>(const Endpoint: string;
+  ParamProc: TProc<TParams>): TResult;
 begin
-  FHTTPClient.Free;
-  inherited;
-end;
-
-function TMistralAIAPI.Post(const Path: string; Body: TJSONObject; Response: TStringStream; OnReceiveData: TReceiveDataCallback): Integer;
-var
-  Headers: TNetHeaders;
-  Stream: TStringStream;
-begin
-  CheckAPI;
-  Headers := GetHeaders + [TNetHeader.Create('Content-Type', 'application/json')];
-  Headers := Headers + [TNetHeader.Create('Accept', 'application/json')];
-  Stream := TStringStream.Create;
-  FHTTPClient.ReceiveDataCallBack := OnReceiveData;
+  Monitoring.Inc;
+  var Response := TStringStream.Create('', TEncoding.UTF8);
+  var Params := TParams.Create;
   try
-    Stream.WriteString(Body.ToJSON);
-    Stream.Position := 0;
-    Result := FHTTPClient.Post(GetRequestURL(Path), Stream, Response, Headers).StatusCode;
+    if Assigned(ParamProc) then
+      ParamProc(Params);
+    var Code := HTTPClient.Delete(BuildUrl(Endpoint), Params.JSON, Response, BuildJsonHeaders);
+    Result := Deserialize<TResult>(Code, Response.DataString);
   finally
-    FHTTPClient.ReceiveDataCallBack := nil;
+    Params.Free;
+    Response.Free;
+    Monitoring.Dec;
+  end;
+end;
+
+function TMistralAIAPI.Delete<TResult>(const Endpoint: string): TResult;
+begin
+  Monitoring.Inc;
+  var Response := TStringStream.Create('', TEncoding.UTF8);
+  try
+    var Code := HTTPClient.Delete(BuildUrl(Endpoint), Response, BuildHeaders);
+    Result := Deserialize<TResult>(Code, Response.DataString);
+  finally
+    Response.Free;
+    Monitoring.Dec;
+  end;
+end;
+
+function TMistralAIAPI.DeleteEx<TResult>(const Endpoint: string): TResult;
+begin
+  Monitoring.Inc;
+  var Response := TStringStream.Create('', TEncoding.UTF8);
+  try
+    var Code := HTTPClient.Delete(BuildUrl(Endpoint), Response, BuildHeaders);
+    var S := Response.DataString;
+    if S.IsEmpty then
+      S := '{"processed":true}';
+    Result := Deserialize<TResult>(Code, S);
+  finally
+    Response.Free;
+    Monitoring.Dec;
+  end;
+end;
+
+function TMistralAIAPI.Get<TResult, TParams>(const Endpoint: string;
+  ParamProc: TProc<TParams>; const ListFieldName: string): TResult;
+begin
+  Monitoring.Inc;
+  Result := nil;
+  var Response := TStringStream.Create('', TEncoding.UTF8);
+  var Params := TParams.Create;
+  try
+    if Assigned(ParamProc) then
+      ParamProc(Params);
+    var Code := HTTPClient.Get(BuildUrl(Endpoint, Params.Value), Response, BuildHeaders);
+    case Code of
+      200..299:
+        if ListFieldName.IsEmpty then
+          Result := Deserialize<TResult>(Code, Response.DataString)
+        else
+          Result := Deserialize<TResult>(Code, format('{"%s":%s}', [ListFieldName, Response.DataString]));
+      else
+        RaiseError(Code, nil);
+    end;
+  finally
+    Response.Free;
+    Params.Free;
+    ResetCustomHeader;
+    Monitoring.Dec;
+  end;
+end;
+
+function TMistralAIAPI.Get<TResult>(const Endpoint,
+  ListFieldName: string): TResult;
+begin
+  Monitoring.Inc;
+  var Response := TStringStream.Create('', TEncoding.UTF8);
+  try
+    var Code := HTTPClient.Get(BuildUrl(Endpoint), Response, BuildHeaders);
+    if ListFieldName.IsEmpty then
+      Result := Deserialize<TResult>(Code, Response.DataString)
+    else
+      Result := Deserialize<TResult>(Code, format('{"%s":%s}', [ListFieldName, Response.DataString]));
+  finally
+    Response.Free;
+    ResetCustomHeader;
+    Monitoring.Dec;
+  end;
+end;
+
+function TMistralAIAPI.Get<TResult>(const Endpoint: string;
+  const Path: TArray<string>): TResult;
+begin
+  Monitoring.Inc;
+  var Response := TStringStream.Create('', TEncoding.UTF8);
+  try
+    var Code := HTTPClient.Get(BuildUrl(Endpoint), Response, BuildHeaders);
+    if Length(Path) = 0 then
+      Result := Deserialize<TResult>(Code, Response.DataString)
+    else
+      Result := Deserialize<TResult>(Code, TJSONNormalizer.Normalize(Response.DataString, Path));
+  finally
+    Response.Free;
+    ResetCustomHeader;
+    Monitoring.Dec;
+  end;
+end;
+
+function TMistralAIAPI.GetEx<TResult>(const Endpoint: string): TResult;
+begin
+  Monitoring.Inc;
+  Result := nil;
+  var Response := TStringStream.Create('', TEncoding.UTF8);
+  try
+    var Code := HTTPClient.Get(BuildUrl(Endpoint), Response, BuildHeaders);
+    case Code of
+      200..299:
+        try
+          begin
+            Result := TJson.JsonToObject<TResult>(Response.DataString);
+            if Assigned(Result) and TResult.InheritsFrom(TJSONFingerprint) then
+              begin
+                var JSONValue := TJSONObject.ParseJSONValue(Response.DataString);
+                try
+                  (Result as TJSONFingerprint).JSONResponse := JSONValue.Format();
+                finally
+                  JSONValue.Free;
+                end;
+              end;
+          end;
+        except
+          Result := nil;
+        end;
+      else
+        DeserializeErrorData(Code, Response.DataString);
+    end;
+  finally
+    Response.Free;
+    ResetCustomHeader;
+    Monitoring.Dec;
+  end;
+end;
+
+function TMistralAIAPI.GetFile<TResult>(const Endpoint: string; const JSONFieldName: string):TResult;
+begin
+  var Stream := TStringStream.Create;
+  try
+    var Code := GetFile(Endpoint, Stream);
+    Stream.Position := 0;
+    var Temp := TStringStream.Create(BytesToString(Stream.Bytes).TrimRight([#0]));
+    try
+      Result := Deserialize<TResult>(Code, Format('{"%s":"%s"}', [JSONFieldName, EncodeBase64(Temp)]));
+    finally
+      Temp.Free;
+    end;
+  finally
     Stream.Free;
   end;
 end;
 
-function TMistralAIAPI.Get(const Path: string; Response: TStringStream): Integer;
-var
-  Headers: TNetHeaders;
+function TMistralAIAPI.GetFile(const Endpoint: string; Response: TStream): Integer;
 begin
-  CheckAPI;
-  Headers := GetHeaders;
-  Result := FHTTPClient.Get(GetRequestURL(Path), Response, Headers).StatusCode;
-end;
-
-function TMistralAIAPI.Post(const Path: string; Body: TMultipartFormData; Response: TStringStream): Integer;
-var
-  Headers: TNetHeaders;
-begin
-  CheckAPI;
-  Headers := GetHeaders;
-  Result := FHTTPClient.Post(GetRequestURL(Path), Body, Response, Headers).StatusCode;
-end;
-
-function TMistralAIAPI.Post(const Path: string; Response: TStringStream): Integer;
-var
-  Headers: TNetHeaders;
-  Stream: TStringStream;
-begin
-  CheckAPI;
-  Headers := GetHeaders;
-  Stream := nil;
+  Monitoring.Inc;
   try
-    Result := FHTTPClient.Post(GetRequestURL(Path), Stream, Response, Headers).StatusCode;
+    Result := FHTTPClient.Get(BuildUrl(Endpoint), Response, BuildHeaders);
+    case Result of
+      200..299:
+        {success};
+      else
+        begin
+          var Recieved := TStringStream.Create;
+          try
+            Response.Position := 0;
+            Recieved.LoadFromStream(Response);
+            DeserializeErrorData(Result, Recieved.DataString);
+          finally
+            Recieved.Free;
+          end;
+        end;
+    end;
   finally
+    Monitoring.Dec;
   end;
 end;
 
-function TMistralAIAPI.Post<TResult, TParams>(const Path: string; ParamProc: TProc<TParams>; const MetadataAsObject: Boolean): TResult;
-var
-  Response: TStringStream;
-  Params: TParams;
-  Code: Integer;
+function TMistralAIAPI.Patch<TResult, TParams>(const Endpoint: string;
+  ParamProc: TProc<TParams>): TResult;
 begin
-  Response := TStringStream.Create('', TEncoding.UTF8);
-  Params := TParams.Create;
+  Monitoring.Inc;
+  var Response := TStringStream.Create('', TEncoding.UTF8);
+  var Params := TParams.Create;
   try
     if Assigned(ParamProc) then
       ParamProc(Params);
-    Code := Post(Path, Params.JSON, Response);
-    if MetadataAsObject then
-      {--- Returns Metadata as JSON object }
-      Result := ParseResponse<TResult>(Code, Response.DataString) else
-      {--- Returns Metadata as string }
-      Result := ParseResponse<TResult>(Code, JSONValueAsString(Response.DataString));
+    var Code := HTTPClient.Patch(BuildUrl(Endpoint), Params.JSON, Response, BuildJsonHeaders);
+    Result := Deserialize<TResult>(Code, Response.DataString);
+  finally
+    Params.Free;
+    Response.Free;
+    Monitoring.Dec;
+  end;
+end;
+
+function TMistralAIAPI.PatchFromUrl<TResult, TParams>(
+  const Endpoint: string; ParamProc: TProc<TParams>): TResult;
+begin
+  Monitoring.Inc;
+  var Response := TStringStream.Create('', TEncoding.UTF8);
+  var Params := TParams.Create;
+  try
+    if Assigned(ParamProc) then
+      ParamProc(Params);
+    var Code := HTTPClient.Patch(BuildUrl(Endpoint, Params.Value), nil, Response, BuildJsonHeaders);
+    Result := Deserialize<TResult>(Code, Response.DataString);
+  finally
+    Params.Free;
+    Response.Free;
+    Monitoring.Dec;
+  end;
+end;
+
+function TMistralAIAPI.Post(const Endpoint: string; Body: TJSONObject; Response: TStringStream; OnReceiveData: TReceiveDataCallback): Integer;
+begin
+  Monitoring.Inc;
+  try
+    Result := HTTPClient.Post(BuildUrl(Endpoint), Body, Response, BuildJsonHeaders, OnReceiveData);
+  finally
+    Monitoring.Dec;
+  end;
+end;
+
+function TMistralAIAPI.Post<TResult, TParams>(const Endpoint: string;
+  ParamProc: TProc<TParams>;
+  const Path: TArray<string>): TResult;
+begin
+  var Response := TStringStream.Create('', TEncoding.UTF8);
+  var Params := TParams.Create;
+  try
+    if Assigned(ParamProc) then
+      ParamProc(Params);
+    var Code := Post(Endpoint, Params.JSON, Response);
+    if Length(Path) = 0 then
+      Result := Deserialize<TResult>(Code, Response.DataString)
+    else
+      Result := Deserialize<TResult>(Code, TJSONNormalizer.Normalize(Response.DataString, Path));
   finally
     Params.Free;
     Response.Free;
   end;
 end;
 
-function TMistralAIAPI.Post<TParams>(const Path: string; ParamProc: TProc<TParams>; Response: TStringStream; Event: TReceiveDataCallback): Boolean;
-var
-  Params: TParams;
-  Code: Integer;
+function TMistralAIAPI.Post<TParams>(const Endpoint: string; ParamProc: TProc<TParams>; Response: TStringStream; Event: TReceiveDataCallback): Boolean;
 begin
-  Params := TParams.Create;
+  var Params := TParams.Create;
   try
     if Assigned(ParamProc) then
       ParamProc(Params);
-    Code := Post(Path, Params.JSON, Response, Event);
+    var Code := Post(Endpoint, Params.JSON, Response, Event);
     case Code of
       200..299:
         Result := True;
@@ -280,7 +580,7 @@ begin
         try
           Response.Position := 0;
           Recieved.LoadFromStream(Response);
-          ParseError(Code, Recieved.DataString);
+          DeserializeErrorData(Code, Recieved.DataString);
         finally
           Recieved.Free;
         end;
@@ -291,187 +591,201 @@ begin
   end;
 end;
 
-function TMistralAIAPI.Post<TResult>(const Path: string; const MetadataAsObject: Boolean): TResult;
-var
-  Response: TStringStream;
-  Code: Integer;
+function TMistralAIAPI.Post<TResult>(const Endpoint: string): TResult;
 begin
-  Response := TStringStream.Create('', TEncoding.UTF8);
+  Monitoring.Inc;
+  var Response := TStringStream.Create('', TEncoding.UTF8);
   try
-    Code := Post(Path, Response);
-    if MetadataAsObject then
-      Result := ParseResponse<TResult>(Code, Response.DataString) else
-      Result := ParseResponse<TResult>(Code, JSONValueAsString(Response.DataString));
+    var Code := HTTPClient.Post(BuildUrl(Endpoint), Response, BuildHeaders);
+    Result := Deserialize<TResult>(Code, Response.DataString);
   finally
     Response.Free;
+    Monitoring.Dec;
   end;
 end;
 
-function TMistralAIAPI.Delete(const Path: string; Response: TStringStream): Integer;
-var
-  Headers: TNetHeaders;
+function TMistralAIAPI.PostEx<TResult>(const Endpoint: string): TResult;
 begin
-  CheckAPI;
-  Headers := GetHeaders;
-  Result := FHTTPClient.Delete(GetRequestURL(Path), Response, Headers).StatusCode;
-end;
-
-function TMistralAIAPI.Delete<TResult>(const Path: string): TResult;
-var
-  Response: TStringStream;
-  Code: Integer;
-begin
-  Response := TStringStream.Create('', TEncoding.UTF8);
+  Monitoring.Inc;
+  Result := nil;
+  var Response := TStringStream.Create('', TEncoding.UTF8);
   try
-    Code := Delete(Path, Response);
-    Result := ParseResponse<TResult>(Code, Response.DataString);
-  finally
-    Response.Free;
-  end;
-end;
-
-function TMistralAIAPI.PostForm<TResult, TParams>(const Path: string; ParamProc: TProc<TParams>): TResult;
-var
-  Response: TStringStream;
-  Params: TParams;
-  Code: Integer;
-begin
-  Response := TStringStream.Create('', TEncoding.UTF8);
-  Params := TParams.Create;
-  try
-    if Assigned(ParamProc) then
-      ParamProc(Params);
-    Code := Post(Path, Params, Response);
-    Result := ParseResponse<TResult>(Code, Response.DataString);
-  finally
-    Params.Free;
-    Response.Free;
-  end;
-end;
-
-procedure TMistralAIAPI.RaiseError(Code: Int64; Error: TErrorCore);
-begin
-  case Code of
-    429:
-      raise MistralAIExceptionRateLimitError.Create(Code, Error);
-    400, 404, 415:
-      raise MistralAIExceptionInvalidRequestError.Create(Code, Error);
-    401:
-      raise MistralAIExceptionAuthenticationError.Create(Code, Error);
-    403:
-      raise MistralAIExceptionPermissionError.Create(Code, Error);
-    409:
-      raise MistralAIExceptionTryAgain.Create(Code, Error);
-    422:
-      raise MistralUnprocessableEntityError.Create(Code, Error);
-  else
-    raise MistralAIException.Create(Code, Error);
-  end;
-end;
-
-function TMistralAIAPI.Get<TResult, TParams>(const Path: string;
-  ParamProc: TProc<TParams>; const MetadataAsObject: Boolean): TResult;
-var
-  Response: TStringStream;
-  Code: Integer;
-  Params: TParams;
-begin
-  Response := TStringStream.Create('', TEncoding.UTF8);
-  Params := TParams.Create;
-  try
-    if Assigned(ParamProc) then
-      ParamProc(Params);
-    Code := Get(Path + Params.Value, Response);
-    if MetadataAsObject then
-      Result := ParseResponse<TResult>(Code, Response.DataString) else
-      Result := ParseResponse<TResult>(Code, JSONValueAsString(Response.DataString));
-  finally
-    Response.Free;
-    Params.Free;
-  end;
-end;
-
-function TMistralAIAPI.Get<TResult>(const Path: string; const MetadataAsObject: Boolean): TResult;
-var
-  Response: TStringStream;
-  Code: Integer;
-begin
-  Response := TStringStream.Create('', TEncoding.UTF8);
-  try
-    Code := Get(Path, Response);
-    if MetadataAsObject then
-      Result := ParseResponse<TResult>(Code, Response.DataString) else
-      Result := ParseResponse<TResult>(Code, JSONValueAsString(Response.DataString));
-  finally
-    Response.Free;
-  end;
-end;
-
-function TMistralAIAPI.GetFile<TResult>(const Path: string; const JSONFieldName: string):TResult;
-var
-  Stream: TStringStream;
-  Temp: TStringStream;
-  Code: Integer;
-begin
-  Stream := TStringStream.Create;
-  try
-    Code := GetFile(Path, Stream);
-    Stream.Position := 0;
-    Temp := TStringStream.Create(BytesToString(Stream.Bytes).TrimRight([#0]));
-    try
-      Result := ParseResponse<TResult>(Code, Format('{"%s":"%s"}', [JSONFieldName, EncodeBase64(Temp)]));
-    finally
-      Temp.Free;
-    end;
-  finally
-    Stream.Free;
-  end;
-end;
-
-function TMistralAIAPI.GetFile(const Path: string; Response: TStream): Integer;
-var
-  Headers: TNetHeaders;
-begin
-  CheckAPI;
-  Headers := GetHeaders;
-  Result := FHTTPClient.Get(GetRequestURL(Path), Response, Headers).StatusCode;
-  case Result of
-    200..299:
-       {success};
-    else
-      begin
-        var Recieved := TStringStream.Create;
+    var Code := HTTPClient.Post(BuildUrl(Endpoint), Response, BuildHeaders);
+    case Code of
+      200..299:
         try
-          Response.Position := 0;
-          Recieved.LoadFromStream(Response);
-          ParseError(Result, Recieved.DataString);
-        finally
-          Recieved.Free;
+          begin
+            var S := Response.DataString;
+            if S.IsEmpty then
+              S := '{"processed":true}';
+            Result := Deserialize<TResult>(Code, S);
+          end;
+        except
+          Result := nil;
         end;
-      end;
+      else
+        DeserializeErrorData(Code, Response.DataString);
+    end;
+  finally
+    Response.Free;
+    Monitoring.Dec;
   end;
 end;
 
-function TMistralAIAPI.GetHeaders: TNetHeaders;
+function TMistralAIAPI.PostForm<TResult, TParams>(const Endpoint: string;
+  ParamProc: TProc<TParams>): TResult;
 begin
-  Result := [TNetHeader.Create('Authorization', 'Bearer ' + FToken)] + FCustomHeaders;
+  Monitoring.Inc;
+  var Response := TStringStream.Create('', TEncoding.UTF8);
+  var Params := TParams.Create;
+  try
+    if Assigned(ParamProc) then
+      ParamProc(Params);
+    var Code := HTTPClient.Post(BuildUrl(Endpoint), Params, Response, BuildHeaders);
+    Result := Deserialize<TResult>(Code, Response.DataString);
+  finally
+    Params.Free;
+    Response.Free;
+    Monitoring.Dec;
+  end;
 end;
 
-function TMistralAIAPI.GetRequestURL(const Path: string): string;
+function TMistralAIAPI.Put<TResult, TParams>(const Endpoint: string;
+  ParamProc: TProc<TParams>): TResult;
 begin
-  Result := FBaseURL + '/';
-  Result := Result + Path;
+  Monitoring.Inc;
+  var Response := TStringStream.Create('', TEncoding.UTF8);
+  var Params := TParams.Create;
+  try
+    if Assigned(ParamProc) then
+      ParamProc(Params);
+    var Code := HttpClient.Put(BuildUrl(Endpoint), Params.JSON, Response, BuildJsonHeaders);
+    Result := Deserialize<TResult>(Code, Response.DataString)
+  finally
+    Params.Free;
+    Response.Free;
+    Monitoring.Dec;
+  end;
 end;
 
-procedure TMistralAIAPI.CheckAPI;
+{ TMistralAIAPIRoute }
+
+constructor TMistralAIAPIRoute.CreateRoute(AAPI: TMistralAIAPI);
 begin
-  if FToken.IsEmpty then
+  inherited Create;
+  FAPI := AAPI;
+end;
+
+procedure TMistralAIAPIRoute.HeaderCustomize;
+begin
+
+end;
+
+procedure TMistralAIAPIRoute.SetAPI(const Value: TMistralAIAPI);
+begin
+  FAPI := Value;
+end;
+
+{ TMistralAISettings }
+
+function TMistralAISettings.BuildHeaders: TNetHeaders;
+begin
+  Result := [TNetHeader.Create('Authorization', 'Bearer ' + FAPIKey)] + FCustomHeaders;
+end;
+
+function TMistralAISettings.BuildUrl(const Endpoint: string): string;
+begin
+  Result := FBaseUrl.TrimRight(['/']) + '/' + Endpoint.TrimLeft(['/']);
+end;
+
+function TMistralAISettings.BuildJsonHeaders: TNetHeaders;
+begin
+  Result := BuildHeaders +
+    [TNetHeader.Create('Content-Type', 'application/json')] +
+    [TNetHeader.Create('Accept', 'application/json')];
+end;
+
+function TMistralAISettings.BuildUrl(const Endpoint,
+  Parameters: string): string;
+begin
+  Result := BuildUrl(EndPoint) + Parameters;
+end;
+
+constructor TMistralAISettings.Create;
+begin
+  inherited;
+  FAPIKey := EmptyStr;
+  FBaseUrl := URL_BASE;
+end;
+
+procedure TMistralAISettings.ResetCustomHeader;
+begin
+  CustomHeaders := [];
+end;
+
+procedure TMistralAISettings.SetAPIKey(const Value: string);
+begin
+  FAPIKey := Value;
+end;
+
+procedure TMistralAISettings.SetBaseUrl(const Value: string);
+begin
+  FBaseUrl := Value;
+end;
+
+procedure TMistralAISettings.SetCustomHeaders(const Value: TNetHeaders);
+begin
+  FCustomHeaders := Value;
+end;
+
+procedure TMistralAISettings.SetOrganization(const Value: string);
+begin
+  FOrganization := Value;
+end;
+
+procedure TMistralAISettings.VerifyApiSettings;
+begin
+  if FAPIKey.IsEmpty then
     raise MistralAIExceptionAPI.Create('Token is empty!');
   if FBaseUrl.IsEmpty then
     raise MistralAIExceptionAPI.Create('Base url is empty!');
 end;
 
-procedure TMistralAIAPI.ParseError(const Code: Int64; const ResponseText: string);
+{ TApiHttpClient }
+
+constructor TApiHttpClient.Create;
+begin
+  inherited Create;
+  FHttpClient := THttpClientAPI.CreateInstance(VerifyApiSettings);
+end;
+
+{ TApiDeserializer }
+
+class constructor TApiDeserializer.Create;
+begin
+  Metadata := TDeserializationPrepare.CreateInstance;
+end;
+
+function TApiDeserializer.Deserialize<T>(const Code: Int64;
+  const ResponseText: string): T;
+begin
+  Result := nil;
+  case Code of
+    200..299:
+      try
+        Result := Parse<T>(ResponseText);
+      except
+        Result := nil;
+      end;
+    else
+      DeserializeErrorData(Code, ResponseText);
+  end;
+  if not Assigned(Result) then
+    raise EInvalidResponse.Create(Code, 'Non-compliant response');
+end;
+
+procedure TApiDeserializer.DeserializeErrorData(const Code: Int64;
+  const ResponseText: string);
 var
   Error: TErrorCore;
 begin
@@ -494,224 +808,61 @@ begin
   end;
 end;
 
-function TMistralAIAPI.ParseResponse<T>(const Code: Int64; const ResponseText: string): T;
+class function TApiDeserializer.Parse<T>(const Value: string): T;
 begin
-  Result := nil;
-  case Code of
-    200..299:
+  {$REGION 'Dev note'}
+     (*
+      - If Metadata are to be treated  as objects, a dedicated  TMetadata class is required, containing
+      all the properties corresponding to the specified JSON fields.
+
+      - However, if Metadata are  not treated  as objects, they will be temporarily handled as a string
+      and subsequently converted back into a valid JSON string during the deserialization process using
+      the revert method of the interceptor.
+
+      By default, Metadata are  treated as strings rather  than objects to handle  cases where multiple
+      classes to be deserialized may contain variable data structures.
+      Refer to the global variable MetadataAsObject.
+     *)
+  {$ENDREGION}
+  case MetadataAsObject of
+    True:
+      Result := TJson.JsonToObject<T>(Value);
+    else
+      Result := TJson.JsonToObject<T>(Metadata.Convert(Value));
+  end;
+
+  {--- Add JSON response if class inherits from TJSONFingerprint class. }
+  if Assigned(Result) and T.InheritsFrom(TJSONFingerprint) then
+    begin
+      var JSONValue := TJSONObject.ParseJSONValue(Value);
       try
-        Result := TJson.JsonToObject<T>(ResponseText);
-      except
-        Result := nil;
+        (Result as TJSONFingerprint).JSONResponse := JSONValue.Format();
+      finally
+        JSONValue.Free;
       end;
-    else
-      ParseError(Code, ResponseText);
-  end;
-  if not Assigned(Result) then
-    raise MistralAIExceptionInvalidResponse.Create(Code, 'Empty or invalid response');
-end;
-
-function TMistralAIAPI.Patch(const Path: string; Body: TJSONObject;
-  Response: TStringStream; OnReceiveData: TReceiveDataCallback): Integer;
-var
-  Headers: TNetHeaders;
-  Stream: TStringStream;
-begin
-  CheckAPI;
-  Headers := GetHeaders + [TNetHeader.Create('Content-Type', 'application/json')];
-  Headers := Headers + [TNetHeader.Create('Accept', 'application/json')];
-  Stream := TStringStream.Create;
-  FHTTPClient.ReceiveDataCallBack := OnReceiveData;
-  try
-    Stream.WriteString(Body.ToJSON);
-    Stream.Position := 0;
-    Result := FHTTPClient.Patch(GetRequestURL(Path), Stream, Response, Headers).StatusCode;
-  finally
-    FHTTPClient.ReceiveDataCallBack := nil;
-    Stream.Free;
-  end;
-end;
-
-function TMistralAIAPI.Patch<TResult, TParams>(const Path: string;
-  ParamProc: TProc<TParams>; const MetadataAsObject: Boolean): TResult;
-var
-  Response: TStringStream;
-  Params: TParams;
-  Code: Integer;
-begin
-  Response := TStringStream.Create('', TEncoding.UTF8);
-  Params := TParams.Create;
-  try
-    if Assigned(ParamProc) then
-      ParamProc(Params);
-    Code := Patch(Path, Params.JSON, Response);
-    if MetadataAsObject then
-      Result := ParseResponse<TResult>(Code, Response.DataString) else
-      Result := ParseResponse<TResult>(Code, JSONValueAsString(Response.DataString));
-  finally
-    Params.Free;
-    Response.Free;
-  end;
-end;
-
-procedure TMistralAIAPI.SetBaseUrl(const Value: string);
-begin
-  FBaseUrl := Value;
-end;
-
-procedure TMistralAIAPI.SetCustomHeaders(const Value: TNetHeaders);
-begin
-  FCustomHeaders := Value;
-end;
-
-procedure TMistralAIAPI.SetOrganization(const Value: string);
-begin
-  FOrganization := Value;
-end;
-
-procedure TMistralAIAPI.SetToken(const Value: string);
-begin
-  FToken := Value;
-end;
-
-function TMistralAIAPI.JSONValueAsString(const Value: string;
-  const Field: TArray<string>): string;
-begin
-  Result := Value;
-  if Length(Field) > 0 then
-    begin
-      for var Item in Field do
-        Result := JSONValueAsString(Result, Item);
     end;
 end;
 
-function TMistralAIAPI.JSONValueAsString(const Value, Field: string): string;
+procedure TApiDeserializer.RaiseError(Code: Int64; Error: TErrorCore);
 begin
-  Result := Value;
-  var i := Pos(Field, Result);
-  while (i > 0) and (i < Result.Length) do
-    begin
-      i := i + Field.Length - 1;
-      Result[i] := '"';
-      Inc(i);
-      var j := 0;
-      while (j > 0) or ((j = 0) and not (Result[i] = '}')) do
-        begin
-          case Result[i] of
-            '{':
-              Inc(j);
-            '}':
-              j := j - 1;
-            '"':
-              Result[i] := '`';
-          end;
-          Inc(i);
-          if i > Result.Length then
-            raise Exception.Create('Invalid JSON string');
-        end;
-      Result[i] := '"';
-      i := Pos(Field, Result);
-    end;
-end;
-
-function TMistralAIAPI.JSONValueAsString(const Value: string): string;
-begin
-  Result := JSONValueAsString(Value, JSONFieldsToString);
-end;
-
-{ MistralAIException }
-
-constructor MistralAIException.Create(const ACode: Int64; const AError: TErrorCore); //TError);
-begin
-  var Error := AError as TError;
-
-  Code := ACode;
-  if Error.Detail <> EmptyStr then
-    Msg := Error.Detail
+  case Code of
+    429:
+      raise ERateLimitError.Create(Code, Error);
+    400, 404, 415:
+      raise EInvalidRequestError.Create(Code, Error);
+    401:
+      raise EAuthenticationError.Create(Code, Error);
+    403:
+      raise EPermissionError.Create(Code, Error);
+    409:
+      raise ETryAgain.Create(Code, Error);
+    422:
+      raise EUnprocessableEntityError.Create(Code, Error);
+    500:
+      raise EEngineException.Create(Code, Error);
   else
-  if Error.Message <> EmptyStr then
-    Msg := Error.Message;
-  if Error.RequestID <> EmptyStr then
-    Msg := Format('%s for request %s', [Msg, Error.RequestID]);
-
-  inherited Create(Format('error %d: %s', [ACode, Msg]));
-end;
-
-constructor MistralAIException.Create(const ACode: Int64; const Value: string);
-begin
-  Code := ACode;
-  Msg := Value;
-  inherited Create(Format('error %d: %s', [ACode, Msg]));
-end;
-
-{ TMistralAIAPIRoute }
-
-constructor TMistralAIAPIRoute.CreateRoute(AAPI: TMistralAIAPI);
-begin
-  inherited Create;
-  FAPI := AAPI;
-end;
-
-procedure TMistralAIAPIRoute.SetAPI(const Value: TMistralAIAPI);
-begin
-  FAPI := Value;
-end;
-
-{ MistralAIValidationException }
-
-constructor MistralAIValidationException.Create(const ACode: Int64;
-  const AError: TErrorCore);
-begin
-  var Error := AError as TError422;
-  Code := ACode;
-  if Length(Error.Detail) > 0 then
-    inherited Create(Format('error %d: %s ', [ACode, TypeToStr(Error.Detail[0].Msg)]))
-  else
-    {--- WARNING ---
-         Problem with errors generated by Mistral.
-         (Detail & Message: inconsistent. Pending correction)}
-    if Length(Error.Message.Detail) > 0 then
-       inherited Create(
-          Format('error %d: %s '+ sLineBreak +' %s',
-                 [ACode, TypeToStr(Error.&Type), ToText(Error)]) )
-    else
-      inherited Create(Format('error %d: %s ', [ACode, 'Detail not captured']));
-end;
-
-function MistralAIValidationException.DetailItemToStr(
-  const Value: TDetail): string;
-begin
-  Result := Format('   %s (%s) --- %s '+sLineBreak, [LocToStr(Value.Loc), Value.Input, Value.Msg])
-end;
-
-function MistralAIValidationException.LocToStr(
-  const Value: TArray<string>): string;
-begin
-  Result := EmptyStr;
-  for var S in Value do
-    if IndexStr(S, ['body']) = -1 then
-      begin
-        if Result <> EmptyStr then
-          Result := Result + '.' + S else
-          Result := S;
-      end;
-end;
-
-function MistralAIValidationException.ToText(
-  const AError: TError422): string;
-begin
-  Result := EmptyStr;
-  for var Item in AError.Message.Detail do
-    begin
-      if Result <> EmptyStr then
-        Result := Format('%s %s', [Result, DetailItemToStr(Item)]) else
-        Result := DetailItemToStr(Item);
-    end;
-end;
-
-function MistralAIValidationException.TypeToStr(const Value: string): string;
-begin
-  Result := StringReplace(Value, '_', ' ', [rfReplaceAll, rfIgnoreCase]);
+    raise MistralAIException.Create(Code, Error);
+  end;
 end;
 
 end.

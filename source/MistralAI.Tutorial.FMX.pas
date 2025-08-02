@@ -16,11 +16,13 @@ uses
   System.SysUtils, System.Classes, Winapi.Messages, FMX.Types, FMX.StdCtrls, FMX.ExtCtrls,
   FMX.Controls, FMX.Forms, Winapi.Windows, FMX.Graphics, FMX.Dialogs, FMX.Memo.Types,
   FMX.Media, FMX.Objects, FMX.Controls.Presentation, FMX.ScrollBox, FMX.Memo, System.UITypes,
-  System.Types,
-  MistralAI, MistralAI.Types, MistralAI.Functions.Core;
+  System.Types, System.JSON,
+  MistralAI, MistralAI.Types, MistralAI.Functions.Core,
+  MistralAI.Httpx;
 
 type
   TToolProc = procedure (const Value: TCalledFunction; Func: IFunctionCore) of object;
+  TToolProcEx = procedure (const Value: TMessageOutputEntry; Func: IFunctionCore) of object;
 
   /// <summary>
   /// Represents a tutorial hub for handling visual components in a Delphi application,
@@ -28,8 +30,11 @@ type
   /// </summary>
   TFMXTutorialHub = class
   private
+    FClient: IMistralAI;
     FMemo1: TMemo;
     FMemo2: TMemo;
+    FMemo3: TMemo;
+    FMemo4: TMemo;
     FButton: TButton;
     FFileId: string;
     FJobId: string;
@@ -37,6 +42,7 @@ type
     FFileName: string;
     FTool: IFunctionCore;
     FToolCall: TToolProc;
+    FToolCallEx: TToolProcEx;
     FPage: Integer;
     FFileOverride: Boolean;
     FCancel: Boolean;
@@ -44,6 +50,10 @@ type
     procedure SetButton(const Value: TButton);
     procedure SetMemo1(const Value: TMemo);
     procedure SetMemo2(const Value: TMemo);
+    procedure SetMemo3(const Value: TMemo);
+    procedure SetMemo4(const Value: TMemo);
+    procedure SetJSONRequest(const Value: string);
+    procedure SetJSONResponse(const Value: string);
   public
     /// <summary>
     /// Advances the tutorial to the next page.
@@ -57,6 +67,22 @@ type
     /// Gets or sets the second memo component for displaying additional messages or data.
     /// </summary>
     property Memo2: TMemo read FMemo2 write SetMemo2;
+    /// <summary>
+    /// Gets or sets the second memo component for displaying additional messages or data.
+    /// </summary>
+    property Memo3: TMemo read FMemo3 write SetMemo3;
+    /// <summary>
+    /// Gets or sets the second memo component for displaying additional messages or data.
+    /// </summary>
+    property Memo4: TMemo read FMemo4 write SetMemo4;
+    /// <summary>
+    /// Sets text for displaying JSON request.
+    /// </summary>
+    property JSONRequest: string write SetJSONRequest;
+    /// <summary>
+    /// Sets text for displaying JSON response.
+    /// </summary>
+    property JSONResponse: string write SetJSONResponse;
     /// <summary>
     /// Gets or sets the button component used to trigger actions or handle cancellation.
     /// </summary>
@@ -89,6 +115,9 @@ type
     /// Gets or sets the procedure for handling tool-specific calls.
     /// </summary>
     property ToolCall: TToolProc read FToolCall write FToolCall;
+
+    property ToolCallEx: TToolProcEx read FToolCallEx write FToolCallEx;
+
     /// <summary>
     /// Gets or sets the current page number within the tutorial.
     /// </summary>
@@ -97,7 +126,12 @@ type
     /// Gets or sets a value indicating whether file overrides are allowed.
     /// </summary>
     property FileOverride: Boolean read FFileOverride write FFileOverride;
-    constructor Create(const AMemo1, AMemo2: TMemo; const AButton: TButton);
+    procedure JSONRequestClear;
+    procedure JSONResponseClear;
+    procedure LoadImage(const FilePath: string);
+    procedure WeatherFunction(const Value: TCalledFunction; Func: IFunctionCore);
+    procedure WeatherFunctionEx(const Value: TMessageOutputEntry; Func: IFunctionCore);
+    constructor Create(const AClient: IMistralAI; const AMemo1, AMemo2, AMemo3, AMemo4: TMemo; const AButton: TButton);
   end;
 
   procedure Cancellation(Sender: TObject);
@@ -125,10 +159,34 @@ type
   procedure Display(Sender: TObject; Value: TListFineTuningJobs); overload;
   procedure Display(Sender: TObject; Value: TBatchJob); overload;
   procedure Display(Sender: TObject; Value: TBatchJobList); overload;
+  procedure Display(Sender: TObject; Value: TSignedUrl); overload;
+  procedure Display(Sender: TObject; Value: TConversation); overload;
+  procedure Display(Sender: TObject; Value: TConversationsListItem); overload;
+  procedure Display(Sender: TObject; Value: TRetrievedEntries); overload;
+  procedure Display(Sender: TObject; Value: TRetrieveMessages); overload;
+  procedure Display(Sender: TObject; Value: TOcr); overload;
+  procedure Display(Sender: TObject; Value: TConversationsAgent); overload;
+  procedure Display(Sender: TObject; Value: TConversationsAgentList); overload;
+  procedure Display(Sender: TObject; Value: TConversationsList); overload;
+  procedure Display(Sender: TObject; Value: TLibrariesMain); overload;
+  procedure Display(Sender: TObject; Value: TLibrariesMainList); overload;
+  procedure Display(Sender: TObject; Value: TLibrariesDocuments); overload;
+  procedure Display(Sender: TObject; Value: TLibrariesDocumentsList); overload;
+  procedure Display(Sender: TObject; Value: TLibraryDocumentsProcessed); overload;
+  procedure Display(Sender: TObject; Value: TLibraryDocumentsText); overload;
+  procedure Display(Sender: TObject; Value: TLibraryDocumentsStatus); overload;
+  procedure Display(Sender: TObject; Value: TLibrariesAccess); overload;
+  procedure Display(Sender: TObject; Value: TLibrariesAccessList); overload;
 
   procedure DisplayStream(Sender: TObject; Value: string); overload;
   procedure DisplayStream(Sender: TObject; Value: TChat); overload;
   procedure DisplayStream(Sender: TObject; Value: TCodestral); overload;
+  procedure DisplayStream(Sender: TObject; Value: TConversationsEvent); overload;
+
+  procedure DisplayChunk(Value: string); overload;
+  procedure DisplayChunk(Value: TChat); overload;
+  procedure DisplayChunk(Value: TCodestral); overload;
+  procedure DisplayChunk(Value: TConversationsEvent); overload;
 
   function F(const Name, Value: string): string; overload;
   function F(const Name: string; const Value: TArray<string>): string; overload;
@@ -214,6 +272,7 @@ end;
 
 procedure Display(Sender: TObject; Value: TChat);
 begin
+  TutorialHub.JSONResponse := Value.JSONResponse;
   for var Item in Value.Choices do
     if Item.FinishReason = TFinishReason.tool_calls then
       begin
@@ -222,14 +281,26 @@ begin
       end
     else
       begin
-        Display(Sender, Item.Message.Content);
+        for var SubItem in Item.Message.Content do
+          begin
+            case SubItem.&Type of
+              TContentType.text:
+                Display(Sender, SubItem.Text);
+              TContentType.thinking:
+                begin
+                  for var Think in SubItem.Thinking do
+                    Display(TutorialHub.Memo2, Think.Text);
+                end;
+            end;
+          end;
       end;
 end;
 
 procedure Display(Sender: TObject; Value: TCodestral); overload;
 begin
+  TutorialHub.JSONResponse := Value.JSONResponse;
   for var Item in Value.Choices do
-    if Item.FinishReason = TCodestralFinishReason.cstool_calls then
+    if Item.FinishReason = TCodestralFinishReason.tool_calls then
       begin
         if Assigned(TutorialHub.ToolCall) then
           TutorialHub.ToolCall(Item.Message.ToolsCalls[0], TutorialHub.Tool);
@@ -242,6 +313,7 @@ end;
 
 procedure Display(Sender: TObject; Value: TEmbeddings); overload;
 begin
+  TutorialHub.JSONResponse := Value.JSONResponse;
   var i := 0;
   for var Item in Value.Data do
     begin
@@ -259,6 +331,8 @@ end;
 
 procedure Display(Sender: TObject; Value: TModel);
 begin
+  if not Value.JSONResponse.IsEmpty then
+    TutorialHub.JSONResponse := Value.JSONResponse;
   Display(Sender, [
     Value.Id,
     F('Name', Value.Name),
@@ -276,6 +350,7 @@ end;
 
 procedure Display(Sender: TObject; Value: TModels);
 begin
+  TutorialHub.JSONResponse := Value.JSONResponse;
   if Length(Value.Data) = 0 then
     begin
       Display(Sender, 'No model found');
@@ -332,18 +407,22 @@ end;
 
 procedure Display(Sender: TObject; Value: TModeration);
 begin
+  TutorialHub.JSONResponse := Value.JSONResponse;
   for var Item in Value.Results do
     Display(Sender, Item);
 end;
 
 procedure DisplayEx(Sender: TObject; Value: TModeration);
 begin
+  TutorialHub.JSONResponse := Value.JSONResponse;
   for var Item in Value.Results do
     DisplayEx(Sender, Item);
 end;
 
 procedure Display(Sender: TObject; Value: TFile);
 begin
+  if not Value.JSONResponse.IsEmpty then
+    TutorialHub.JSONResponse := Value.JSONResponse;
   Display(Sender, [
     F(Value.FileName, Value.Id),
     F('Source', [
@@ -359,6 +438,7 @@ end;
 
 procedure Display(Sender: TObject; Value: TFiles);
 begin
+  TutorialHub.JSONResponse := Value.JSONResponse;
   if Length(Value.Data) = 0 then
     begin
       Display(Sender, 'No file found');
@@ -370,6 +450,7 @@ end;
 
 procedure Display(Sender: TObject; Value: TDeletedResult);
 begin
+  TutorialHub.JSONResponse := Value.JSONResponse;
   Display(Sender, [
     F('Id', Value.Id),
     F('Deleted', [
@@ -381,6 +462,7 @@ end;
 
 procedure Display(Sender: TObject; Value: TDownLoadFile);
 begin
+  TutorialHub.JSONResponse := Value.JSONResponse;
   if TutorialHub.FileName.IsEmpty then
     raise Exception.Create('No filename defined for download.');
   Value.SaveToFile(TutorialHub.FileName, not TutorialHub.FileOverride);
@@ -389,6 +471,7 @@ end;
 
 procedure Display(Sender: TObject; Value: TJobOut);
 begin
+  TutorialHub.JSONResponse := Value.JSONResponse;
   Display(Sender, [
     Value.Id,
     F('AutoStart', [
@@ -402,6 +485,7 @@ end;
 
 procedure Display(Sender: TObject; Value: TJobOutProgress);
 begin
+  TutorialHub.JSONResponse := Value.JSONResponse;
   Display(Sender, [
     Value.Id,
     F('AutoStart', [
@@ -422,6 +506,7 @@ end;
 
 procedure Display(Sender: TObject; Value: TListFineTuningJobs);
 begin
+  TutorialHub.JSONResponse := Value.JSONResponse;
   Display(Sender, F('Total', [Value.Total.ToString, F('Object', Value.&Object.ToString)]));
   for var Item in Value.Data do
     Display(Sender, F('Id', [
@@ -433,6 +518,8 @@ end;
 
 procedure Display(Sender: TObject; Value: TBatchJob);
 begin
+  if not Value.JSONResponse.IsEmpty then
+    TutorialHub.JSONResponse := Value.JSONResponse;
   Display(Sender, F('Id', [
     Value.Id,
     F('Model', Value.Model),
@@ -448,9 +535,235 @@ end;
 
 procedure Display(Sender: TObject; Value: TBatchJobList);
 begin
+  TutorialHub.JSONResponse := Value.JSONResponse;
   Display(Sender, F('Total', [
     Value.Total.ToString,
     F('Object', Value.&Object)]));
+  for var Item in Value.Data do
+    Display(Sender, Item);
+end;
+
+procedure Display(Sender: TObject; Value: TSignedUrl); overload;
+begin
+  TutorialHub.JSONResponse := Value.JSONResponse;
+  Display(Sender, Value.Url);
+end;
+
+procedure Display(Sender: TObject; Value: TConversation);
+begin
+  TutorialHub.JSONResponse := Value.JSONResponse;
+  for var Item in Value.Outputs do
+  begin
+    case Item.&Type of
+      TConversatonEvent.function_call :
+        TutorialHub.ToolCallEx(Item, TutorialHub.Tool);
+
+      TConversatonEvent.message_input,
+      TConversatonEvent.message_output:
+        begin
+          for var SubItem in Item.Content do
+            case SubItem.&Type of
+              TContentChunkType.text:
+                Display(Sender, SubItem.Text);
+
+              TContentChunkType.tool_file:
+                begin
+                  case Subitem.Tool of
+                    TConversationTool.image_generation:
+                      TutorialHub.LoadImage(SubItem.FileId);
+                  end;
+                end;
+            end;
+        end;
+    end;
+  end;
+end;
+
+procedure Display(Sender: TObject; Value: TConversationsListItem);
+begin
+  TutorialHub.JSONResponse := Value.JSONResponse;
+  if Assigned(Value) then
+    begin
+      Display(Sender, F('objet', Value.&Object));
+      Display(Sender, F('id', Value.Id));
+      Display(Sender, F('stop', Value.CompletionArgs.Stop));
+    end;
+end;
+
+procedure Display(Sender: TObject; Value: TRetrievedEntries); overload;
+begin
+  TutorialHub.JSONResponse := Value.JSONResponse;
+  Display(TutorialHub, F('object', Value.&Object));
+  Display(TutorialHub, F('conversation_id', Value.ConversationId));
+  Display(TutorialHub, EmptyStr);
+  for var Item in Value.Entries do
+    begin
+      Display(TutorialHub, F('object', Item.&Object));
+      Display(TutorialHub, F('type', Item.&Type.ToString));
+      Display(TutorialHub, F('id', Item.Id));
+      case Item.&Type of
+        TConversatonEvent.message_input,
+        TConversatonEvent.message_output:
+          Display(TutorialHub, F('role', Item.Role.ToString));
+        TConversatonEvent.tool_execution:
+        Display(TutorialHub, F('function', Item.&Function));
+      end;
+      Display(TutorialHub, F('prefix', BoolToStr(Item.Prefix, True)));
+      for var SubItem in Item.Content do
+        begin
+          if SubItem.&Type = TContentChunkType.text then
+            Display(TutorialHub, F('content', SubItem.Text));
+          Display(TutorialHub, EmptyStr);
+        end;
+      Display(TutorialHub, '----------------');
+    end;
+end;
+
+procedure Display(Sender: TObject; Value: TRetrieveMessages);
+begin
+  TutorialHub.JSONResponse := Value.JSONResponse;
+  Display(TutorialHub, F('object', Value.&Object));
+  Display(TutorialHub, F('conversation_id', Value.ConversationId));
+  Display(TutorialHub, EmptyStr);
+  for var Item in Value.Messages do
+    begin
+      Display(TutorialHub, F('object', Item.&Object));
+      Display(TutorialHub, F('type', Item.&Type.ToString));
+      Display(TutorialHub, F('id', Item.Id));
+      case Item.&Type of
+        TConversatonEvent.message_input,
+        TConversatonEvent.message_output:
+          Display(TutorialHub, F('role', Item.Role.ToString));
+      end;
+
+      Display(TutorialHub, F('prefix', BoolToStr(Item.Prefix, True)));
+      for var SubItem in Item.Content do
+        begin
+          if SubItem.&Type = TContentChunkType.text then
+            Display(TutorialHub, F('content', SubItem.Text));
+          Display(TutorialHub, EmptyStr);
+        end;
+      Display(TutorialHub, '----------------');
+    end;
+end;
+
+procedure Display(Sender: TObject; Value: TOcr);
+begin
+  TutorialHub.JSONResponse := Value.JSONResponse;
+  for var Item in Value.Pages do
+    begin
+      Display(Sender, F('page', Item.Index.ToString));
+      Display(Sender, Item.Markdown);
+    end;
+end;
+
+procedure Display(Sender: TObject; Value: TConversationsAgent);
+begin
+  if not Value.JSONResponse.IsEmpty then
+    TutorialHub.JSONResponse := Value.JSONResponse;
+  Display(Sender, F('id', Value.Id));
+  Display(Sender, F('name', Value.Name));
+  if not Value.Model.IsEmpty then
+    Display(Sender, F('model', Value.Model));
+  if not Value.Description.IsEmpty then
+    Display(Sender, F('description', Value.Description));
+  if not Value.Instructions.IsEmpty then
+    Display(Sender, F('instructions', Value.Instructions));
+  Display(Sender, F('version', Value.Version.ToString));
+  Display(Sender, EmptyStr);
+end;
+
+procedure Display(Sender: TObject; Value: TConversationsAgentList);
+begin
+  TutorialHub.JSONResponse := Value.JSONResponse;
+  for var Item in Value.Data do
+    Display(Sender, Item);
+end;
+
+procedure Display(Sender: TObject; Value: TConversationsList);
+begin
+  TutorialHub.JSONResponse := Value.JSONResponse;
+  for var Item in Value.Data do
+    Display(TutorialHub, Item.Id);
+end;
+
+procedure Display(Sender: TObject; Value: TLibrariesMain);
+begin
+  if not Value.JSONResponse.IsEmpty then
+    TutorialHub.JSONResponse := Value.JSONResponse;
+  Display(Sender, F('id', F(Value.Id, F('name', Value.Name))));
+  Display(Sender, F('chunk_size', Value.ChunkSize.ToString));
+  Display(Sender, F('description',Value.Description));
+  Display(Sender, EmptyStr);
+end;
+
+procedure Display(Sender: TObject; Value: TLibrariesMainList);
+begin
+  TutorialHub.JSONResponse := Value.JSONResponse;
+  for var Item in Value.Data do
+    Display(Sender, Item);
+end;
+
+procedure Display(Sender: TObject; Value: TLibrariesDocuments);
+begin
+  if not Value.JSONResponse.IsEmpty then
+    TutorialHub.JSONResponse := Value.JSONResponse;
+  Display(Sender, F('id', F(Value.Id, F('name', Value.Name))));
+  Display(Sender, F('processing_status', F(Value.ProcessingStatus, F('mime_type', Value.MimeType))));
+  Display(Sender, F('summary', Value.Summary));
+  Display(Sender, EmptyStr);
+end;
+
+procedure Display(Sender: TObject; Value: TLibrariesDocumentsList);
+begin
+  TutorialHub.JSONResponse := Value.JSONResponse;
+  Display(Sender,
+    F('total_items',
+      F(Value.Pagination.TotalItems.ToString,
+        F('total_pages', Value.Pagination.TotalPages.ToString))));
+  Display(Sender,
+    F('current_page',
+      F(Value.Pagination.CurrentPage.ToString,
+        F('has_more', BoolToStr(Value.Pagination.HasMore, True)))));
+  for var Item in Value.Data do
+    Display(Sender, Item);
+end;
+
+procedure Display(Sender: TObject; Value: TLibraryDocumentsProcessed);
+begin
+  TutorialHub.JSONResponse := Value.JSONResponse;
+  Display(Sender, F('processed', BoolToStr(Value.Processed, True)));
+end;
+
+procedure Display(Sender: TObject; Value: TLibraryDocumentsText);
+begin
+  TutorialHub.JSONResponse := Value.JSONResponse;
+  Display(Sender, Value.Text);
+end;
+
+procedure Display(Sender: TObject; Value: TLibraryDocumentsStatus);
+begin
+  TutorialHub.JSONResponse := Value.JSONResponse;
+  Display(Sender, F('document_id', Value.DocumentId));
+  Display(Sender, F('processing_status', Value.ProcessingStatus));
+  Display(Sender, EmptyStr);
+end;
+
+procedure Display(Sender: TObject; Value: TLibrariesAccess);
+begin
+  if not Value.JSONResponse.IsEmpty then
+    TutorialHub.JSONResponse := Value.JSONResponse;
+  Display(Sender, F('library_id', Value.LibraryId));
+  Display(Sender, F('role', Value.Role));
+  Display(Sender, F('share_with_uuid', Value.ShareWithUuid));
+  Display(Sender, F('share_with_type', Value.ShareWithType.ToString));
+  Display(Sender, F('user_id', Value.UserId));
+  Display(Sender, EmptyStr);
+end;
+
+procedure Display(Sender: TObject; Value: TLibrariesAccessList);
+begin
+  TutorialHub.JSONResponse := Value.JSONResponse;
   for var Item in Value.Data do
     Display(Sender, Item);
 end;
@@ -492,13 +805,74 @@ end;
 procedure DisplayStream(Sender: TObject; Value: TChat);
 begin
   if Assigned(Value) then
-    DisplayStream(Sender, Value.Choices[0].Delta.Content);
+    begin
+      for var Item in Value.Choices do
+        begin
+          for var SubItem in Item.Delta.Content do
+          begin
+            case SubItem.&Type of
+              TContentType.text:
+                DisplayStream(Sender, SubItem.Text);
+              TContentType.thinking:
+                begin
+                  for var Think in SubItem.Thinking do
+                    DisplayStream(TutorialHub.Memo2, Think.Text);
+                end;
+            end;
+          end;
+
+        end;
+      DisplayChunk(Value);
+    end;
 end;
 
 procedure DisplayStream(Sender: TObject; Value: TCodestral);
 begin
   if Assigned(Value) then
-    DisplayStream(Sender, Value.Choices[0].Delta.Content);
+    begin
+      for var Item in Value.Choices do
+        begin
+          DisplayStream(Sender, Item.Delta.Content);
+        end;
+      DisplayChunk(Value);
+    end;
+end;
+
+procedure DisplayStream(Sender: TObject; Value: TConversationsEvent);
+begin
+  if Assigned(Value) then
+    begin
+      DisplayChunk(Value);
+      if Value.&Type = TChunkEvent.message_output_delta then
+        DisplayStream(Sender, Value.Content[0].Text);
+    end;
+end;
+
+procedure DisplayChunk(Value: string); overload;
+begin
+  var JSONValue := TJSONObject.ParseJSONValue(Value);
+  TutorialHub.Memo4.Lines.BeginUpdate;
+  try
+    Display(TutorialHub.Memo4, JSONValue.ToString);
+  finally
+    TutorialHub.Memo4.Lines.EndUpdate;
+    JSONValue.Free;
+  end;
+end;
+
+procedure DisplayChunk(Value: TChat); overload;
+begin
+  DisplayChunk(Value.JSONResponse);
+end;
+
+procedure DisplayChunk(Value: TCodestral); overload;
+begin
+  DisplayChunk(Value.JSONResponse);
+end;
+
+procedure DisplayChunk(Value: TConversationsEvent);
+begin
+  DisplayChunk(Value.JSONResponse);
 end;
 
 function F(const Name, Value: string): string;
@@ -556,13 +930,44 @@ end;
 
 { TFMXTutorialHub }
 
-constructor TFMXTutorialHub.Create(const AMemo1, AMemo2: TMemo; const AButton: TButton);
+constructor TFMXTutorialHub.Create(const AClient: IMistralAI; const AMemo1, AMemo2, AMemo3, AMemo4: TMemo; const AButton: TButton);
 begin
   inherited Create;
+  Fclient := AClient;
   Memo1 := AMemo1;
   Memo2 := AMemo2;
+  Memo3 := AMemo3;
+  Memo4 := AMemo4;
   Button := AButton;
   FFileOverride := False;
+end;
+
+procedure TFMXTutorialHub.JSONRequestClear;
+begin
+  Memo3.Lines.Clear;
+end;
+
+procedure TFMXTutorialHub.JSONResponseClear;
+begin
+  Memo4.Lines.Clear;
+end;
+
+procedure TFMXTutorialHub.LoadImage(const FilePath: string);
+begin
+  FClient.&File.AsyncGetSignedUrl(FilePath,
+  procedure (Params: TSignedUrlParams)
+  begin
+    Params.Expiry(1);
+  end,
+  function : TAsyncSignedUrl
+  begin
+    Result.OnSuccess :=
+      procedure (Sender: TObject; Value: TSignedUrl)
+      begin
+        THttpx.DownloadFromSignedUrl(Value.Url, True);
+      end;
+    Result.OnError := Display;
+  end);
 end;
 
 procedure TFMXTutorialHub.NextPage;
@@ -582,6 +987,20 @@ begin
   FButton.Text := 'Cancel';
 end;
 
+procedure TFMXTutorialHub.SetJSONRequest(const Value: string);
+begin
+  Memo3.Lines.Text := Value;
+  Memo3.SelStart := 0;
+  Application.ProcessMessages;
+end;
+
+procedure TFMXTutorialHub.SetJSONResponse(const Value: string);
+begin
+  Memo4.Lines.Text := Value;
+  Memo4.SelStart := 0;
+  Application.ProcessMessages;
+end;
+
 procedure TFMXTutorialHub.SetMemo1(const Value: TMemo);
 begin
   FMemo1 := Value;
@@ -592,6 +1011,74 @@ procedure TFMXTutorialHub.SetMemo2(const Value: TMemo);
 begin
   FMemo2 := Value;
   FMemo2.TextSettings.WordWrap := True;
+end;
+
+procedure TFMXTutorialHub.SetMemo3(const Value: TMemo);
+begin
+  FMemo3 := Value;
+  FMemo3.TextSettings.WordWrap := False;
+end;
+
+procedure TFMXTutorialHub.SetMemo4(const Value: TMemo);
+begin
+  FMemo4 := Value;
+  FMemo4.TextSettings.WordWrap := False;
+end;
+
+procedure TFMXTutorialHub.WeatherFunction(const Value: TCalledFunction;
+  Func: IFunctionCore);
+begin
+  var ArgResult := Func.Execute(Value.&Function.Arguments);
+
+  FClient.Chat.AsyncCreateStream(
+    procedure (Params: TChatParams)
+    begin
+      Params.Model('open-mixtral-8x22b-2404');
+      Params.Messages([
+        PayLoad.System('Respond like a star weather presenter on a prime-time TV channel.'),
+        Payload.User(ArgResult)
+      ]);
+      Params.Stream(True);
+      Params.MaxTokens(1024);
+    end,
+    function : TAsynChatStream
+    begin
+      Result.Sender := TutorialHub;
+      Result.OnProgress := DisplayStream;
+      Result.OnSuccess := Display;
+      Result.OnDoCancel := DoCancellation;
+      Result.OnCancellation := Cancellation;
+      Result.OnError := Display;
+    end);
+end;
+
+procedure TFMXTutorialHub.WeatherFunctionEx(const Value: TMessageOutputEntry;
+  Func: IFunctionCore);
+begin
+  var ArgResult := Func.Execute(Value.Arguments);
+
+  FClient.Conversations.AsyncCreateStream(
+    procedure (Params: TConversationsParams)
+    begin
+      Params.Instructions('Respond like a star weather presenter on a prime-time TV channel.');
+      Params.Inputs(ArgResult);
+      Params.Model('mistral-medium-2505');
+      Params.Stream;
+      Params.Store(False);
+      Params.CompletionArgs(TCompletionArgsParams.Create
+        .Temperature(0.3)
+        .TopP(0.95)
+      )
+    end,
+    function : TAsyncConversationsEvent
+    begin
+      Result.Sender := TutorialHub;
+      Result.OnProgress := DisplayStream;
+      Result.OnSuccess := Display;
+      Result.OnDoCancel := DoCancellation;
+      Result.OnCancellation := Cancellation;
+      Result.OnError := Display;
+    end);
 end;
 
 initialization
