@@ -32,6 +32,15 @@ We assume that you have already unzipped one of the test applications—[TestMis
 
 <br>
 
+### Sections
+        - [Non streamed](#non-streamed) 
+        - [Streamed](#streamed)
+        - [Multi-turn conversations](#multi-turn-conversations) 
+        - [Parallel method for generating text](#parallel-method-for-generating-text)
+        - [Reasoning](#reasoning)
+
+<br>
+
 ___
 
 ### Non streamed
@@ -541,7 +550,14 @@ ___
 
 ## Vision
 
+With vision capabilities, models can interpret images alongside text, extracting insights directly from visual data. 
+
 Refer to the [official documentation](https://docs.mistral.ai/capabilities/vision/).
+
+- [Analyze single source](#analyze-single-source)
+- [Analyze multi-source](#analyze-multi-source)
+
+<br>
 
 ### Analyze single source
 
