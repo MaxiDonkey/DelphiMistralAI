@@ -58,6 +58,8 @@ ___
 
 The Transcription API converts audio into time-aligned text with automatic language detection. It hides all input mechanics: whether the audio comes as base64, a public URL, or a signed URL from an upload, the wrapper detects and normalizes it transparently—just supply your audio source and get back a structured transcript with optional timestamps. Designed for short-to-medium recordings (≈15 minutes per request), it’s a low-friction building block for meeting notes, searchable audio archives, voice-driven interfaces, and downstream NLP.
 
+Refer to [official documentation](https://docs.mistral.ai/capabilities/audio/)
+
 ### Exemple
 
 ```Pascal
@@ -127,7 +129,7 @@ The Transcription API converts audio into time-aligned text with automatic langu
 
 <br>
 
-__
+___
 
 ## Chat with Audio
 
