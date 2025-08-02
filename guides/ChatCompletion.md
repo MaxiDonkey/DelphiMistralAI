@@ -30,8 +30,6 @@ The Chat API supports both single‑turn requests and multi‑turn, stateless co
 
 We assume that you have already unzipped one of the test applications—[TestMistralAI_VCL](https://github.com/MaxiDonkey/DelphiMistralAI/tree/main/sample) or [TestMistralAI_FMX](https://github.com/MaxiDonkey/DelphiMistralAI/tree/main/sample)—so you can integrate the code snippets below with a simple copy and paste.
 
-<br>
-
 ### Sections
 - [Non streamed](#non-streamed) 
 - [Streamed](#streamed)
