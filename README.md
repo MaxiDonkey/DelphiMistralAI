@@ -204,7 +204,7 @@ Comprehensive Project Documentation Reference
 #### 2. Generation / Completions
 - Standard Completions 
    - [Chat completions](https://github.com/MaxiDonkey/DelphiMistralAI/blob/main/guides/ChatCompletion.md#chat-api-v1chatcompletions) 
-   - [Agents completions](https://github.com/MaxiDonkey/DelphiMistralAI/blob/main/guides/AgentsCompletions.md)
+   - [Agents completions](https://github.com/MaxiDonkey/DelphiMistralAI/blob/main/guides/AgentsCompletions.md#agents-completions-v1agentscompletions)
 
 - Specialized Completions  
    - [Fill-in-the-middle](https://github.com/MaxiDonkey/DelphiMistralAI/blob/main/guides/FIM.md#fill-in-the-middle-v1fimcompletions) 
