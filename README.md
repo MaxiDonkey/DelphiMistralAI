@@ -285,7 +285,7 @@ Below, the table succinctly summarizes all MistralAI endpoints supported by the 
 |--- |--- |:---: | 
 |[Chat Completion API](https://github.com/MaxiDonkey/DelphiMistralAI/blob/main/guides/ChatCompletion.md#chat-api-v1chatcompletions) | v1/chat/completions | <div align="center"><span style="color: green;">●</span></div> |
 |[Fill-in-the-middle API](https://github.com/MaxiDonkey/DelphiMistralAI/blob/main/guides/FIM.md#fill-in-the-middle-v1fimcompletions) |v1/fim/completions | <div align="center"><span style="color: green;">●</span></div> |
-|[Agents competions API](https://github.com/MaxiDonkey/DelphiMistralAI/blob/main/guides/AgentsCompletions.md#agents-completions-v1agentscompletions) | v1/agents/completions | <div align="center"><span style="color: green;">●</span></div> |
+|[Agents completions API](https://github.com/MaxiDonkey/DelphiMistralAI/blob/main/guides/AgentsCompletions.md#agents-completions-v1agentscompletions) | v1/agents/completions | <div align="center"><span style="color: green;">●</span></div> |
 |[Embeddings API](https://github.com/MaxiDonkey/DelphiMistralAI/blob/main/guides/Embeddings.md#embeddings-v1embeddings) | v1/embeddings | <div align="center"><span style="color: green;">●</span></div> |
 |[Classifiers API](https://github.com/MaxiDonkey/DelphiMistralAI/blob/main/guides/Classifiers.md#moderation) | v1/moderations | <div align="center"><span style="color: green;">●</span></div> |
 | | v1/chat/moderations | <div align="center"><span style="color: green;">●</span></div> |
