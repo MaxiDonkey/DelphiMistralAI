@@ -21,7 +21,9 @@ ___
 
 ## List all libraries you have access to
 
-ist all libraries that you have created or have been shared with you.
+List all libraries that you have created or have been shared with you.
+
+Refer to [official documentation](https://docs.mistral.ai/api/#tag/beta.libraries/operation/libraries_list_v1)
 
 ```Pascal
 //uses MistralAI, MistralAI.Types, MistralAI.Tutorial.VCL or MistralAI.Tutorial.FMX;
@@ -70,6 +72,8 @@ ___
 ## Create a new Library
 
 Create a new Library, you will be marked as the owner and only you will have the possibility to share it with others. When first created this will only be accessible by you.
+
+Refer to [official documentation](https://docs.mistral.ai/api/#tag/beta.libraries/operation/libraries_create_v1)
 
 ```Pascal
 //uses MistralAI, MistralAI.Types, MistralAI.Tutorial.VCL or MistralAI.Tutorial.FMX;
@@ -134,6 +138,8 @@ ___
 
 Given a library id, details information about that Library.
 
+Refer to [official documentation](https://docs.mistral.ai/api/#tag/beta.libraries/operation/libraries_get_v1)
+
 ```Pascal
 //uses MistralAI, MistralAI.Types, MistralAI.Tutorial.VCL or MistralAI.Tutorial.FMX;
 
@@ -183,6 +189,8 @@ ___
 
 Given a library id, deletes it together with all documents that have been uploaded to that library.
 
+Refer to [official documentation](https://docs.mistral.ai/api/#tag/beta.libraries/operation/libraries_delete_v1)
+
 ```Pascal
 //uses MistralAI, MistralAI.Types, MistralAI.Tutorial.VCL or MistralAI.Tutorial.FMX;
 
@@ -231,6 +239,8 @@ ___
 ## Update a library
 
 Given a library id, you can update the name and description.
+
+Refer to [official documentation](https://docs.mistral.ai/api/#tag/beta.libraries/operation/libraries_update_v1)
 
 ```Pascal
 //uses MistralAI, MistralAI.Types, MistralAI.Tutorial.VCL or MistralAI.Tutorial.FMX;
