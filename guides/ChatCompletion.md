@@ -33,11 +33,11 @@ We assume that you have already unzipped one of the test applications—[TestMis
 <br>
 
 ### Sections
-        - [Non streamed](#non-streamed) 
-        - [Streamed](#streamed)
-        - [Multi-turn conversations](#multi-turn-conversations) 
-        - [Parallel method for generating text](#parallel-method-for-generating-text)
-        - [Reasoning](#reasoning)
+- [Non streamed](#non-streamed) 
+- [Streamed](#streamed)
+- [Multi-turn conversations](#multi-turn-conversations) 
+- [Parallel method for generating text](#parallel-method-for-generating-text)
+- [Reasoning](#reasoning)
 
 <br>
 
