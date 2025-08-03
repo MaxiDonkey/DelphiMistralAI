@@ -326,7 +326,7 @@ To help you get up to speed on both endpoints, the two following documents provi
 - [v1/conversations](https://github.com/MaxiDonkey/DelphiMistralAI/blob/main/guides/Conversations.md)
 
 >[!NOTE]
->If you're a new user, we recommend using the Responses API.
+>If you're a new user, we recommend using the v1/conversations API.
 
 <br>
 
