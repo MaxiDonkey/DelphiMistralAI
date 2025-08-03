@@ -322,8 +322,8 @@ With these integrated capabilities, you can build more autonomous, agent‑orien
 The `v1/conversations` endpoint is intended to gradually replace `v1/chat/completions`, as it embodies a synthesis of current best practices in AI—especially for those looking to adopt an agentic approach.
 
 To help you get up to speed on both endpoints, the two following documents provide detailed documentation, complete with numerous request examples and use cases:
-- [v1/chat/completions](https://github.com/MaxiDonkey/DelphiMistralAI/blob/main/guides/ChatCompletion.md)
-- [v1/conversations](https://github.com/MaxiDonkey/DelphiMistralAI/blob/main/guides/Conversations.md)
+- [v1/chat/completions](https://github.com/MaxiDonkey/DelphiMistralAI/blob/main/guides/ChatCompletion.md#chat-api-v1chatcompletions)
+- [v1/conversations](https://github.com/MaxiDonkey/DelphiMistralAI/blob/main/guides/Conversations.md#conversations-api-v1conversations)
 
 >[!NOTE]
 >If you're a new user, we recommend using the `v1/conversations` API.
