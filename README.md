@@ -332,7 +332,7 @@ To help you get up to speed on both endpoints, the two following documents provi
 
 ## Functional differences between the three endpoints
 
-|Capabilities | [Chat Completions API](https://github.com/MaxiDonkey/DelphiMistralAI/blob/main/guides/ChatCompletion.md) | [Conversations API](https://github.com/MaxiDonkey/DelphiMistralAI/blob/main/guides/Conversations.md) | [Agents & connectors API](https://github.com/MaxiDonkey/DelphiMistralAI/blob/main/guides/AgentsConnectors.md) |
+|Capabilities | [Chat Completions API](https://github.com/MaxiDonkey/DelphiMistralAI/blob/main/guides/ChatCompletion.md#chat-api-v1chatcompletions) | [Conversations API](https://github.com/MaxiDonkey/DelphiMistralAI/blob/main/guides/AgentsConnectors.md#agents--connectors-v1agents) | [Agents & connectors API](https://github.com/MaxiDonkey/DelphiMistralAI/blob/main/guides/AgentsConnectors.md#agents--connectors-v1agents) |
 | :---: |:---: | :---: | :---: |
 |Text generation | <div align="center"><span style="color: green;">●</span></div> | <div align="center"><span style="color: green;">●</span></div> | |
 | Vision | <div align="center"><span style="color: green;">●</span></div> | | |
