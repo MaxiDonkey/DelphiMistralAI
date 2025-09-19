@@ -1196,7 +1196,7 @@ type
 implementation
 
 uses
-  System.StrUtils, Rest.Json, System.Rtti, MistralAI.NetEncoding.Base64, Vcl.Dialogs;
+  System.StrUtils, Rest.Json, System.Rtti, MistralAI.NetEncoding.Base64;
 
 { TUploadParams }
 

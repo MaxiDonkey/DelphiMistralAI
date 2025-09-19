@@ -22,7 +22,7 @@ uses
   MistralAI.Audio;
 
 const
-  VERSION = 'DelphiMistralAIv1.3.0';
+  VERSION = 'DelphiMistralAIv1.3.1';
 
 type
   /// <summary>

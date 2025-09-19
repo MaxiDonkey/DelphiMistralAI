@@ -10,7 +10,7 @@
 interface
 
 uses
-  Winapi.Windows, Winapi.ShellAPI, System.SysUtils, System.Classes, System.Net.URLClient,
+  System.SysUtils, System.Classes, System.Net.URLClient,
   System.Net.HttpClient, System.Net.HttpClientComponent, System.NetEncoding;
 
 type
@@ -31,17 +31,6 @@ type
     class function GetFileNameFromURI(const URI: string): string;
 
     /// <summary>
-    /// Launches the specified file or application using the default system handler.
-    /// </summary>
-    /// <param name="FilePath">
-    /// The full path of the file or executable to open.
-    /// </param>
-    /// <exception cref="EOSError">
-    /// Raised if the ShellExecute call fails (i.e. returns a value ≤ 32).
-    /// </exception>
-    class procedure Open(const FilePath: string);
-
-    /// <summary>
     /// Downloads the file at the specified signed URL into the current directory,
     /// using the file name derived from the URI, and optionally opens it.
     /// </summary>
@@ -58,7 +47,7 @@ type
     /// <exception cref="EOSError">
     /// Raised if opening the file fails (ShellExecute returns ≤ 32).
     /// </exception>
-    class procedure DownloadFromSignedUrl(const Uri: string; const Open: Boolean = False); overload;
+    class procedure DownloadFromSignedUrl(const Uri: string); overload;
 
     /// <summary>
     /// Downloads the file from the specified signed URL into the given directory,
@@ -80,7 +69,7 @@ type
     /// <exception cref="EOSError">
     /// Raised if opening the file fails (ShellExecute returns ≤ 32).
     /// </exception>
-    class procedure DownloadFromSignedUrl(const Uri: string; const Path: string; const Open: Boolean = False); overload;
+    class procedure DownloadFromSignedUrl(const Uri: string; const Path: string); overload;
   end;
 
 implementation
@@ -88,8 +77,7 @@ implementation
 { THttpx }
 
 class procedure THttpx.DownloadFromSignedUrl(const Uri: string;
-  const Path: string;
-  const Open: Boolean);
+  const Path: string);
 var
   HttpClient: THTTPClient;
   FileStream: TFileStream;
@@ -104,8 +92,6 @@ begin
     FileStream := TFileStream.Create(FilePath, fmCreate);
     try
       HttpClient.Get(URI, FileStream);
-      if Open then
-        THttpx.Open(FilePath);
     finally
       FileStream.Free;
     end;
@@ -114,25 +100,15 @@ begin
   end;
 end;
 
-class procedure THttpx.DownloadFromSignedUrl(const Uri: string;
-  const Open: Boolean);
+class procedure THttpx.DownloadFromSignedUrl(const Uri: string);
 begin
-  DownloadFromSignedUrl(Uri, '', Open);
+  DownloadFromSignedUrl(Uri, '');
 end;
 
 class function THttpx.GetFileNameFromURI(const URI: string): string;
 begin
   var CleanURI := URI.Split(['?'])[0];
   Result := Copy(CleanURI, LastDelimiter('/', CleanURI) + 1, MaxInt);
-end;
-
-class procedure THttpx.Open(const FilePath: string);
-var
-  Ret: HINST;
-begin
-  Ret := ShellExecuteW(0, nil, PWideChar(FilePath), nil, nil, SW_SHOWNORMAL);
-  if Ret <= 32 then
-    RaiseLastOSError;
 end;
 
 end.

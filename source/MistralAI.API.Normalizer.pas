@@ -112,6 +112,9 @@ begin
       if NextVal is TJSONArray then
         Exit;
 
+      if NextVal is TJSONNull then
+        Exit;
+
       if not (NextVal is TJSONString) then
         raise Exception.CreateFmt(
           'TJSONNormalizer: "%s" is neither JSONString nor JSONArray (got %s)',

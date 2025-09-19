@@ -13,7 +13,8 @@ unit MistralAI.Tutorial.VCL;
 interface
 
 uses
-  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes,
+  Winapi.Windows, Winapi.ShellAPI, Winapi.Messages,
+  System.SysUtils, System.Variants, System.Classes,
   Vcl.Graphics, Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, Vcl.ExtCtrls,
   System.UITypes, System.JSON,
   MistralAI, MistralAI.Types, MistralAI.Functions.Core,
@@ -196,6 +197,8 @@ type
 
   function CodeBefore: string;
   function CodeAfter: string;
+
+  procedure ImageOpen(const FilePath: string);
 
 var
   /// <summary>
@@ -953,6 +956,15 @@ begin
   end;
 end;
 
+procedure ImageOpen(const FilePath: string);
+var
+  Ret: HINST;
+begin
+  Ret := ShellExecuteW(0, nil, PWideChar(FilePath), nil, nil, SW_SHOWNORMAL);
+  if Ret <= 32 then
+    RaiseLastOSError;
+end;
+
 { TVCLTutorialHub }
 
 constructor TVCLTutorialHub.Create(const AClient: IMistralAI; const AMemo1, AMemo2, AMemo3, AMemo4: TMemo; const AButton: TButton);
@@ -989,7 +1001,7 @@ begin
     Result.OnSuccess :=
       procedure (Sender: TObject; Value: TSignedUrl)
       begin
-        THttpx.DownloadFromSignedUrl(Value.Url, True);
+        THttpx.DownloadFromSignedUrl(Value.Url);
       end;
     Result.OnError := Display;
   end);
